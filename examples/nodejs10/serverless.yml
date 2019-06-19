@@ -1,0 +1,27 @@
+service:
+  name: scaleway-node10
+
+provider:
+  name: scaleway
+  runtime: node10
+  # Global Environment variables - used in every functions
+  env:
+    test: test
+  # the path to the credentials file needs to be absolute
+  scwToken: <scw-token>
+  scwOrganization: <scw-organization-id>
+
+plugins:
+  - serverless-scaleway-functions
+
+package:
+  exclude:
+    - .gitignore
+    - .git/**
+
+functions:
+  first:
+    handler: handler.js
+    # Local environment variables - used only in given function
+    env:
+      local: local
