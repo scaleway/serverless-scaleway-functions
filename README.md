@@ -35,16 +35,16 @@ plugins:
 
 ## Usage
 
-See [this section of the documention](./docs/README.md) in order to start using `Serverless with Scaleway Functions`.
+See [this section of the documention](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md) in order to start using `Serverless with Scaleway Functions`.
 
 
 ## Documentation and useful Links
 
-- [Get started with Serverless Framework on Scaleway Functions](./docs/README/md)
+- [Get started with Serverless Framework on Scaleway Functions](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md)
 - [Scaleway Functions Golang Runtime](https://github.com/scaleway/scaleway-functions-go) (you `MUST` use this library if you plan to develop with Golang).
 - [Serverless Framework documentation](https://serverless.com)
 - [Scaleway Cloud Provider](https://scaleway.com)
-- [Examples/Templates](./examples) for different runtimes on Scaleway Functions
+- [Examples/Templates](https://github.com/scaleway/serverless-scaleway-functions/blob/master/examples) for different runtimes on Scaleway Functions
 
 As `Scaleway Functions` is only in `early phase`, the platform's documentation is private and will be linked to users invited to test the product.
 
