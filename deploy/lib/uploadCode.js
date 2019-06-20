@@ -25,7 +25,8 @@ module.exports = {
       return this.provider.apiManager.get(`/functions/${func.id}/upload-url?content_length=${archiveSize}`)
         .then(response => Object.assign(func, {
           uploadUrl: response.data.url,
-          uploadHeader: response.data.headers,
+          uploadHeader: {'content_length': archiveSize,
+                         'Content-Type': 'application/octet-stream'}
         }));
     });
 
@@ -50,9 +51,7 @@ module.exports = {
         data,
         method: 'put',
         url: func.uploadUrl,
-        headers: Object.assign(func.uploadHeader, {
-          'Content-Type': 'application/octet-stream',
-        }),
+        headers: func.uploadHeader,
         maxContentLength: 1000000000,
       }));
     });
