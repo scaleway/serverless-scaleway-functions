@@ -45,7 +45,6 @@ class ScalewayProvider {
       this.setCredentials(options);
 
       this.apiUrl = 'https://api.scaleway.com/functions/v1alpha2/regions/fr-par';
-      this.defaultStage = 'dev';
       this.apiManager = axios.create({
         baseURL: this.apiUrl,
         headers: {

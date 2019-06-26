@@ -23,7 +23,7 @@ module.exports = {
   },
 
   removeSingleNamespace(namespace) {
-    if (!namespace) throw new Error(`Unable to remove namespace and functions: No namespace found with name ${this.namespaceFullName}`);
+    if (!namespace) throw new Error(`Unable to remove namespace and functions: No namespace found with name ${this.namespaceName}`);
     return this.provider.apiManager.delete(`namespaces/${namespace.id}`)
       .then(() => this.waitNamespaceIsDeleted(namespace))
       .catch((err) => {

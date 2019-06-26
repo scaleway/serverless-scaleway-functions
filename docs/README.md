@@ -86,8 +86,6 @@ service:
 
 provider:
   name: scaleway
-  # stage where you want to deploy your functions, defaults to dev
-  stage: production
   # Available Runtimes are:
   # node8, node10 for JavaScript
   # python (2.7), python3 (3.7) for Python
@@ -209,19 +207,6 @@ functions:
       LOCAL_VARIABLE: mounted-in-this-function
 ```
 
-### Stage
-
-In order to make it easy for organizations to deploy their functions to multiple environments, we provide a way to `tag` your namespaces with a **stage**.
-
-**By default**, stage value => `dev`
-
-This way, you may deploy to a different environment by inquiring a `stage`:
-
-- **serverless.yml**:
-```yml
-provider:
-  stage: staging
-```
 
 # Serverless Remove: Delete a project
 

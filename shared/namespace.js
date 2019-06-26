@@ -6,7 +6,7 @@ module.exports = {
     return this.provider.apiManager.get('namespaces')
       .then((response) => {
         const namespaces = response.data.namespaces;
-        return namespaces.find(ns => ns.name === this.namespaceFullName);
+        return namespaces.find(ns => ns.name === this.namespaceName);
       });
   },
 };
