@@ -14,7 +14,10 @@ module.exports = {
   getFunctions() {
     const functionsUrl = `namespaces/${this.namespace.id}/functions`;
     return this.provider.apiManager.get(functionsUrl)
-      .then(response => response.data.functions);
+      .then(response => response.data.functions)
+      .catch((err) => {
+        throw new Error(err.response.data.message)
+      })
   },
 
   createOrUpdateFunctions(foundFunctions) {
@@ -36,45 +39,43 @@ module.exports = {
   createSingleFunction(func) {
     const params = {
       name: func.name,
-      environment_variables: func.env || {},
+      environment_variables: func.env,
       namespace_id: this.namespace.id,
-      memory_limit: func.memoryLimit || constants.DEFAULT_MEMORY_LIMIT,
-      cpu_limit: func.cpuLimit || constants.DEFAULT_CPU_LIMIT,
-      min_scale: func.minScale || constants.DEFAULT_MIN_SCALE,
-      max_scale: func.maxScale || constants.DEFAULT_MAX_SCALE,
+      memory_limit: func.memoryLimit,
+      min_scale: func.minScale,
+      max_scale: func.maxScale,
       runtime: this.runtime,
+      timeout: func.timeout,
+      handler: func.handler
     };
-    if (func.timeout) {
-      params.timeout = func.timeout;
-    }
-    if (func.handler) {
-      params.handler = func.handler;
-    }
+
     this.serverless.cli.log(`Creating function ${func.name}...`);
 
     return this.provider.apiManager.post('functions', params)
-      .then(response => Object.assign(response.data, { handler: func.handler }));
+      .then(response => Object.assign(response.data, { handler: func.handler }))
+      .catch((err) => {
+        throw new Error(err.response.data.message)
+      })
   },
 
   updateFunction(func, foundFunc) {
-    const params = {
-      environment_variables: func.env || {},
-      min_scale: func.minScale || foundFunc.min_scale,
-      max_scale: func.maxScale || foundFunc.max_scale,
-      memory_limit: func.memoryLimit || foundFunc.memory_limit,
-      cpu_limit: func.cpuLimit || foundFunc.cpu_limit,
-      runtime: this.runtime,
-      redeploy: false,
-    };
-    if (func.timeout) {
-      params.timeout = func.timeout;
-    }
-    if (func.handler) {
-      params.handler = func.handler;
-    }
+
+    const params = {};
+
+    params.redeploy = false;
+    params.environment_variables = func.env;
+    params.memory_limit = func.memoryLimit;
+    params.min_scale = func.minScale;
+    params.max_scale = func.maxScale;
+    params.timeout = func.timeout;
+    params.handler = func.handler;
+
     const updateUrl = `functions/${foundFunc.id}`;
     this.serverless.cli.log(`Updating function ${func.name}...`);
-    return this.provider.apiManager.put(updateUrl, params)
-      .then(response => Object.assign(response.data, { handler: func.handler }));
+    return this.provider.apiManager.patch(updateUrl, params)
+      .then(response => Object.assign(response.data, { handler: func.handler }))
+      .catch((err) => {
+        throw new Error(err.response.data.message)
+      })
   },
 };

@@ -8,12 +8,19 @@ module.exports = {
     return BbPromise.bind(this)
       .then(this.deployEachFunction)
       .then(() => this.serverless.cli.log('Waiting for function deployments, this may take multiple minutes...'))
+      .catch((err) => {
+        throw new Error(err.response.data.message)
+      })
       .then(this.waitFunctionsAreDeployed);
   },
 
   deployEachFunction() {
     const promises = this.functions.map(
-      func => this.provider.apiManager.post(`functions/${func.id}/deploy`, {}).then(response => response.data),
+      func => this.provider.apiManager.post(`functions/${func.id}/deploy`, {})
+      .then(response => response.data)
+      .catch((err) => {
+        throw new Error(err.response.data.message)
+      }),
     );
 
     return Promise.all(promises);
@@ -26,6 +33,9 @@ module.exports = {
         let functionsAreReady = true;
         for (let i = 0; i < functions.length; i += 1) {
           const func = response.data.functions[i];
+          if (func.status === 'error') {
+            throw new Error(func.error_message)
+          }
           if (func.status !== 'ready') {
             functionsAreReady = false;
             break;
