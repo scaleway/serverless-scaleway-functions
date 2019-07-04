@@ -27,7 +27,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "gitlab.infra.online.net/paas/scaleway-functions-go"
+  name = "github.com/scaleway/scaleway-functions-go"
 
 [prune]
   go-tests = true

@@ -3,19 +3,21 @@
 
 [[projects]]
   branch = "master"
-  name = "gitlab.infra.online.net/paas/scaleway-functions-go"
+  digest = "1:fb21b671b27f27cd895678d74a57dec2bf7c27470118cc5c47839477bc6388e9"
+  name = "github.com/scaleway/scaleway-functions-go"
   packages = [
     "events",
     "lambda",
-    "lambda/handlertrace",
-    "lambda/messages",
-    "lambdacontext"
   ]
-  revision = "627460bb686a6bbc48562ba97f70d13c2cf272e9"
+  pruneopts = "UT"
+  revision = "e550fb379304786e34ad93c8d466f0d55151d3a8"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "43077f9f965a55a59d03d8b5f8753adc1f42bcc98ff5c4ea119918eed4b3d0c2"
+  input-imports = [
+    "github.com/scaleway/scaleway-functions-go/events",
+    "github.com/scaleway/scaleway-functions-go/lambda",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

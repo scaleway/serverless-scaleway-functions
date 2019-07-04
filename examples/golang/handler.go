@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 
-	"gitlab.infra.online.net/paas/scaleway-functions-go/events"
-	"gitlab.infra.online.net/paas/scaleway-functions-go/lambda"
+	"github.com/scaleway/scaleway-functions-go/events"
+	"github.com/scaleway/scaleway-functions-go/lambda"
 )
 
 // Handler - Handle event
