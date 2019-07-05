@@ -168,9 +168,10 @@ functions:
 ```
 - src
   - testing
-    - handler.go -> package testing
+    - handler.go -> package main inside "src/testing" directory
   - second
-    - handler.go -> package second
+    - handler.go -> package main inside "src/second" directory
+- handler.go -> package main at the root of the project
 - serverless.yml
 ```
 Your serverless.yml `functions` should look something like this:
@@ -179,6 +180,8 @@ provider:
   # ...
   runtime: golang
 functions:
+  root:
+    handler: "."
   testing:
     handler: src/testing
   second:
