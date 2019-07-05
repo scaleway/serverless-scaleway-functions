@@ -22,7 +22,12 @@ package:
 
 functions:
   first:
-    handler: function
+    # If handler is at the root of your serverless project
+    handler: "."
     # Local environment variables - used only in given function
     env:
       local: local
+
+  mypackage:
+    # if your handler is in a custom package
+    handler: mypackage
