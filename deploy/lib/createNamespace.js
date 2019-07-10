@@ -59,6 +59,7 @@ module.exports = {
             setTimeout(() => resolve(this.waitNamespaceIsReady()), 1000);
           });
         }
+        this.saveNamespaceToProvider(response.data);
         return true;
       });
   },
