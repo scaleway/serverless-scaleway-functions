@@ -21,7 +21,7 @@ package:
 
 functions:
   first:
-    handler: handler.js
+    handler: handler.myHandler
     # Local environment variables - used only in given function
     env:
       local: local

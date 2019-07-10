@@ -24,7 +24,7 @@ functions:
   first:
     # Path to compiled JavaScript Handler
     # Note that this must be a `.js` file even though you are using .ts
-    handler: src/handler.js
+    handler: .webpack/handler.myHandler
     # Local environment variables - used only in given function
     env:
       local: local

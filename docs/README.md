@@ -126,12 +126,12 @@ Available runtimes are:
 #### Functions Handler
 
 Based on the chosen runtime, the `handler` variable on function might vary:
-- `node` (8 or 10): Path to your handler file (from serverless.yml), omit `./`, `../`.
+- `node` (8 or 10): Path to your handler file (from serverless.yml), omit `./`, `../`, suffixed by the exported function to use (example: `myFunction.myHandler` => file `myFunction.js` exports a function `myHandler`).
 ```
 - src
   - handlers
-    - firstHandler.js
-    - secondHandler.js
+    - firstHandler.js  => module.exports.myFirstHandler
+    - secondHandler.js => module.exports.mySecondHandler
 - serverless.yml
 ```
 Inside serverless.yml:
@@ -141,16 +141,16 @@ provider:
   runtime: node8 # or node10
 functions:
   first:
-    handler: src/handlers/firstHandler.js
+    handler: src/handlers/firstHandler.myFirstHandler
   second:
-    handler: src/handlers/secondHandler.js
+    handler: src/handlers/secondHandler.mySecondHandler
 ```
-- `python` (2.7 and 3.7): Similar to `node`, path to handler file `src/testing/handler.py`:
+- `python` (2.7 and 3.7): Similar to `node`, path to handler file, suffixed with exported function to use: `src/testing/handler.my_handler` => file `handler.py` defines a method `my_handler`, inside directory `src/testing`.
 ```
 - src
   - handlers
-    - firstHandler.py
-    - secondHandler.py
+    - firstHandler.py  => def my_first_handler
+    - secondHandler.py => def my_second_handler
 - serverless.yml
 ```
 Inside serverless.yml:
@@ -160,9 +160,9 @@ provider:
   runtime: python3 # or python for python 2.7
 functions:
   first:
-    handler: src/handlers/firstHandler.py
+    handler: src/handlers/firstHandler.my_first_handler
   second:
-    handler: src/handlers/secondHandler.py
+    handler: src/handlers/secondHandler.my_second_handler
 ```
 - `golang`: Path to your handler's **package**, for example if I have the following structure:
 ```
