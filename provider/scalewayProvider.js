@@ -43,7 +43,7 @@ class ScalewayProvider {
 
     return new BbPromise((resolve) => {
       this.setCredentials(options);
-
+      
       this.apiUrl = 'https://api.scaleway.com/functions/v1alpha2/regions/fr-par';
       this.apiManager = axios.create({
         baseURL: this.apiUrl,

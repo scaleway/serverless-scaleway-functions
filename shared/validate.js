@@ -10,7 +10,7 @@ module.exports = {
       .then(this.validateServicePath)
       .then(this.validateCredentials)
       .then(this.validateNamespace)
-      .then(this.validateFunctions)
+      .then(this.validateApplications)
       .then(this.checkErrors);
   },
 
@@ -50,32 +50,42 @@ module.exports = {
     return BbPromise.resolve(currentErrors.concat(namespaceErrors));
   },
 
-  validateFunctions(errors) {
-    const currentErrors = Array.isArray(errors) ? errors : [];
-    const functions = this.serverless.service.functions;
-    const functionNames = Object.keys(functions);
-    let functionErrors = [];
+  validateApplications(errors) {
+    let functionNames = [];
+    let containerNames = [];
 
-    if (!functionNames.length) {
-      functionErrors.push('You must define at least one function to deploy under the functions: key.');
+    const currentErrors = Array.isArray(errors) ? errors : [];
+    let functionErrors = [];
+    let containers = [];
+
+    const functions = this.serverless.service.functions;
+    if (functions && Object.keys(functions).length !== 0) {
+      functionNames = Object.keys(functions);
+
+      functionNames.forEach((functionName) => {
+        const func = functions[functionName];
+        // Check if function handler exists
+        try {
+          if (!fs.existsSync(path.resolve('./', func.handler))) {
+            throw new Error('File does not exists');
+          }
+        } catch (error) {
+          const message = `Handler defined for function ${functionName} does not exist.`;
+          functionErrors.push(message);
+        }
+      });
     }
 
-    functionNames.forEach((functionName) => {
-      const func = functions[functionName];
+    if (this.serverless.service.custom) {
+      containers = this.serverless.service.custom.containers;
+    }
+    if (containers && Object.keys(containers).length !== 0) {
+      containerNames = Object.keys(containers);
+    }
 
-      // Check function env vars
-      functionErrors = functionErrors.concat(this.validateEnv(func.env));
-
-      // Check if function handler exists
-      try {
-        if (!fs.existsSync(path.resolve('./', func.handler))) {
-          throw new Error('File does not exists');
-        }
-      } catch (error) {
-        const message = `Handler defined for function ${functionName} does not exist.`;
-        functionErrors.push(message);
-      }
-    });
+    if (!functionNames.length && !containerNames.length) {
+      functionErrors.push('You must define at least one function or container to deploy under the functions or custom key.');
+    }
 
     return BbPromise.resolve(currentErrors.concat(functionErrors));
   },

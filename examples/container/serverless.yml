@@ -1,0 +1,32 @@
+service:
+  name: scaleway-container
+
+provider:
+  name: scaleway
+  # Global Environment variables - used in every functions
+  env:
+    test: test
+  # the path to the credentials file needs to be absolute
+  scwToken: <scw-token>
+  scwOrganization: <scw-organization-id>
+
+plugins:
+  - serverless-scaleway-functions
+
+package:
+  exclude:
+    - node_modules/**
+    - .gitignore
+    - .git/**
+
+custom:
+  containers:
+    first:
+      directory: my-container
+      # minScale: 1
+      # memoryLimit: 256
+      # maxScale: 2
+      # timeout: 20000
+      # Local environment variables - used only in given function
+      env:
+        local: local

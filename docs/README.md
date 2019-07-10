@@ -90,6 +90,7 @@ provider:
   # node8, node10 for JavaScript
   # python (2.7), python3 (3.7) for Python
   # golang
+  # You don't need to specify a runtime if you deploy only containers
   runtime: <runtime>
   # See documentation below for environment
   env:
@@ -110,10 +111,47 @@ functions:
     env:
       MY_VARIABLE: "my-value"
 ```
+### Managing containers
+
+**Requirements:** You need to have Docker installed to be able to build and push your image to your Scaleway registry.
+
+You must define your containers inside the `custom.containers` field in your serverless.yml manifest.
+Each container must specify the relative path of its application directory (containing the Dockerfile, and all files related to the application to deploy):
+
+```yml
+custom:
+  containers:
+    myContainer:
+      directory: my-container-directory
+      # Environment only available in this function
+      env:
+        MY_VARIABLE: "my-value"
+```
+
+Here is an example of the files you should have, the `directory` containing your Dockerfile ans scripts is `my-container-directory`.
+
+```
+.
+├── my-container-directory
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── server.py
+│   └── (...)
+├── node_modules
+│   ├── serverless-scaleway-functions
+│   └── (...)
+├── package-lock.json
+├── package.json
+└── serverless.yml
+```
+
+Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080.
+
+You may use the [container example](../examples/container) to getting started.
 
 ### Runtime and Functions Handler
 
-You must specify your functions runtime inside `provider.runtime` key inside your serverless.yml file.
+You must specify your functions runtime inside `provider.runtime` key inside your serverless.yml file. It is not necessary if you wish to deploy containers only.
 
 #### Runtimes
 
