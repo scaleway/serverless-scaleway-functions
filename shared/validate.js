@@ -77,6 +77,13 @@ module.exports = {
         functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
       }
 
+    let functionErrors = [];
+    let containers = [];
+
+    const functions = this.serverless.service.functions;
+    if (functions && Object.keys(functions).length !== 0) {
+      functionNames = Object.keys(functions);
+
       functionNames.forEach((functionName) => {
         const func = functions[functionName];
         // Check if function handler exists
