@@ -11,19 +11,19 @@ class ScalewayDeploy {
     this.provider = this.serverless.getProvider('scaleway');
 
     Object.assign(
-        this,
-        setUpDeployment,
-        removeNamespace,
-        namespaceUtils,
-        validate,
+      this,
+      setUpDeployment,
+      removeNamespace,
+      namespaceUtils,
+      validate,
     );
 
     this.hooks = {
       // Validate serverless.yml, set up default values, configure deployment...
       'before:remove:remove': () => BbPromise.bind(this)
         .then(this.provider.initialize(this.serverless, this.options))
-        .then(this.validate)
-        .then(this.setUpDeployment),
+        .then(this.setUpDeployment)
+        .then(this.validate),
       // Every tasks related to space deletion:
       // - Delete given space if it exists
       'remove:remove': () => BbPromise.bind(this)

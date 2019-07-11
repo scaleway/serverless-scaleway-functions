@@ -103,7 +103,7 @@ module.exports = {
             throw new Error('File does not exists');
           }
         } catch (error) {
-          const message = `Handler defined for function ${functionName} does not exist.`;
+          const message = `Handler file defined for function ${functionName} does not exist (${func.handler}).`;
           functionErrors.push(message);
         }
       });
