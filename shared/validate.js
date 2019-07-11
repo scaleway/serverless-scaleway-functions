@@ -4,6 +4,14 @@ const BbPromise = require('bluebird');
 const fs = require('fs');
 const path = require('path');
 
+const RUNTIMES_EXTENSIONS = {
+  node8: ['ts', 'js'],
+  node10: ['ts', 'js'],
+  python: ['py'],
+  python3: ['py'],
+  golang: ['go'],
+};
+
 module.exports = {
   validate() {
     return BbPromise.bind(this)
@@ -55,18 +63,43 @@ module.exports = {
     let containerNames = [];
 
     const currentErrors = Array.isArray(errors) ? errors : [];
-    let functionErrors = [];
+    const functionErrors = [];
     let containers = [];
 
-    const functions = this.serverless.service.functions;
+    const { functions } = this.serverless.service;
     if (functions && Object.keys(functions).length !== 0) {
       functionNames = Object.keys(functions);
+
+      // Check that runtime is authorized
+      const extensions = RUNTIMES_EXTENSIONS[this.runtime];
+      if (!extensions) {
+        const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
+        functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
+      }
 
       functionNames.forEach((functionName) => {
         const func = functions[functionName];
         // Check if function handler exists
         try {
-          if (!fs.existsSync(path.resolve('./', func.handler))) {
+          // get handler file => path/to/file.handler => split ['path/to/file', 'handler']
+          const splitHandlerPath = func.handler.split('.');
+          if (splitHandlerPath.length !== 2) {
+            throw new Error(`Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`);
+          }
+          const handlerPath = splitHandlerPath[0];
+
+          // For each extensions linked to a language (node: .ts,.js, python: .py ...),
+          // check that a handler file exists with one of the extensions
+          let handlerFileExists = false;
+          for (let i = 0; i < extensions.length; i += 1) {
+            const extension = extensions[i];
+            const handler = `${handlerPath}.${extension}`;
+            if (fs.existsSync(path.resolve('./', handler))) {
+              handlerFileExists = true;
+            }
+          }
+          // If Handler file does not exist, throw an error
+          if (!handlerFileExists) {
             throw new Error('File does not exists');
           }
         } catch (error) {
@@ -77,6 +110,7 @@ module.exports = {
     }
 
     if (this.serverless.service.custom) {
+      // eslint-disable-next-line prefer-destructuring
       containers = this.serverless.service.custom.containers;
     }
     if (containers && Object.keys(containers).length !== 0) {
