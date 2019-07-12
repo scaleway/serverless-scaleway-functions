@@ -1,4 +1,5 @@
 from flask import Flask
+import os
 
 DEFAULT_PORT = "8080"
 MESSAGE = "Hello, World from Scaleway Container !\n"
