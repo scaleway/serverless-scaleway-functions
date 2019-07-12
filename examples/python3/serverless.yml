@@ -22,7 +22,7 @@ package:
 
 functions:
   first:
-    handler: handler.my_handler
+    handler: handler.handle
     # Local environment variables - used only in given function
     env:
       local: local

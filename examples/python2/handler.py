@@ -1,4 +1,4 @@
-def my_handler(event, context):
+def handle(event, context):
     """handle a request to the function
     Args:
         req (dict): request body

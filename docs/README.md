@@ -164,67 +164,67 @@ Available runtimes are:
 #### Functions Handler
 
 Based on the chosen runtime, the `handler` variable on function might vary:
-- `node` (8 or 10): Path to your handler file (from serverless.yml), omit `./`, `../`, suffixed by the exported function to use (example: `myFunction.myHandler` => file `myFunction.js` exports a function `myHandler`).
-```
-- src
-  - handlers
-    - firstHandler.js  => module.exports.myFirstHandler
-    - secondHandler.js => module.exports.mySecondHandler
-- serverless.yml
-```
-Inside serverless.yml:
-```yml
-provider:
-  # ...
-  runtime: node8 # or node10
-functions:
-  first:
-    handler: src/handlers/firstHandler.myFirstHandler
-  second:
-    handler: src/handlers/secondHandler.mySecondHandler
-```
-- `python` (2.7 and 3.7): Similar to `node`, path to handler file, suffixed with exported function to use: `src/testing/handler.my_handler` => file `handler.py` defines a method `my_handler`, inside directory `src/testing`.
-```
-- src
-  - handlers
-    - firstHandler.py  => def my_first_handler
-    - secondHandler.py => def my_second_handler
-- serverless.yml
-```
-Inside serverless.yml:
-```yml
-provider:
-  # ...
-  runtime: python3 # or python for python 2.7
-functions:
-  first:
-    handler: src/handlers/firstHandler.my_first_handler
-  second:
-    handler: src/handlers/secondHandler.my_second_handler
-```
+- `node` (8 or 10): Path to your handler file (from serverless.yml), omit `./`, `../`, suffixed by the exported function to use (example: `myFunction.handle` => file `myFunction.js` exports a function `handle`).
+  ```
+  - src
+    - handlers
+      - firstHandler.js  => module.exports.myFirstHandler
+      - secondHandler.js => module.exports.mySecondHandler
+  - serverless.yml
+  ```
+  Inside serverless.yml:
+  ```yml
+  provider:
+    # ...
+    runtime: node8 # or node10
+  functions:
+    first:
+      handler: src/handlers/firstHandler.myFirstHandler
+    second:
+      handler: src/handlers/secondHandler.mySecondHandler
+  ```
+- `python` (2.7 and 3.7): Similar to `node`, path to handler file, suffixed with exported function to use: `src/testing/handler.handle` => file `handler.py` defines a method `handle`, inside directory `src/testing`.
+  ```
+  - src
+    - handlers
+      - firstHandler.py  => def my_first_handler
+      - secondHandler.py => def my_second_handler
+  - serverless.yml
+  ```
+  Inside serverless.yml:
+  ```yml
+  provider:
+    # ...
+    runtime: python3 # or python for python 2.7
+  functions:
+    first:
+      handler: src/handlers/firstHandler.my_first_handler
+    second:
+      handler: src/handlers/secondHandler.my_second_handler
+  ```
 - `golang`: Path to your handler's **package**, for example if I have the following structure:
-```
-- src
-  - testing
-    - handler.go -> package main inside "src/testing" directory
-  - second
-    - handler.go -> package main inside "src/second" directory
-- handler.go -> package main at the root of the project
-- serverless.yml
-```
-Your serverless.yml `functions` should look something like this:
-```yml
-provider:
-  # ...
-  runtime: golang
-functions:
-  root:
-    handler: "."
-  testing:
-    handler: src/testing
-  second:
-    handler: src/second
-```
+  ```
+  - src
+    - testing
+      - handler.go -> package main inside "src/testing" directory
+    - second
+      - handler.go -> package main inside "src/second" directory
+  - handler.go -> package main at the root of the project
+  - serverless.yml
+  ```
+  Your serverless.yml `functions` should look something like this:
+  ```yml
+  provider:
+    # ...
+    runtime: golang
+  functions:
+    root:
+      handler: "."
+    testing:
+      handler: src/testing
+    second:
+      handler: src/second
+  ```
 
 ### Environment Variables
 
