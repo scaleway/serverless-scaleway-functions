@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'scaleway-functions-typescript';
 
-const handler: APIGatewayProxyHandler = (event, context, callback) => {
+export const myHandler: APIGatewayProxyHandler = (event, context, callback) => {
   const result = {
     message: 'Hello from Node w/ TypeScript on Scaleway Functions !',
   };
@@ -11,4 +11,3 @@ const handler: APIGatewayProxyHandler = (event, context, callback) => {
   };
 };
 
-export default handler;

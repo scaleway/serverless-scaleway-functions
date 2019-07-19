@@ -1,7 +1,7 @@
 module.exports = {
   setUpDeployment() {
-    const service = this.provider.serverless.service;
-    const provider = service.provider;
+    const { service } = this.provider.serverless;
+    const { provider } = service;
     this.namespaceName = service.service;
     this.namespaceVariables = provider.env || {};
     this.runtime = provider.runtime;

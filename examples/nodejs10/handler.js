@@ -1,4 +1,4 @@
-module.exports = (event, context, callback) => {
+module.exports.handle = (event, context, callback) => {
   const result = {
     message: 'Hello from Serverless Framework and Scaleway Functions :D',
   };
