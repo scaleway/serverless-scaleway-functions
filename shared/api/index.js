@@ -4,6 +4,8 @@ const axios = require('axios');
 const namespacesApi = require('./namespaces');
 const functionsApi = require('./functions');
 const containersApi = require('./containers');
+// Registry
+const RegistryApi = require('./registry');
 
 function getApiManager(apiUrl, token) {
   return axios.create({
@@ -37,4 +39,5 @@ module.exports = {
   getApiManager,
   manageError,
   Api,
+  RegistryApi,
 };

@@ -5,7 +5,7 @@ const BbPromise = require('bluebird');
 module.exports = {
   createServerlessNamespace() {
     return BbPromise.bind(this)
-      .then(this.getNamespaceFromList)
+      .then(() => this.getNamespaceFromList(this.namespaceName))
       .then(this.createIfNotExists);
   },
 

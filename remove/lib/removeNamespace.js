@@ -6,7 +6,7 @@ module.exports = {
   removeNamespace() {
     this.serverless.cli.log('Removing namespace and associated functions/triggers...');
     return BbPromise.bind(this)
-      .then(this.getNamespaceFromList)
+      .then(() => this.getNamespaceFromList(this.namespaceName))
       .then(this.removeSingleNamespace);
   },
 

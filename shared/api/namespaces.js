@@ -3,12 +3,12 @@
 const { manageError } = require('./index');
 
 module.exports = {
-  getNamespaceFromList() {
+  getNamespaceFromList(namespaceName) {
     // query Scaleway API to check if space exists
-    return this.apiManager.get('namespaces')
+    return this.apiManager.get(`namespaces?name=${namespaceName}`)
       .then((response) => {
         const { namespaces } = response.data;
-        return namespaces.find(ns => ns.name === this.namespaceName);
+        return namespaces.find(ns => ns.name === namespaceName);
       })
       .catch(manageError);
   },
