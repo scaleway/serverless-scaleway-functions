@@ -1,7 +1,5 @@
 'use strict';
 
-const https = require('https');
-const axios = require('axios');
 const BbPromise = require('bluebird');
 
 const providerName = 'scaleway';
@@ -19,6 +17,13 @@ class ScalewayProvider {
 
   getScwOrganization() {
     return this.scwOrganization;
+  }
+
+  getCredentials() {
+    return {
+      apiUrl: this.apiUrl,
+      token: this.scwToken,
+    };
   }
 
   setCredentials(options) {
@@ -45,16 +50,6 @@ class ScalewayProvider {
       this.setCredentials(options);
 
       this.apiUrl = 'https://api.scaleway.com/functions/v1alpha2/regions/fr-par';
-      this.apiManager = axios.create({
-        baseURL: this.apiUrl,
-        headers: {
-          'X-Auth-Token': this.scwToken,
-        },
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false,
-        }),
-      });
-
       resolve();
     });
   }

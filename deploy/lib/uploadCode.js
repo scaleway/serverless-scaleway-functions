@@ -9,11 +9,11 @@ const constants = require('./constants');
 module.exports = {
   uploadCode() {
     return BbPromise.bind(this)
-      .then(this.getPresignedUrl)
+      .then(this.getPresignedUrlForFunctions)
       .then(this.uploadFunctionsCode);
   },
 
-  getPresignedUrl() {
+  getPresignedUrlForFunctions() {
     // get archive size
     // get presigned url
     const promises = this.functions.map((func) => {
@@ -22,11 +22,13 @@ module.exports = {
       const archiveSize = stats.size;
 
       // get presigned url
-      return this.provider.apiManager.get(`/functions/${func.id}/upload-url?content_length=${archiveSize}`)
+      return this.getPresignedUrl(func.id, archiveSize)
         .then(response => Object.assign(func, {
-          uploadUrl: response.data.url,
-          uploadHeader: {'content_length': archiveSize,
-                         'Content-Type': 'application/octet-stream'}
+          uploadUrl: response.url,
+          uploadHeader: {
+            content_length: archiveSize,
+            'Content-Type': 'application/octet-stream',
+          },
         }));
     });
 
@@ -47,13 +49,13 @@ module.exports = {
           resolve(data);
         });
       })
-      .then(data => axios({
-        data,
-        method: 'put',
-        url: func.uploadUrl,
-        headers: func.uploadHeader,
-        maxContentLength: 1000000000,
-      }));
+        .then(data => axios({
+          data,
+          method: 'put',
+          url: func.uploadUrl,
+          headers: func.uploadHeader,
+          maxContentLength: 1000000000,
+        }));
     });
 
     return Promise.all(promises);
