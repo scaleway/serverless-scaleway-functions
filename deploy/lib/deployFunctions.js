@@ -8,11 +8,7 @@ module.exports = {
     return BbPromise.bind(this)
       .then(this.deployEachFunction)
       .then(() => this.serverless.cli.log('Waiting for function deployments, this may take multiple minutes...'))
-      .then(this.printFunctionEndpointsAfterDeployment)
-      .catch((err) => {
-        const error = err.response.data ? err.response.data.message : err;
-        throw new Error(error);
-      });
+      .then(this.printFunctionEndpointsAfterDeployment);
   },
 
   deployEachFunction() {

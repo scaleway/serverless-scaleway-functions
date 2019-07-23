@@ -84,14 +84,11 @@ function createTestService(
   }
   writeYamlFile(serverlessFilePath, serverlessConfig);
 
-  process.env.TOPIC_1 = `${serviceName}-1`;
-  process.env.TOPIC_2 = `${serviceName}-1`;
-  process.env.BUCKET_1 = `${serviceName}-1`;
-  process.env.BUCKET_2 = `${serviceName}-2`;
-  process.env.COGNITO_USER_POOL_1 = `${serviceName}-1`;
-  process.env.COGNITO_USER_POOL_2 = `${serviceName}-2`;
-
   return serverlessConfig;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = {
@@ -105,4 +102,5 @@ module.exports = {
   removeService,
   replaceEnv,
   createTestService,
+  sleep,
 };

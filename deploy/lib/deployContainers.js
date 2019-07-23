@@ -8,10 +8,7 @@ module.exports = {
     return BbPromise.bind(this)
       .then(this.deployEachContainer)
       .then(() => this.serverless.cli.log('Waiting for container deployments, this may take multiple minutes...'))
-      .then(this.waitContainersAreDeployed)
-      .catch((err) => {
-        throw new Error(err.response.data.message);
-      });
+      .then(this.waitContainersAreDeployed);
   },
 
   deployEachContainer() {

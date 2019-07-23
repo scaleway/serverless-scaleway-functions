@@ -6,14 +6,10 @@ const axios = require('axios');
 const { expect } = require('chai');
 const { execSync } = require('../utils/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName } = require('../utils/misc');
+const { getServiceName, sleep } = require('../utils/misc');
 const { Api, RegistryApi } = require('../../shared/api');
 
 const serverlessExec = path.join('serverless');
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 describe('Service Lifecyle Integration Test', () => {
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs10');
