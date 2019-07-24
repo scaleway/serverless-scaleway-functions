@@ -66,7 +66,7 @@ describe('Service Lifecyle Integration Test', () => {
   it('should invoke updated container from scaleway', async () => {
     await sleep(45000);
     const response = await axios.get(namespace.containers[0].endpoint);
-    expect(response.data.message).to.be.equal('Serverless Update Succeeded');
+    expect(response.data.message).to.be.equal('Container successfully updated');
   });
 
   it('should remove service from scaleway', async () => {
