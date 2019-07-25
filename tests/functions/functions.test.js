@@ -8,6 +8,7 @@ const { execSync } = require('../utils/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
 const { Api, RegistryApi } = require('../../shared/api');
+const { FUNCTIONS_API_URL } = require('../../shared/constants');
 
 const serverlessExec = path.join('serverless');
 
@@ -18,7 +19,7 @@ describe('Service Lifecyle Integration Test', () => {
   let serviceName;
   const scwOrganization = process.env.SCW_ORGANIZATION;
   const scwToken = process.env.SCW_TOKEN;
-  const apiUrl = process.env.SCW_URL || 'https://api.scaleway.com/functions/v1alpha2/regions/fr-par';
+  const apiUrl = process.env.SCW_URL || FUNCTIONS_API_URL;
   let api;
   let registryApi;
   let namespace;

@@ -1,6 +1,7 @@
 'use strict';
 
 const BbPromise = require('bluebird');
+const { FUNCTIONS_API_URL } = require('../shared/constants');
 
 const providerName = 'scaleway';
 
@@ -49,7 +50,7 @@ class ScalewayProvider {
     return new BbPromise((resolve) => {
       this.setCredentials(options);
 
-      this.apiUrl = 'https://api.scaleway.com/functions/v1alpha2/regions/fr-par';
+      this.apiUrl = FUNCTIONS_API_URL;
       resolve();
     });
   }

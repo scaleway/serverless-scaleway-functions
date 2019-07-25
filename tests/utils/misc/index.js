@@ -11,13 +11,13 @@ const region = 'us-east-1';
 
 const testServiceIdentifier = 'scwtestsls';
 
-const serverlessExec = path.resolve(__dirname, '..', '..', '..', 'node_modules', '.bin', 'serverless');
+const serverlessExec = 'serverless';
 
 const serviceNameRegex = new RegExp(`${testServiceIdentifier}-d+`);
 
-function getServiceName() {
+function getServiceName(identifier = '') {
   const hrtime = process.hrtime();
-  return `${testServiceIdentifier}-${hrtime[1]}`;
+  return `${testServiceIdentifier}-${identifier}${hrtime[1]}`;
 }
 
 function deployService() {
@@ -48,26 +48,23 @@ function replaceEnv(values) {
 function createTestService(
   tmpDir,
   options = {
-    // Either templateName or templateDir have to be provided
-    templateName: null, // Generic template to use (e.g. 'aws-nodejs')
-    templateDir: null, // Path to custom pre-prepared service template
+    templateName: 'nodejs10', // Name of the template inside example directory to use for test service
+    serviceName: null,
     filesToAdd: [], // Array of additional files to add to the service directory
     serverlessConfigHook: null, // Eventual hook that allows to customize serverless config
   },
 ) {
-  const serviceName = getServiceName();
+  const serviceName = options.serviceName || getServiceName();
 
-  fse.mkdirsSync(tmpDir);
-  process.chdir(tmpDir);
-
-  if (options.templateName) {
-    // create a new Serverless service
-    execSync(`${serverlessExec} create --template-path ${options.templateName}`);
-  } else if (options.templateDir) {
-    fse.copySync(options.templateDir, tmpDir, { clobber: true, preserveTimestamps: true });
-  } else {
-    throw new Error("Either 'templateName' or 'templateDir' options have to be provided");
+  if (!options.templateName) {
+    throw new Error('Template Name must be provided to create a test service');
   }
+
+  // create a new Serverless service
+  execSync(`${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`);
+  process.chdir(tmpDir);
+  // Install dependencies
+  execSync('npm i');
 
   if (options.filesToAdd && options.filesToAdd.length) {
     options.filesToAdd.forEach((filePath) => {

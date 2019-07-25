@@ -9,9 +9,10 @@
     "git": "https://github.com/scaleway/serverless-scaleway-functions"
   },
   "scripts": {
-    "test": "jest",
-    "test:functions": "jest functions",
-    "test:containers": "jest containers",
+    "test": "jest --maxWorkers 5",
+    "test:functions": "jest --maxWorkers 5 functions",
+    "test:containers": "jest --maxWorkers 5 containers",
+    "test:runtimes": "jest --maxWorkers 5 runtimes",
     "coverage": "jest --coverage",
     "lint": "eslint . --cache"
   },
@@ -33,7 +34,8 @@
     "useStderr": true,
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup-tests.js"
-    ]
+    ],
+    "verbose": true
   },
   "dependencies": {
     "axios": "^0.19.0",

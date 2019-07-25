@@ -3,8 +3,7 @@
 const axios = require('axios');
 const https = require('https');
 const { manageError } = require('./index');
-
-const REGISTRY_API_URL = 'https://api.scaleway.com/registry/v1beta2/regions/fr-par/';
+const { REGISTRY_API_URL } = require('../constants');
 
 class RegistryApi {
   constructor(token) {

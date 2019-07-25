@@ -79,6 +79,9 @@ module.exports = {
 
       functionNames.forEach((functionName) => {
         const func = functions[functionName];
+        if (func.runtime === 'golang') { // Golang runtime does not work like other runtimes, we should ignore validation for it
+          return;
+        }
         // Check if function handler exists
         try {
           // get handler file => path/to/file.handler => split ['path/to/file', 'handler']
