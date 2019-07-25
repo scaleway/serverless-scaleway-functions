@@ -40,4 +40,6 @@ We provided multiple test suites, as described above, with the following npm scr
 - `npm run test:containers`: Run containers's test suite
 - `npm run test:runtimes`: Run runtimes's test suite
 
+**Also, make sure that you did not install this repository inside a `node_modules` folder, otherwhise your npm commands won't work (`no tests found`)**.
+
 As these test suites imply real-time build/packaging of your functions/containers code and deployment to our platform, they take a bit of time (~3 minutes for functions/containers, and ~6 minutes for runtimes).
