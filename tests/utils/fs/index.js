@@ -3,10 +3,8 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
-const fse = require('fs-extra');
 const crypto = require('crypto');
 const YAML = require('js-yaml');
-const JSZip = require('jszip');
 
 const tmpDirCommonPath = path.join(
   os.tmpdir(),
@@ -20,18 +18,6 @@ function getTmpDirPath() {
 
 function getTmpFilePath(fileName) {
   return path.join(getTmpDirPath(), fileName);
-}
-
-function createTmpDir() {
-  const dirPath = getTmpDirPath();
-  fse.ensureDirSync(dirPath);
-  return dirPath;
-}
-
-function createTmpFile(name) {
-  const filePath = getTmpFilePath(name);
-  fse.ensureFileSync(filePath);
-  return filePath;
 }
 
 function replaceTextInFile(filePath, subString, newSubString) {
@@ -50,18 +36,11 @@ function writeYamlFile(filePath, content) {
   return yaml;
 }
 
-function listZipFiles(filename) {
-  return new JSZip().loadAsync(fs.readFileSync(filename)).then(zip => Object.keys(zip.files));
-}
-
 module.exports = {
   tmpDirCommonPath,
   getTmpDirPath,
   getTmpFilePath,
-  createTmpDir,
-  createTmpFile,
   replaceTextInFile,
   readYamlFile,
   writeYamlFile,
-  listZipFiles,
 };

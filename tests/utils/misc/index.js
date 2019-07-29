@@ -1,7 +1,6 @@
 'use strict';
 
 const path = require('path');
-const fse = require('fs-extra');
 const { execSync } = require('../child-process');
 const { readYamlFile, writeYamlFile } = require('../fs');
 
@@ -50,7 +49,6 @@ function createTestService(
   options = {
     templateName: 'nodejs10', // Name of the template inside example directory to use for test service
     serviceName: null,
-    filesToAdd: [], // Array of additional files to add to the service directory
     serverlessConfigHook: null, // Eventual hook that allows to customize serverless config
   },
 ) {
@@ -65,12 +63,6 @@ function createTestService(
   process.chdir(tmpDir);
   // Install dependencies
   execSync('npm i');
-
-  if (options.filesToAdd && options.filesToAdd.length) {
-    options.filesToAdd.forEach((filePath) => {
-      fse.copySync(filePath, tmpDir, { preserveTimestamps: true });
-    });
-  }
 
   const serverlessFilePath = path.join(tmpDir, 'serverless.yml');
   let serverlessConfig = readYamlFile(serverlessFilePath);
