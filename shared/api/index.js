@@ -19,8 +19,16 @@ function getApiManager(apiUrl, token) {
   });
 }
 
+/**
+ * Display the right error message, check if error has a response and data attribute
+ * to properly display either the global error, or the component-level error (function/container)
+ * @param {Error} err - Error thrown
+ */
 function manageError(err) {
-  return err.response && err.response.data ? err.response.data.message : err;
+  if (!err.response || !err.response.data) {
+    return err;
+  }
+  return err.response.data.message || err.response.data.error_message;
 }
 
 class Api {

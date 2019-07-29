@@ -29,27 +29,6 @@ describe('Service Lifecyle Integration Test', () => {
     serviceName = getServiceName();
     api = new Api(apiUrl, scwToken);
     registryApi = new RegistryApi(scwToken);
-
-    //
-    // tmpDirPath = getTmpDirPath();
-    // serverlessFilePath = path.join(tmpDirPath, 'serverless.yml');
-    // const serverlessConfig = createTestService(tmpDirPath, {
-    //   templateName: path.resolve(__dirname, '..', '..', 'examples', 'nodejs10'),
-    //   serverlessConfigHook: (config) => {
-    //     scwOrganizationId = process.env.SCW_ORGANIZATION;
-    //     scwToken = process.env.SCW_TOKEN;
-    //     return Object.assign(config, {
-    //       service: {
-    //         provider: Object.assign(config.service.provider, {
-    //           scwToken,
-    //           scwOrganization: scwOrganizationId,
-    //         }),
-    //       },
-    //     });
-    //   },
-    // });
-    // serviceName = serverlessConfig.service;
-    // deployService();
   });
 
   afterAll(() => {

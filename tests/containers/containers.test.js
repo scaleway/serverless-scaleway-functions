@@ -85,7 +85,6 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should throw error container directory not found', () => {
-    // TODO
     replaceTextInFile('serverless.yml', 'my-container', 'doesnotexist');
     try {
       expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
