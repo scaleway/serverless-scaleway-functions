@@ -35,6 +35,7 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup-tests.js"
     ],
+    "testPathIgnorePatterns": ["tests/utils", "tests/setup-tests.js"],
     "verbose": true
   },
   "dependencies": {
