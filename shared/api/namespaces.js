@@ -4,7 +4,7 @@ const { manageError } = require('./index');
 
 module.exports = {
   listNamespaces() {
-    return this.apimanager.get('namespaces?count=100')
+    return this.apiManager.get('namespaces?page_size=100')
       .then(response => response.data.namespaces || [])
       .catch(manageError);
   },

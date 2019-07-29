@@ -50,6 +50,7 @@ module.exports = {
           });
         }
         return containers;
-      });
+      })
+      .catch(manageError);
   },
 };
