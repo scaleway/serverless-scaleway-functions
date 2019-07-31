@@ -1,42 +1,214 @@
-# Serverless Framework: Deploy on Scaleway Functions (plugin)
+# Serverless Framework: Deploy on Scaleway Functions
 
-Developed and maintained by `Scaleway's Serverless Team`.
+This plugin allows [Serverless Framework](https://serverless.com) users to deploy their functions and containers to Scaleway Functions with a simple `serverless deploy` 
 
-This plugin allows [Serverless Framework](https://serverless.com)'s users to deploy their functions to Scaleway Functions. By using this plugin, users may deploy a fully managed Serverless Application on Scaleway Functions with just one Command Line, and a little bit of configuration.
-
-`Scaleway Functions` is a Serverless (Function As A Service) Platform, provided by [Scaleway](https://scaleway.com) to allow end-users to develop and deploy serverless workloads (we manage your Ops, scalability, availability, while you pay only for your usage, when your code gets executed) on Scaleway's fully managed infrastructure.
-
-The [Serverless Framework](https://serverless.com) is an Open-Source tool developed in node.js which helps you deploy a `Serverless` Project (composed of one or multiple functions) to the actor of your choice (AWS, Google Cloud, Microsoft Azure, Scaleway and more) with a single command line: `serverless deploy`.
-
-This tool manages the different steps needed to create, package and deploy your functions to your provider thanks to `plugins`, like the one developed in this repository.
-
-With the Serverless Framework, you define all the resources needed for your project (S3 Bucket, Database Instances and more) inside a configuration file called the `serverless.yml`, and Serverless will take care of creating these resources for you. This allows developers to focus on development of their products, while infrastructure is managed by both Serverless Framework and Cloud Providers.
+Serverless Framework will handle everything from the namespace creation to the function/code deployment by calling APIs endpoint under the hood.
+	
+We do it in three steps:
+* We create a serverless project
+* We configure/develop our functions
+* We deploy
 
 ## Requirements
+	
+- Install node.js
+- Install [Serverless](https://serverless.com) CLI (`npm install serverless -g`)
 
-- node.js and npm installed
-- [Serverless framework](https://serverless.com) installed:
-  ```bash
-  npm i -g serverless
-  ```
-- Your are invited to the Early Access on [Scaleway Functions Platform](https://scaleway.com/betas#serverless)
+Let's work into ~/my-srvless-projects
+```bash
+# mkdir ~/my-srvless-projects
+# cd ~/my-srvless-projects
+```
 
-## Install
+Clone [Scaleway Serverless Plugin](https://github.com/scaleway/serverless-scaleway-functions) locally:
+```bash
+# git clone https://github.com/scaleway/serverless-scaleway-functions.git ./serverless-scaleway-functions
+```
+
+## Create a Project
+
+The easiest way to create a project is to use one of our templates. The list of templates is [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples))
+
+Let's use python3
 
 ```bash
-npm install --save serverless-scaleway-functions
+serverless create --template-path=~/my-srvless-projects/serverless-scaleway-functions/examples/python3 --path=mypython3functions
 ```
 
-And inside your `serverless.yml` manifest:
+*Important*: template-path *MUST* be absolute
+
+Once it's done, we can install mandatory node packages used by serverless
+```bash
+cd mypython3functions
+npm i
+```
+
+Note: these packages are only used by serverless, they are not shipped with your functions.
+
+## Configure your functions
+
+Your functions are defined in the `serverless.yml` file created:
+
 ```yml
+service:
+  name: scaleway-python3
+
+provider:
+  name: scaleway
+  runtime: python3
+  # Global Environment variables - used in every functions
+  env:
+    test: test
+  scwToken: <scw-token>
+  scwOrganization: <scw-organization-id>
+
 plugins:
   - serverless-scaleway-functions
+  
+package:
+  exclude:
+    - node_modules/**
+    - .gitignore
+    - .git/**
+
+functions:
+  first:
+    handler: handler.py
+    # Local environment variables - used only in given function
+    env:
+      local: local
 ```
 
-## Usage
+**Note: `provider.name` and `plugins` MUST NOT be changed, they enable us to use the scaleway provider**
 
-See [this section of the documention](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md) in order to start using `Serverless with Scaleway Functions`.
+This file contains the configuration of one namespace containing one or more functions (in this example, only one)
+of the same runtime (here `python3`)
 
+The different parameters are:
+* `service.name`: your namespace name
+* `provider.runtime`: the runtime of your functions (check the supported runtimes above)
+* `provider.env`: environment variables attached to your namespace are injectedto all your namespace functions
+* `scwToken`: Scaleway token you got in prerequisites
+* `scwOrganization`: Scaleway org id you got in prerequisites
+* `package.exclude`: usually, you don't need to configure it. Enable to exclude directories from the deployment
+* `functions`: Configure of your fonctions. It's a yml dictionary, with the key being the function name
+  * `handler`: file or function which will be executed. See the next section for runtime specific handlers
+  * `env`: environment variables specifics for the current function
+  * `minScale`: how many function instances we keep running (default: 0)
+  * `maxScale`: maximum number of instances this function can scale to (default: 20)
+  * `memoryLimit`: ram allocated to the function instances. See the introduction for the list of supported values 
+
+## Functions Handler
+
+Based on the chosen runtime, the `handler` variable on function might vary.
+
+### Node
+
+Path to your handler file (from serverless.yml), omit `./`, `../`, and add the exported function to use as a handler:
+```
+# ls
+- src
+  - handlers
+    - firstHandler.js  => module.exports.myFirstHandler = ...
+    - secondHandler.js => module.exports.mySecondHandler = ...
+- serverless.yml
+```
+In serverless.yml:
+```yml
+provider:
+  # ...
+  runtime: node8 # or node10
+functions:
+  first:
+    handler: src/handlers/firstHandler.myFirstHandler
+  second:
+    handler: src/handlers/secondHandler.mySecondHandler
+```
+### Python
+
+Similar to `node`, path to handler file `src/testing/handler.py`:
+```
+- src
+  - handlers
+    - firstHandler.py  => def my_first_handler
+    - secondHandler.py => def my_second_handler
+- serverless.yml
+```
+In serverless.yml:
+```yml
+provider:
+  # ...
+  runtime: python3 # or python for python 2.7
+functions:
+  first:
+    handler: src/handlers/firstHandler.my_first_handler
+  second:
+    handler: src/handlers/secondHandler.my_second_handler
+```
+
+### Golang
+	
+Path to your handler's **package**, for example if I have the following structure:
+```
+- src
+  - testing
+    - handler.go -> package main in src/testing subdirectory
+  - second
+    - handler.go -> package main in src/second subdirectory
+- serverless.yml
+- handler.go -> package main at the root of project
+```
+Your serverless.yml `functions` should look something like this:
+```yml
+provider:
+  # ...
+  runtime: golang
+functions:
+  main:
+    handler: "."
+  testing:
+    handler: src/testing
+  second:
+    handler: src/second
+```
+
+### Managing containers
+
+**Requirements:** You need to have Docker installed to be able to build and push your image to your Scaleway registry.
+
+You must define your containers inside the `custom.containers` field in your serverless.yml manifest.
+Each container must specify the relative path of its application directory (containing the Dockerfile, and all files related to the application to deploy):
+
+```yml
+custom:
+  containers:
+    myContainer:
+      directory: my-container-directory
+      # Environment only available in this container 
+      env:
+        MY_VARIABLE: "my-value"
+```
+
+Here is an example of the files you should have, the `directory` containing your Dockerfile and scripts is `my-container-directory`.
+
+```
+.
+├── my-container-directory
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── server.py
+│   └── (...)
+├── node_modules
+│   ├── serverless-scaleway-functions
+│   └── (...)
+├── package-lock.json
+├── package.json
+└── serverless.yml
+```
+
+Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080.
+
+You may use the [container example](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) to getting started.
 
 ## Documentation and useful Links
 
