@@ -1,33 +1,24 @@
 'use strict';
 
 const BbPromise = require('bluebird');
-const constants = require('./constants');
-
 
 module.exports = {
   createFunctions() {
     return BbPromise.bind(this)
-      .then(this.getFunctions)
+      .then(() => this.listFunctions(this.namespace.id))
       .then(this.createOrUpdateFunctions);
   },
 
-  getFunctions() {
-    const functionsUrl = `namespaces/${this.namespace.id}/functions`;
-    return this.provider.apiManager.get(functionsUrl)
-      .then(response => response.data.functions)
-      .catch((err) => {
-        throw new Error(err.response.data.message)
-      })
-  },
-
   createOrUpdateFunctions(foundFunctions) {
-    const functions = this.provider.serverless.service.functions;
+    const { functions } = this.provider.serverless.service;
 
     const functionNames = Object.keys(functions);
     const promises = functionNames.map((functionName) => {
       const func = Object.assign(functions[functionName], { name: functionName });
       const foundFunc = foundFunctions.find(f => f.name === func.name);
-      return foundFunc ? this.updateFunction(func, foundFunc) : this.createSingleFunction(func);
+      return foundFunc
+        ? this.updateSingleFunction(func, foundFunc)
+        : this.createSingleFunction(func);
     });
 
     return Promise.all(promises)
@@ -46,20 +37,15 @@ module.exports = {
       max_scale: func.maxScale,
       runtime: this.runtime,
       timeout: func.timeout,
-      handler: func.handler
+      handler: func.handler,
     };
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
-
-    return this.provider.apiManager.post('functions', params)
-      .then(response => Object.assign(response.data, { handler: func.handler }))
-      .catch((err) => {
-        throw new Error(err.response.data.message)
-      })
+    return this.createFunction(params)
+      .then(response => Object.assign(response, { handler: func.handler }));
   },
 
-  updateFunction(func, foundFunc) {
-
+  updateSingleFunction(func, foundFunc) {
     const params = {};
 
     params.redeploy = false;
@@ -70,12 +56,8 @@ module.exports = {
     params.timeout = func.timeout;
     params.handler = func.handler;
 
-    const updateUrl = `functions/${foundFunc.id}`;
     this.serverless.cli.log(`Updating function ${func.name}...`);
-    return this.provider.apiManager.patch(updateUrl, params)
-      .then(response => Object.assign(response.data, { handler: func.handler }))
-      .catch((err) => {
-        throw new Error(err.response.data.message)
-      })
+    return this.updateFunction(foundFunc.id, params)
+      .then(response => Object.assign(response, { handler: func.handler }));
   },
 };

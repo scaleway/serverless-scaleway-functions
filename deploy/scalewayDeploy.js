@@ -8,13 +8,17 @@ const pushContainers = require('./lib/pushContainers');
 const uploadCode = require('./lib/uploadCode');
 const deployFunctions = require('./lib/deployFunctions');
 const deployContainers = require('./lib/deployContainers');
-const namespaceUtils = require('../shared/namespace');
+const { Api } = require('../shared/api');
 
 class ScalewayDeploy {
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options || {};
     this.provider = this.serverless.getProvider('scaleway');
+    this.provider.initialize(this.serverless, this.options);
+
+    const credentials = this.provider.getCredentials();
+    const api = new Api(credentials.apiUrl, credentials.token);
 
     Object.assign(
       this,
@@ -27,7 +31,7 @@ class ScalewayDeploy {
       uploadCode,
       deployFunctions,
       deployContainers,
-      namespaceUtils,
+      api,
     );
 
     function chainContainers() {
@@ -38,6 +42,7 @@ class ScalewayDeploy {
           .then(this.pushContainers)
           .then(this.deployContainers);
       }
+      return undefined;
     }
 
     function chainFunctions() {
@@ -47,12 +52,12 @@ class ScalewayDeploy {
           .then(this.uploadCode)
           .then(this.deployFunctions);
       }
+      return undefined;
     }
 
     this.hooks = {
       // Validate serverless.yml, set up default values, configure deployment...
       'before:deploy:deploy': () => BbPromise.bind(this)
-        .then(this.provider.initialize(this.serverless, this.options))
         .then(this.setUpDeployment)
         .then(this.validate),
       // Every tasks related to functions deployment:
@@ -62,7 +67,7 @@ class ScalewayDeploy {
       // - Get Presigned URL and Push code for each function to S3
       // - Deploy each function / container
       'deploy:deploy': () => BbPromise.bind(this)
-        .then(this.createNamespace)
+        .then(this.createServerlessNamespace)
         .then(chainContainers)
         .then(chainFunctions),
     };

@@ -8,7 +8,8 @@ module.exports = {
     "strict": "off",
     "prefer-rest-params": "off",
     "react/require-extension" : "off",
-    "import/no-extraneous-dependencies" : "off"
+    "import/no-extraneous-dependencies" : "off",
+    "prefer-destructuring": "off"
   },
   "env": {
     "jest": true
