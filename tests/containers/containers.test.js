@@ -54,7 +54,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should invoke container from scaleway', async () => {
     const deployedFunction = namespace.containers[0];
-    await sleep(2000);
+    await sleep(6000);
     const response = await axios.get(deployedFunction.endpoint);
     expect(response.data.message).to.be.equal('Hello, World from Scaleway Container !');
   });
