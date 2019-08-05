@@ -54,7 +54,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should invoke container from scaleway', async () => {
     const deployedFunction = namespace.containers[0];
-    await sleep(30000);
+    await sleep(6000);
     const response = await axios.get(deployedFunction.endpoint);
     expect(response.data.message).to.be.equal('Hello, World from Scaleway Container !');
   });
@@ -65,7 +65,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke updated container from scaleway', async () => {
-    await sleep(45000);
+    await sleep(10000);
     const response = await axios.get(namespace.containers[0].endpoint);
     expect(response.data.message).to.be.equal('Container successfully updated');
   });

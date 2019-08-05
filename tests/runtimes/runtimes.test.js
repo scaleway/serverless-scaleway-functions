@@ -6,7 +6,7 @@ const axios = require('axios');
 const { expect } = require('chai');
 const { execSync } = require('../utils/child-process');
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, sleep, createTestService } = require('../utils/misc');
+const { getServiceName, createTestService, sleep } = require('../utils/misc');
 const { Api, RegistryApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL } = require('../../shared/constants');
 
@@ -33,7 +33,7 @@ afterAll(() => {
 const exampleRepositories = fs.readdirSync(examplesDir);
 
 describe.each(exampleRepositories)(
-  'test runtime %i',
+  'test runtimes',
   (runtime) => {
     const runtimeServiceName = getServiceName(runtime);
     const tmpDir = getTmpDirPath();
@@ -75,7 +75,7 @@ describe.each(exampleRepositories)(
       } else {
         deployedApplication = namespace.functions[0];
       }
-      await sleep(20000);
+      await sleep(6000);
       const response = await axios.get(deployedApplication.endpoint);
       expect(response.status).to.be.equal(200);
     });
