@@ -226,6 +226,24 @@ Based on the chosen runtime, the `handler` variable on function might vary:
       handler: src/second
   ```
 
+#### Authentication
+
+By default your functions and containers are public. You can set the privacy to `private` to protect them. Here is an example to deploy one private function and one private container:
+
+```yml
+functions:
+  myFunction:
+    handler: path/to/handler/file
+  containers:
+    first:
+      directory: my-container
+      env:
+        local: local
+      privacy: private
+```
+
+After you deployed them with `serverless deploy`, you can do `serverless jwt` to get the JWT tokens for your namespace and private functions / containers.
+
 ### Environment Variables
 
 You may inject environment variables in different scope:

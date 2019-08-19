@@ -19,7 +19,7 @@ describe('Service Lifecyle Integration Test', () => {
   let serviceName;
   const scwOrganization = process.env.SCW_ORGANIZATION;
   const scwToken = process.env.SCW_TOKEN;
-  const apiUrl = process.env.SCW_URL || FUNCTIONS_API_URL;
+  const apiUrl = FUNCTIONS_API_URL;
   let api;
   let registryApi;
   let namespace;

@@ -1,6 +1,7 @@
 'use strict';
 
 const BbPromise = require('bluebird');
+const { PRIVACY_PRIVATE } = require('../../shared/constants');
 
 module.exports = {
   createContainers() {
@@ -35,6 +36,7 @@ module.exports = {
       min_scale: container.minScale,
       max_scale: container.maxScale,
       timeout: container.timeout,
+      privacy: container.privacy,
     };
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
@@ -51,6 +53,7 @@ module.exports = {
       min_scale: container.minScale,
       max_scale: container.maxScale,
       timeout: container.timeout,
+      privacy: container.privacy,
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);

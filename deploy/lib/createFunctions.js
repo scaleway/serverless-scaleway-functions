@@ -38,6 +38,7 @@ module.exports = {
       runtime: this.runtime,
       timeout: func.timeout,
       handler: func.handler,
+      privacy: func.privacy,
     };
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
@@ -55,6 +56,7 @@ module.exports = {
     params.max_scale = func.maxScale;
     params.timeout = func.timeout;
     params.handler = func.handler;
+    params.privacy = func.privacy;
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
     return this.updateFunction(foundFunc.id, params)
