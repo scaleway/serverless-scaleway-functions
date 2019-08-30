@@ -15,7 +15,7 @@ const serverlessExec = 'serverless';
 let oldCwd;
 const scwOrganization = process.env.SCW_ORGANIZATION;
 const scwToken = process.env.SCW_TOKEN;
-const apiUrl = process.env.SCW_URL || FUNCTIONS_API_URL;
+const apiUrl = FUNCTIONS_API_URL;
 const examplesDir = path.resolve(__dirname, '..', '..', 'examples');
 let api;
 let registryApi;

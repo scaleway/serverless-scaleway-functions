@@ -1,6 +1,6 @@
 'use strict';
 
-const { manageError } = require('./index');
+const { manageError } = require('./utils');
 
 module.exports = {
   listContainers(namespaceId) {

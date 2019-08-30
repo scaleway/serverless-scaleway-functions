@@ -5,5 +5,9 @@ module.exports = {
     this.namespaceName = service.service;
     this.namespaceVariables = provider.env || {};
     this.runtime = provider.runtime;
+
+    const defaultTokenExpirationDate = new Date()
+    defaultTokenExpirationDate.setFullYear(defaultTokenExpirationDate.getFullYear() + 1)
+    this.tokenExpirationDate = provider.tokenExpiration || defaultTokenExpirationDate.toISOString()
   },
 };
