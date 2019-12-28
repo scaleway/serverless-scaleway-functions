@@ -1,7 +1,7 @@
 package lambda
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,16 +13,26 @@ import (
 	"github.com/scaleway/scaleway-functions-go/events"
 )
 
-const defaultPort = 8080
+const defaultPort = 8081
 
 // FunctionHandler - Handler for Event
 type FunctionHandler func(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error)
 
-// Start takes the function Handler, at the moment only supporting HTTP Triggers (Api Gateway Proxy events)
-// It takes care of wrapping the handler with an HTTP server, which receives requests when functions are triggered
-// And execute the handler after formatting the HTTP Request to an API Gateway Proxy Event
-func Start(handler FunctionHandler) {
-	portEnv := os.Getenv("PORT")
+// Request structure sent from core runtime
+type runtimeRequest struct {
+	Event   interface{}
+	Context interface{}
+}
+
+// Start - Start the process
+func Start(handler interface{}) {
+	wrappedHandler := NewHandler(handler)
+	StartHandler(wrappedHandler)
+}
+
+// StartHandler - Execute a Function handler
+func StartHandler(handler Handler) {
+	portEnv := os.Getenv("SCW_UPSTREAM_PORT")
 	port, err := strconv.Atoi(portEnv)
 	if err != nil {
 		port = defaultPort
@@ -39,74 +49,45 @@ func Start(handler FunctionHandler) {
 	log.Fatal(s.ListenAndServe())
 }
 
-func makeRequestHandler(handler FunctionHandler) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var input string
-
-		if r.Body != nil {
-			defer r.Body.Close()
-
-			bodyBytes, bodyErr := ioutil.ReadAll(r.Body)
-
-			if bodyErr != nil {
-				log.Printf("Error reading body from request.")
-			}
-
-			input = string(bodyBytes)
-		}
-
-		// HTTP Headers - only first value
-		// TODO: use HeaderMultipleValue
-		headers := map[string]string{}
-		for key, value := range r.Header {
-			headers[key] = value[len(value)-1]
-		}
-
-		queryParameters := map[string]string{}
-		for key, value := range r.URL.Query() {
-			queryParameters[key] = value[len(value)-1]
-		}
-
-		isBase64Encoded := true
-		_, err := base64.StdEncoding.DecodeString(input)
+// Create HTTP Handler, in charge of retrieving events and execution context from upstream requests,
+// Invoke a function Handler, and handle responses (error or success)
+func makeRequestHandler(handler Handler) func(res http.ResponseWriter, req *http.Request) {
+	return func(res http.ResponseWriter, req *http.Request) {
+		bodyBytes, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			isBase64Encoded = false
+			errorMessage := fmt.Sprintf("An error occured while reading request: %v", err)
+			handleResponse(res, http.StatusInternalServerError, []byte(errorMessage))
+			return
 		}
 
-		event := events.APIGatewayProxyRequest{
-			Path:                  r.URL.Path,
-			HTTPMethod:            r.Method,
-			Headers:               headers,
-			QueryStringParameters: queryParameters,
-			StageVariables:        map[string]string{},
-			Body:                  input,
-			IsBase64Encoded:       isBase64Encoded,
-			RequestContext: events.APIGatewayProxyRequestContext{
-				Stage:      "",
-				HTTPMethod: r.Method,
-			},
+		var runtimeReq runtimeRequest
+
+		if err := json.Unmarshal(bodyBytes, &runtimeReq); err != nil {
+			errorMessage := fmt.Sprintf("Unable to parse Request body: %v", err)
+			handleResponse(res, http.StatusInternalServerError, []byte(errorMessage))
+			return
 		}
 
-		result, resultErr := handler(event)
-
-		if result.Headers != nil {
-			for key, value := range result.Headers {
-				w.Header().Set(key, value)
-			}
+		// Transform event to []byte for later use
+		eventBytes, err := json.Marshal(runtimeReq.Event)
+		if err != nil {
+			handleResponse(res, http.StatusInternalServerError, []byte("Error during event encoding to JSON"))
+			return
 		}
 
-		if resultErr != nil {
-			log.Print(resultErr)
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			if result.StatusCode == 0 {
-				w.WriteHeader(http.StatusOK)
-			} else {
-				w.WriteHeader(result.StatusCode)
-			}
+		// Invoke function Handler
+		response, err := handler.Invoke(nil, eventBytes)
+		if err != nil {
+			errorMessage := fmt.Sprintf("An error occured during handler execution: %v", err)
+			handleResponse(res, http.StatusInternalServerError, []byte(errorMessage))
+			return
 		}
 
-		responseBody := []byte(result.Body)
-		w.Write(responseBody)
+		handleResponse(res, http.StatusOK, response)
 	}
+}
+
+func handleResponse(res http.ResponseWriter, statusCode int, message []byte) {
+	res.WriteHeader(statusCode)
+	res.Write(message)
 }
