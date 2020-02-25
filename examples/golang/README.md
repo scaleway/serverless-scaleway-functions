@@ -2,8 +2,9 @@
 
 ## Requirements
 
-Every handler must be in its own package, identified by `package main`, and exporting a main function with the following `lambda.Start` statement:
-```go
+Every handler must be in its own `package main` in a file named `handler.go`, and export a main function with the following `lambda.Start()` statement:
+
+```golang
 // Must Always be package main
 package main
 
@@ -28,12 +29,14 @@ func main() {
 }
 ```
 
-## Run
+Multiple handler must be created with multiple `main` packages in separate directories.
 
-Make sure that `dep` is installed on your local machine. Then, you must run the following command to install dependencies (Scaleway's lambda types/helpers):
+## Deploy
+
+Make sure that your `go.mod` is up-to-date and then vendor your dependencies, so they can be uploaded with your code.
+
+```sh
+go build # updates go.mod & go.sum
+go mod vendor # install dependencies in ./vendor
+serverless deploy
 ```
-dep ensure
-```
-
-We are building `golang` binaries inside our APIs, although we need you to package all your code with `vendors` (dependencies), so a `go build` command would work properly without prior installations on our side.
-
