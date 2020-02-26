@@ -66,6 +66,12 @@ module.exports = {
           });
         }
         return true;
+      })
+      .catch((err) => {
+        if (err.response && err.response.status === 404) {
+          return true;
+        }
+        throw new Error('An error occured during namespace deletion');
       });
   },
 };

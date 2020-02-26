@@ -14,12 +14,6 @@ module.exports = {
     if (!namespace) throw new Error(`Unable to remove namespace and functions: No namespace found with name ${this.namespaceName}`);
     return this.deleteNamespace(namespace.id)
       .then(() => this.waitNamespaceIsDeleted(namespace.id))
-      .catch((err) => {
-        if (err.response && err.response.status === 404) {
-          this.serverless.cli.log('Namespace has been deleted successfully');
-          return true;
-        }
-        throw new Error('An error occured during namespace deletion');
-      });
+      .then(() => this.serverless.cli.log('Namespace has been deleted successfully'));
   },
 };
