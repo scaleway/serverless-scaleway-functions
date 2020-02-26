@@ -1,6 +1,4 @@
-github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
-github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190902123854-d4d96fd0fc1e h1:QxWzurAt2+MIvvnS6Cieto4MeT0P66i0bfZqaDYvX0A=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190902123854-d4d96fd0fc1e/go.mod h1:bpwyJakDwy3vzlVI6EydCG3uK50TrH46S65+bfTRAfM=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190909203341-57acb56bff6f h1:QStiPg23j7DMvzX2mO13LiDKDhDCgTPLeICnNb11Brg=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190909203341-57acb56bff6f/go.mod h1:bpwyJakDwy3vzlVI6EydCG3uK50TrH46S65+bfTRAfM=
+github.com/scaleway/scaleway-functions-go v0.0.0-20190913090627-dce37b40fe59 h1:ZoLNx15W3012xe7IxVKw+NXU0L+lYcnTHSTJtj2tTwQ=
+github.com/scaleway/scaleway-functions-go v0.0.0-20190913090627-dce37b40fe59/go.mod h1:bpwyJakDwy3vzlVI6EydCG3uK50TrH46S65+bfTRAfM=
+github.com/scaleway/scaleway-functions-go v0.0.0-20200226164347-b68e0ea4ad8d h1:sX0L76Zx/pdLmH9B9UOthCKDLqEBsSr3HDkC8I46t4A=
+github.com/scaleway/scaleway-functions-go v0.0.0-20200226164347-b68e0ea4ad8d/go.mod h1:ZG2iMjqoQTZ8TMHA6wHAdfbRRsVr+2dPTmnlCu0sNWs=

@@ -15,7 +15,7 @@ module.exports = {
     return this.deleteNamespace(namespace.id)
       .then(() => this.waitNamespaceIsDeleted(namespace.id))
       .catch((err) => {
-        if (err.response.status === 404) {
+        if (err.response && err.response.status === 404) {
           this.serverless.cli.log('Namespace has been deleted successfully');
           return true;
         }

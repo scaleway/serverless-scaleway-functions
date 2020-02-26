@@ -60,7 +60,7 @@ module.exports = {
   waitNamespaceIsDeleted(namespaceId) {
     return this.getNamespace(namespaceId)
       .then((response) => {
-        if (response.status === 'deleting') {
+        if (response && response.status === 'deleting') {
           return new Promise((resolve) => {
             setTimeout(() => resolve(this.waitNamespaceIsDeleted(namespaceId)), 1000);
           });
