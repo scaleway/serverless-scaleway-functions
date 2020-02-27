@@ -1,6 +1,6 @@
 {
   "name": "serverless-scaleway-functions",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Provider plugin for the Serverless Framework v1.x which adds support for Scaleway Functions.",
   "main": "index.js",
   "author": "scaleway.com",
@@ -35,7 +35,10 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup-tests.js"
     ],
-    "testPathIgnorePatterns": ["tests/utils", "tests/setup-tests.js"],
+    "testPathIgnorePatterns": [
+      "tests/utils",
+      "tests/setup-tests.js"
+    ],
     "verbose": true
   },
   "dependencies": {
@@ -49,6 +52,7 @@
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.0",
+    "fs-extra": "^8.1.0",
     "jest": "^24.8.0"
   }
 }
