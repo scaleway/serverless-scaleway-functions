@@ -60,12 +60,18 @@ module.exports = {
   waitNamespaceIsDeleted(namespaceId) {
     return this.getNamespace(namespaceId)
       .then((response) => {
-        if (response.status === 'deleting') {
+        if (response && response.status === 'deleting') {
           return new Promise((resolve) => {
             setTimeout(() => resolve(this.waitNamespaceIsDeleted(namespaceId)), 1000);
           });
         }
         return true;
+      })
+      .catch((err) => {
+        if (err.response && err.response.status === 404) {
+          return true;
+        }
+        throw new Error('An error occured during namespace deletion');
       });
   },
 };

@@ -1,6 +1,8 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs-extra');
+
 const { execSync } = require('../child-process');
 const { readYamlFile, writeYamlFile } = require('../fs');
 
@@ -47,9 +49,11 @@ function replaceEnv(values) {
 function createTestService(
   tmpDir,
   options = {
+    devModuleDir: '',
     templateName: 'nodejs10', // Name of the template inside example directory to use for test service
     serviceName: null,
     serverlessConfigHook: null, // Eventual hook that allows to customize serverless config
+    runCurrentVersion: false,
   },
 ) {
   const serviceName = options.serviceName || getServiceName();
@@ -63,6 +67,18 @@ function createTestService(
   process.chdir(tmpDir);
   // Install dependencies
   execSync('npm i');
+  // Copy current directory to run current version of Serverless Framework
+  if (options.runCurrentVersion && options.devModuleDir !== '') {
+    const tmpModulePath = path.join(tmpDir, '/node_modules/serverless-scaleway-functions');
+    // Copy the serverless-scaleway-functions module from this repository, exclude node_modules
+    fs.readdirSync(options.devModuleDir)
+      .filter(file => file !== 'node_modules')
+      .forEach((file) => {
+        const filePath = path.join(options.devModuleDir, file);
+        const newPath = path.join(tmpModulePath, file);
+        fs.copySync(filePath, newPath);
+      });
+  }
 
   const serverlessFilePath = path.join(tmpDir, 'serverless.yml');
   let serverlessConfig = readYamlFile(serverlessFilePath);

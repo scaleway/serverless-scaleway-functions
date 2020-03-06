@@ -16,7 +16,8 @@ let oldCwd;
 const scwOrganization = process.env.SCW_ORGANIZATION;
 const scwToken = process.env.SCW_TOKEN;
 const apiUrl = FUNCTIONS_API_URL;
-const examplesDir = path.resolve(__dirname, '..', '..', 'examples');
+const devModuleDir = path.resolve(__dirname, '..', '..');
+const examplesDir = path.resolve(devModuleDir, 'examples');
 let api;
 let registryApi;
 
@@ -40,8 +41,10 @@ describe.each(exampleRepositories)(
     let namespace = {};
 
     createTestService(tmpDir, {
+      devModuleDir,
       templateName: path.resolve(examplesDir, runtime),
       serviceName: runtimeServiceName,
+      runCurrentVersion: true,
       serverlessConfigHook: (config) => {
         // use right SCW token and organization for the deployment as well as service name
         const newConfig = Object.assign({}, config);
