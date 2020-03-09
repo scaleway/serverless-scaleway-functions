@@ -3,24 +3,24 @@
 const { manageError } = require('./utils');
 
 module.exports = {
-  issueJwtNamespace(namespace_id, expiration_date) {
-    const jwtUrl = `jwt/issue?namespace_id=${namespace_id}&expiration_date=${expiration_date}`;
+  issueJwtNamespace(namespaceId, expirationDate) {
+    const jwtUrl = `jwt/issue?namespace_id=${namespaceId}&expiration_date=${expirationDate}`;
     return this.apiManager.get(jwtUrl)
       .then(response => response.data || {})
       .catch(manageError);
   },
 
-  issueJwtFunction(function_id, expiration_date) {
-    const jwtUrl = `jwt/issue?function_id=${function_id}&expiration_date=${expiration_date}`;
+  issueJwtFunction(functionId, expirationDate) {
+    const jwtUrl = `jwt/issue?function_id=${functionId}&expiration_date=${expirationDate}`;
     return this.apiManager.get(jwtUrl)
       .then(response => response.data || {})
       .catch(manageError);
   },
 
-  issueJwtContainer(container_id, expiration_date) {
-    const jwtUrl = `jwt/issue?container_id=${container_id}&expiration_date=${expiration_date}`;
+  issueJwtContainer(containerId, expirationDate) {
+    const jwtUrl = `jwt/issue?container_id=${containerId}&expiration_date=${expirationDate}`;
     return this.apiManager.get(jwtUrl)
       .then(response => response.data || {})
       .catch(manageError);
   },
-}
+};

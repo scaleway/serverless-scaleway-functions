@@ -44,6 +44,5 @@ class ScalewayJwt {
     };
   }
 }
-  
+
 module.exports = ScalewayJwt;
-  

@@ -13,6 +13,7 @@
     "test:functions": "jest --maxWorkers 5 functions",
     "test:containers": "jest --maxWorkers 5 containers",
     "test:runtimes": "jest --maxWorkers 5 runtimes",
+    "test:triggers": "jest --maxWorkers 5 triggers",
     "coverage": "jest --coverage",
     "lint": "eslint . --cache"
   },

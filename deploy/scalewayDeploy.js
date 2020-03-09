@@ -1,4 +1,5 @@
 const BbPromise = require('bluebird');
+const { Api } = require('../shared/api');
 const validate = require('../shared/validate');
 const setUpDeployment = require('../shared/setUpDeployment');
 const createNamespace = require('./lib/createNamespace');
@@ -8,7 +9,7 @@ const pushContainers = require('./lib/pushContainers');
 const uploadCode = require('./lib/uploadCode');
 const deployFunctions = require('./lib/deployFunctions');
 const deployContainers = require('./lib/deployContainers');
-const { Api } = require('../shared/api');
+const deployTriggers = require('./lib/deployTriggers');
 
 class ScalewayDeploy {
   constructor(serverless, options) {
@@ -31,6 +32,7 @@ class ScalewayDeploy {
       uploadCode,
       deployFunctions,
       deployContainers,
+      deployTriggers,
       api,
     );
 
@@ -69,7 +71,8 @@ class ScalewayDeploy {
       'deploy:deploy': () => BbPromise.bind(this)
         .then(this.createServerlessNamespace)
         .then(chainContainers)
-        .then(chainFunctions),
+        .then(chainFunctions)
+        .then(this.deployTriggers),
     };
   }
 }

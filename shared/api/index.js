@@ -4,6 +4,7 @@ const axios = require('axios');
 const namespacesApi = require('./namespaces');
 const functionsApi = require('./functions');
 const containersApi = require('./containers');
+const triggersApi = require('./triggers');
 const jwtApi = require('./jwt');
 
 // Registry
@@ -29,6 +30,7 @@ class Api {
       namespacesApi,
       functionsApi,
       containersApi,
+      triggersApi,
       jwtApi,
     );
   }

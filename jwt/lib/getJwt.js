@@ -17,37 +17,39 @@ module.exports = {
 
   setNamespace(namespace) {
     if (!namespace) {
-        throw new Error(`Namespace <${this.namespaceName}> doesn\'t exist, you should deploy it first.`)
+      throw new Error(`Namespace <${this.namespaceName}> doesn't exist, you should deploy it first.`);
     }
     this.namespace = namespace;
   },
 
-  getJwtNamespace(){
+  getJwtNamespace() {
     return this.issueJwtNamespace(this.namespace.id, this.tokenExpirationDate)
       .then(response => Object.assign(this.namespace, { token: response.token }))
-      .then(() => this.serverless.cli.log(`Namespace <${this.namespace.name}> token (valid until ${this.tokenExpirationDate}):\n${this.namespace.token}\n`))
+      .then(() => this.serverless.cli.log(`Namespace <${this.namespace.name}> token (valid until ${this.tokenExpirationDate}):\n${this.namespace.token}\n`));
   },
 
-  getJwtFunctions(functions){
+  getJwtFunctions(functions) {
     const promises = functions.map((func) => {
       if (func.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(func.id, this.tokenExpirationDate)
           .then(response => Object.assign(func, { token: response.token }))
-          .then(() => this.serverless.cli.log(`Function <${func.name}> token (valid until ${this.tokenExpirationDate}):\n${func.token}\n`))
+          .then(() => this.serverless.cli.log(`Function <${func.name}> token (valid until ${this.tokenExpirationDate}):\n${func.token}\n`));
       }
-    })
-    return Promise.all(promises)
+      return undefined;
+    });
+    return Promise.all(promises);
   },
 
-  getJwtContainers(containers){
+  getJwtContainers(containers) {
     const promises = containers.map((container) => {
       if (container.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(container.id, this.tokenExpirationDate)
           .then(response => Object.assign(container, { token: response.token }))
-          .then(() => this.serverless.cli.log(`Container <${container.name}> token (valid until ${this.tokenExpirationDate}):\n${container.token}\n`))
+          .then(() => this.serverless.cli.log(`Container <${container.name}> token (valid until ${this.tokenExpirationDate}):\n${container.token}\n`));
       }
-    })
-    return Promise.all(promises)
+      return undefined;
+    });
+    return Promise.all(promises);
   },
 
 };
