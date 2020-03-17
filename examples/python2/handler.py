@@ -5,5 +5,5 @@ def handle(event, context):
     """
 
     return {
-        "message": "Hello From Python2 runtime on Serverless Framework and Scaleway Functions"
+        "body": "Hello From Python2 runtime on Serverless Framework and Scaleway Functions"
     }

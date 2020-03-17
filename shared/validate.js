@@ -12,6 +12,18 @@ const RUNTIMES_EXTENSIONS = {
   golang: ['go'],
 };
 
+const cronScheduleRegex = new RegExp(
+  /^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$/,
+);
+
+const TRIGGERS_VALIDATION = {
+  schedule: (trigger) => {
+    if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
+      throw new Error(`Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`);
+    }
+  },
+};
+
 module.exports = {
   validate() {
     return BbPromise.bind(this)
@@ -63,7 +75,7 @@ module.exports = {
     let containerNames = [];
 
     const currentErrors = Array.isArray(errors) ? errors : [];
-    const functionErrors = [];
+    let functionErrors = [];
     let containers = [];
 
     const { functions } = this.serverless.service;
@@ -82,6 +94,7 @@ module.exports = {
         if (this.runtime === 'golang') { // Golang runtime does not work like other runtimes, we should ignore validation for it
           return;
         }
+
         // Check if function handler exists
         try {
           // get handler file => path/to/file.handler => split ['path/to/file', 'handler']
@@ -109,6 +122,10 @@ module.exports = {
           const message = `Handler file defined for function ${functionName} does not exist (${func.handler}).`;
           functionErrors.push(message);
         }
+
+        // Check that triggers are valid
+        func.events = func.events || [];
+        functionErrors = [...functionErrors, ...this.validateTriggers(func.events)];
       });
     }
 
@@ -118,6 +135,13 @@ module.exports = {
     }
     if (containers && Object.keys(containers).length !== 0) {
       containerNames = Object.keys(containers);
+
+      // Validate triggers/events for containers
+      containerNames.forEach((containerName) => {
+        const container = containers[containerName];
+        container.events = container.events || [];
+        functionErrors = [...functionErrors, ...this.validateTriggers(container.events)];
+      });
     }
 
     if (!functionNames.length && !containerNames.length) {
@@ -125,6 +149,35 @@ module.exports = {
     }
 
     return BbPromise.resolve(currentErrors.concat(functionErrors));
+  },
+
+  validateTriggers(triggers) {
+    // Check that key schedule exists
+    return triggers.reduce((accumulator, trigger) => {
+      const triggerKeys = Object.keys(trigger);
+      if (triggerKeys.length !== 1) {
+        const errorMessage = 'Trigger is invalid, it should contain at least one event type configuration (example: schedule).';
+        return [...accumulator, errorMessage];
+      }
+
+      // e.g schedule, http
+      const triggerName = triggerKeys[0];
+
+      const authorizedTriggers = Object.keys(TRIGGERS_VALIDATION);
+      if (!authorizedTriggers.includes(triggerName)) {
+        const errorMessage = `Trigger Type ${triggerName} is not currently supported by Scaleway's Serverless platform, supported types are the following: ${authorizedTriggers.join(', ')}`;
+        return [...accumulator, errorMessage];
+      }
+
+      // Run Trigger validation
+      try {
+        TRIGGERS_VALIDATION[triggerName](trigger[triggerName]);
+      } catch (error) {
+        return [...accumulator, error.message];
+      }
+
+      return accumulator;
+    }, []);
   },
 
   validateEnv(variables) {

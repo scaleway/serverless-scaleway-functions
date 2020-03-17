@@ -1,7 +1,6 @@
 'use strict';
 
 const BbPromise = require('bluebird');
-const { PRIVACY_PRIVATE } = require('../../shared/constants');
 
 module.exports = {
   createContainers() {
