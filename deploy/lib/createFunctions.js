@@ -28,6 +28,9 @@ module.exports = {
   },
 
   createSingleFunction(func) {
+    const message = `this -> ${this.runtime} and func ->  ${func.runtime}`;
+    this.serverless.cli.log(`${message}`)
+
     const params = {
       name: func.name,
       environment_variables: func.env,
@@ -35,7 +38,7 @@ module.exports = {
       memory_limit: func.memoryLimit,
       min_scale: func.minScale,
       max_scale: func.maxScale,
-      runtime: this.runtime,
+      runtime: func.runtime || this.runtime,
       timeout: func.timeout,
       handler: func.handler,
       privacy: func.privacy,
