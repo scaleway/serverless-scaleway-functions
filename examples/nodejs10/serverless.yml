@@ -8,8 +8,8 @@ provider:
   env:
     test: test
   # the path to the credentials file needs to be absolute
-  scwToken: 216c1f65-730b-4488-8f80-99118725da18
-  scwOrganization: 03dca599-b4cf-48db-89a4-05faad6201e4
+  scwToken: <your-token>
+  scwOrganization: <your-org-id>
 
 plugins:
   - serverless-scaleway-functions
