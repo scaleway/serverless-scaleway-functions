@@ -155,7 +155,10 @@ You may use the [container example](../examples/container) to getting started.
 
 ### Runtime and Functions Handler
 
-You must specify a default function'runtime inside `provider.runtime` key inside your serverless.yml file. If you want a specif runtime for a specific function you can define it inside `functions.myfunction.runtime` key.  
+You must specify a default function'runtime inside `provider.runtime` key inside your serverless.yml file.  
+
+If you want to use a different runtime for a specific function, you may define the runtime you wish to use inside functions.myfunction.runtime. This way, you may use the same serverless project to deploy functions written in different languages.
+
 It is not necessary if you wish to deploy containers only.
 
 #### Runtimes
