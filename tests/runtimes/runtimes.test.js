@@ -40,6 +40,8 @@ describe.each(exampleRepositories)(
     const tmpDir = getTmpDirPath();
     let namespace = {};
 
+    const isContainer = ['container', 'container-schedule'].includes(runtime);
+
     createTestService(tmpDir, {
       devModuleDir,
       templateName: path.resolve(examplesDir, runtime),
@@ -64,7 +66,7 @@ describe.each(exampleRepositories)(
       execSync(`${serverlessExec} deploy`);
       namespace = await api.getNamespaceFromList(runtimeServiceName);
       // If runtime is container => get container
-      if (runtime === 'container') {
+      if (isContainer) {
         namespace.containers = await api.listContainers(namespace.id);
       } else {
         namespace.functions = await api.listFunctions(namespace.id);
@@ -73,7 +75,7 @@ describe.each(exampleRepositories)(
 
     it(`should invoke function for runtime ${runtime} from scaleway`, async () => {
       let deployedApplication;
-      if (runtime === 'container') {
+      if (isContainer) {
         deployedApplication = namespace.containers[0];
       } else {
         deployedApplication = namespace.functions[0];
