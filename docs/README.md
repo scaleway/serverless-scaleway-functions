@@ -91,6 +91,8 @@ provider:
   # python (2.7), python3 (3.7) for Python
   # golang
   # You don't need to specify a runtime if you deploy only containers
+  # This is the default runtime for your functions
+  # You can define a specific runtime for each function
   runtime: <runtime>
   # See documentation below for environment
   env:
@@ -105,8 +107,10 @@ provider:
 ```yml
 functions:
   myFunction:
-    # handler may vary for each runtimes (e.g in golang, references package while python/node references handler file).
+    # handler may vary for each runtimes (e.g in golang, references package while python/node references handler file).    
     handler: path/to/handler/file
+    # Optional runtime if same as the default runtime
+    runtime: <runtime> 
     # Environment only available in this function
     env:
       MY_VARIABLE: "my-value"
@@ -151,7 +155,8 @@ You may use the [container example](../examples/container) to getting started.
 
 ### Runtime and Functions Handler
 
-You must specify your functions runtime inside `provider.runtime` key inside your serverless.yml file. It is not necessary if you wish to deploy containers only.
+You must specify a default function'runtime inside `provider.runtime` key inside your serverless.yml file. If you want a specif runtime for a specific function you can define it inside `functions.myfunction.runtime` key.  
+It is not necessary if you wish to deploy containers only.
 
 #### Runtimes
 
@@ -159,7 +164,6 @@ Available runtimes are:
 - `node8` and `node10` for JavaScript
 - `python` (2.7) and `python3` (3.7) for Python
 - `golang`
-
 
 #### Functions Handler
 
