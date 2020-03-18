@@ -82,7 +82,7 @@ module.exports = {
     if (functions && Object.keys(functions).length !== 0) {
       functionNames = Object.keys(functions);
 
-      // Check that runtime is authorized
+      // Check that default runtime is authorized
       const extensions = RUNTIMES_EXTENSIONS[this.runtime];
       if (!extensions) {
         const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
@@ -90,9 +90,20 @@ module.exports = {
       }
 
       functionNames.forEach((functionName) => {
+
         const func = functions[functionName];
-        if (this.runtime === 'golang') { // Golang runtime does not work like other runtimes, we should ignore validation for it
-          return;
+
+        if (func.runtime === 'golang' || (!func.runtime && this.runtime === 'golang')) {
+          return; // Golang runtime does not work like other runtimes, we should ignore validation for it
+        }
+
+        // Check that function's runtime is authorized if existing
+        if (func.runtime){
+          const extensions = RUNTIMES_EXTENSIONS[func.runtime];
+          if (!extensions) {
+            const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
+            functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
+          }
         }
 
         // Check if function handler exists
