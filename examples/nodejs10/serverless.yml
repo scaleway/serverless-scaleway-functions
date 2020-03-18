@@ -3,13 +3,13 @@ service:
 
 provider:
   name: scaleway
-  runtime: python3
+  runtime: node10
   # Global Environment variables - used in every functions
   env:
     test: test
   # the path to the credentials file needs to be absolute
-  scwToken: <your-token>
-  scwOrganization: <your-org-id>
+  scwToken: <scw-token>
+  scwOrganization: <scw-organization-id>
 
 plugins:
   - serverless-scaleway-functions
@@ -21,7 +21,6 @@ package:
 
 functions:
   first:
-    runtime: node10
     handler: handler.handle
     # Local environment variables - used only in given function
     env:
