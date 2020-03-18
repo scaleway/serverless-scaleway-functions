@@ -28,9 +28,6 @@ module.exports = {
   },
 
   createSingleFunction(func) {
-    const message = `this -> ${this.runtime} and func ->  ${func.runtime}`;
-    this.serverless.cli.log(`${message}`)
-
     const params = {
       name: func.name,
       environment_variables: func.env,
