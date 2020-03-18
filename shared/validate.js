@@ -92,10 +92,10 @@ module.exports = {
       functionNames.forEach((functionName) => {
 
         const func = functions[functionName];
-        const extensions = RUNTIMES_EXTENSIONS[func.runtime];
         
         // Check that function's runtime is authorized if existing
         if (func.runtime && func.runtime !== 'golang'){
+          const extensions = RUNTIMES_EXTENSIONS[func.runtime];
           if (!extensions) {
             const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
             functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
