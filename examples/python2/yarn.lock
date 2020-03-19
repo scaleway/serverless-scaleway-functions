@@ -244,9 +244,9 @@ safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.2.tgz#991ec69d296e0313747d59bdfd2b745c35f8828d"
   integrity sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==
 
-serverless-scaleway-functions@^0.1.15:
-  version "0.1.15"
-  resolved "https://registry.yarnpkg.com/serverless-scaleway-functions/-/serverless-scaleway-functions-0.1.15.tgz#0903a2e9a302156583a965761fa0a00c0cd8c5f4"
+serverless-scaleway-functions@^0.1.16:
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/serverless-scaleway-functions/-/serverless-scaleway-functions-0.1.16.tgz#0903a2e9a302156583a965761fa0a00c0cd8c5f4"
   integrity sha512-W/MiP00XnIY/1Vx9bRE+zw4TGnawo1ZgLPU/5KxSUsRmBL63tuRMxmJfDAcLlfPlv1btnwnaj+luWbwkRmqBOw==
   dependencies:
     axios "^0.19.0"

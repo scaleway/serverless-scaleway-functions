@@ -3291,8 +3291,8 @@ restore-cursor@^2.0.0:
     signal-exit "^3.0.2"
 
 ret@~0.1.10:
-  version "0.1.15"
-  resolved "https://registry.yarnpkg.com/ret/-/ret-0.1.15.tgz#b8a4825d5bdb1fc3f6f53c2bc33f81388681c7bc"
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/ret/-/ret-0.1.16.tgz#b8a4825d5bdb1fc3f6f53c2bc33f81388681c7bc"
   integrity sha512-TTlYpa+OL+vMMNG24xSlQGEJ3B/RzEfUlLct7b5G/ytav+wPrplCpVMFuwzXbkecJrb6IYo1iFb0S9v37754mg==
 
 rimraf@2.6.3:
