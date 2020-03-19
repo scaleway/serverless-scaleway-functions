@@ -92,11 +92,13 @@ The different parameters are:
 * `scwOrganization`: Scaleway org id you got in prerequisites
 * `package.exclude`: usually, you don't need to configure it. Enable to exclude directories from the deployment
 * `functions`: Configure of your fonctions. It's a yml dictionary, with the key being the function name
-  * `handler`: file or function which will be executed. See the next section for runtime specific handlers
-  * `env`: environment variables specifics for the current function
-  * `minScale`: how many function instances we keep running (default: 0)
-  * `maxScale`: maximum number of instances this function can scale to (default: 20)
+  * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
+  * `env` (Optional): environment variables specifics for the current function
+  * `minScale` (Optional): how many function instances we keep running (default: 0)
+  * `maxScale` (Optional): maximum number of instances this function can scale to (default: 20)
   * `memoryLimit`: ram allocated to the function instances. See the introduction for the list of supported values 
+  * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
+  * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
 
 ## Functions Handler
 
@@ -171,6 +173,52 @@ functions:
   second:
     handler: src/second
 ```
+
+### Events
+
+With `events`, you may link your functions with specific triggers, which might include `CRON Schedule (Time based)`, `MQTT Queues` (Publish on a topic will trigger the function), `S3 Object update` (Upload an object will trigger the function).
+
+**Note that we do not include HTTP triggers in our event types, as a HTTP endpoint is created for every function**. Triggers are just a new way to trigger your Function, but you will always be able to execute your code via HTTP.
+
+Here is a list of supported triggers on Scaleway Serverless, and the configuration parameters required to deploy them:
+- **schedule**: Trigger your function based on CRON schedules
+  - `rate`: CRON Schedule (UNIX Format) on which your function will be executed
+  - `input`: key-value mapping to define arguments that will be passed into your function's event object during execution.
+
+To link a Trigger to your function, you may define a key `events` in your function:
+```yml
+functions:
+  handler: myHandler.handle
+  events:
+    # "events" is a list of triggers, the first key being the type of trigger.
+    - schedule:
+        # CRON Job Schedule (UNIX Format)
+        rate: '1 * * * *'
+        # Input variable are passed in your function's event during execution
+        input:
+          key: value
+          key2: value2
+```
+
+You may link Events to your **Containers too** (See section `Managing containers` below for more informations on how to deploy containers):
+
+```yaml
+custom:
+  containers:
+    myContainer:
+      directory: my-directory
+      # Events key
+      events:
+        - schedule:
+            rate: '1 * * * *'
+            input:
+              key: value
+              key2: value2
+```
+
+You may refer to the follow examples:
+- [NodeJS-10 with schedule trigger](./examples/nodejs10-schedule)
+- [Container with Schedule Trigger](./examples/container-schedule)
 
 ### Managing containers
 
