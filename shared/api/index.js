@@ -6,6 +6,7 @@ const functionsApi = require('./functions');
 const containersApi = require('./containers');
 const triggersApi = require('./triggers');
 const jwtApi = require('./jwt');
+const logsApi = require('./logs');
 
 // Registry
 const RegistryApi = require('./registry');
@@ -32,6 +33,7 @@ class Api {
       containersApi,
       triggersApi,
       jwtApi,
+      logsApi,
     );
   }
 }
