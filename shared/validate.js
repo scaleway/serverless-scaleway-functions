@@ -90,7 +90,6 @@ module.exports = {
       }
 
       functionNames.forEach((functionName) => {
-
         const func = functions[functionName];
 
         if (func.runtime === 'golang' || (!func.runtime && this.runtime === 'golang')) {
@@ -98,7 +97,7 @@ module.exports = {
         }
 
         // Check that function's runtime is authorized if existing
-        if (func.runtime){
+        if (func.runtime) {
           const extensions = RUNTIMES_EXTENSIONS[func.runtime];
           if (!extensions) {
             const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');

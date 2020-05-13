@@ -31,7 +31,7 @@ afterAll(() => {
 
 const runtimesToTest = [
   { name: 'nodejs10-schedule', isFunction: true },
-  { name: 'container-schedule', isFunction: false }
+  { name: 'container-schedule', isFunction: false },
 ];
 
 describe.each(runtimesToTest)(
