@@ -4,7 +4,7 @@ const ScalewayProvider = require('./provider/scalewayProvider');
 const ScalewayDeploy = require('./deploy/scalewayDeploy');
 const ScalewayRemove = require('./remove/scalewayRemove');
 const ScalewayJwt = require('./jwt/scalewayJwt');
-const ScalewayLogs = require('./logs/scalewayLogs')
+const ScalewayLogs = require('./logs/scalewayLogs');
 
 class ScalewayIndex {
   constructor(serverless, options) {

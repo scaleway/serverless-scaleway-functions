@@ -7,24 +7,39 @@ module.exports = {
   getLogs() {
     return BbPromise.bind(this)
       .then(() => this.getNamespaceFromList(this.namespaceName))
-      .then((namespace) => this.listFunctions(namespace.id))
+      .then(this.listApplications)
       .then(this.getApplicationId)
       .then(this.getLines)
-      .then(this.printLines)
+      .then(this.printLines);
   },
 
-  getApplicationId(functions){
-    for (const fn of functions) {
-        if (fn.name == this.options.f) {
-            return fn.id
-        }
+  listApplications(namespace) {
+    if (this.options.container) {
+      return this.listContainers(namespace.id);
     }
-    throw new Error("function not found");
+    return this.listFunctions(namespace.id);
   },
 
-  printLines(logs){
-      for (const log of logs){
-        this.serverless.cli.log(log.message)
+  getApplicationId(apps) {
+    for (let i = 0; i < apps.length; i += 1) {
+      if (apps[i].name === this.options.f) {
+        return apps[i].id;
       }
-  }
+    }
+    return this.notFoundError();
+  },
+
+  notFoundError() {
+    let applicationType = 'function';
+    if (this.options.container) {
+      applicationType = 'container';
+    }
+    throw new Error(`${applicationType} "${this.options.f}" not found`);
+  },
+
+  printLines(logs) {
+    for (let i = 0; i < logs.length; i += 1) {
+      this.serverless.cli.log(logs[i].message);
+    }
+  },
 };

@@ -258,6 +258,22 @@ Scaleway's platform will automatically inject a PORT environment variable on whi
 
 You may use the [container example](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) to getting started.
 
+## Logs
+
+The `serverless logs` command lets you watch the logs of a specific function or container.
+
+For a function, pass the function name you want to fetch the logs for with `-f`:
+
+```bash
+serverless logs -f function_name
+```
+
+For a container, add the `--container` flag:
+
+```bash
+serverless logs --container -f container_name
+```
+
 ## Documentation and useful Links
 
 - [Get started with Serverless Framework on Scaleway Functions](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md)

@@ -3,7 +3,7 @@ const setUpDeployment = require('../shared/setUpDeployment');
 const getLogs = require('./lib/getLogs');
 const { Api } = require('../shared/api');
 
-class ScalewayDeploy {
+class ScalewayLogs {
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options || {};
@@ -19,8 +19,6 @@ class ScalewayDeploy {
       getLogs,
       api,
     );
-
-
     this.hooks = {
       'before:logs:logs': () => BbPromise.bind(this)
         .then(this.setUpDeployment),
@@ -30,4 +28,4 @@ class ScalewayDeploy {
   }
 }
 
-module.exports = ScalewayDeploy;
+module.exports = ScalewayLogs;
