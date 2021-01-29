@@ -7,6 +7,7 @@ const path = require('path');
 const RUNTIMES_EXTENSIONS = {
   node8: ['ts', 'js'],
   node10: ['ts', 'js'],
+  node14: ['ts', 'js'],
   python: ['py'],
   python3: ['py'],
   golang: ['go'],
