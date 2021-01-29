@@ -87,7 +87,7 @@ of the same runtime (here `python3`)
 The different parameters are:
 * `service.name`: your namespace name
 * `provider.runtime`: the runtime of your functions (check the supported runtimes above)
-* `provider.env`: environment variables attached to your namespace are injectedto all your namespace functions
+* `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
 * `scwToken`: Scaleway token you got in prerequisites
 * `scwOrganization`: Scaleway org id you got in prerequisites
 * `package.exclude`: usually, you don't need to configure it. Enable to exclude directories from the deployment
@@ -119,7 +119,7 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: node8 # or node10
+  runtime: node8 # or node10 or node14
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler
