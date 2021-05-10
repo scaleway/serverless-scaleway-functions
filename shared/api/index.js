@@ -23,13 +23,26 @@ function getApiManager(apiUrl, token) {
   });
 }
 
-class Api {
+class FunctionApi {
   constructor(apiUrl, token) {
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
       namespacesApi,
       functionsApi,
+      triggersApi,
+      jwtApi,
+      logsApi,
+    );
+  }
+}
+
+class ContainerApi {
+  constructor(apiUrl, token) {
+    this.apiManager = getApiManager(apiUrl, token);
+    Object.assign(
+      this,
+      namespacesApi,
       containersApi,
       triggersApi,
       jwtApi,
@@ -38,8 +51,10 @@ class Api {
   }
 }
 
+
 module.exports = {
   getApiManager,
-  Api,
+  FunctionApi,
+  ContainerApi,
   RegistryApi,
 };

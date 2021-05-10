@@ -2,6 +2,7 @@
 
 const BbPromise = require('bluebird');
 const { FUNCTIONS_API_URL } = require('../shared/constants');
+const { CONTAINERS_API_URL } = require('../shared/constants');
 
 const providerName = 'scaleway';
 
@@ -20,9 +21,16 @@ class ScalewayProvider {
     return this.scwOrganization;
   }
 
-  getCredentials() {
+  getFunctionCredentials() {
     return {
-      apiUrl: this.apiUrl,
+      apiUrl: this.apiFunctionUrl,
+      token: this.scwToken,
+    };
+  }
+
+  getContainerCredentials() {
+    return {
+      apiUrl: this.apiContainerUrl,
       token: this.scwToken,
     };
   }
@@ -50,7 +58,8 @@ class ScalewayProvider {
     return new BbPromise((resolve) => {
       this.setCredentials(options);
 
-      this.apiUrl = FUNCTIONS_API_URL;
+      this.apiFunctionUrl = FUNCTIONS_API_URL;
+      this.apiContainerUrl = CONTAINERS_API_URL;
       resolve();
     });
   }
