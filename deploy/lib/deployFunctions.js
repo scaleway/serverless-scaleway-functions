@@ -22,7 +22,7 @@ module.exports = {
   printFunctionEndpointsAfterDeployment() {
     return this.waitFunctionsAreDeployed(this.namespace.id)
       .then((functions) => {
-        functions.forEach(func => this.serverless.cli.log(`Function ${func.name} has been deployed to: ${func.endpoint}`));
+        functions.forEach(func => this.serverless.cli.log(`Function ${func.name} has been deployed to: https://${func.domain_name}`));
       });
   },
 };

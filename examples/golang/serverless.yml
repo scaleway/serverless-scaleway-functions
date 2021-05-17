@@ -1,6 +1,6 @@
 service:
   name: scaleway-golang
-
+configValidationMode: off
 provider:
   name: scaleway
   runtime: golang

@@ -1,6 +1,6 @@
 service:
   name: scaleway-node14
-
+configValidationMode: off
 provider:
   name: scaleway
   runtime: node14

@@ -39,6 +39,7 @@ module.exports = {
       timeout: func.timeout,
       handler: func.handler,
       privacy: func.privacy,
+      domain_name: func.domain_name,
     };
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
@@ -57,6 +58,7 @@ module.exports = {
     params.timeout = func.timeout;
     params.handler = func.handler;
     params.privacy = func.privacy;
+    params.domain_name = func.domain_name;
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
     return this.updateFunction(foundFunc.id, params)
