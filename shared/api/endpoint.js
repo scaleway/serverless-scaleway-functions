@@ -6,7 +6,7 @@ function getApi(object) {
   if (object.provider.serverless.service.custom
     && object.provider.serverless.service.custom.containers
     && Object.keys(object.provider.serverless.service.custom.containers).length !== 0) {
-    const credentials = this.provider.getContainerCredentials();
+    const credentials = object.provider.getContainerCredentials();
     api = new ContainerApi(credentials.apiUrl, credentials.token);
   }
 
