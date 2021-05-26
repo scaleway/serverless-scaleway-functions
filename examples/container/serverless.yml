@@ -1,6 +1,6 @@
 service:
   name: scaleway-container
-
+configValidationMode: off
 provider:
   name: scaleway
   # Global Environment variables - used in every functions

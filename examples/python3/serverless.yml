@@ -1,6 +1,6 @@
 service:
   name: scaleway-python3
-
+configValidationMode: off
 provider:
   name: scaleway
   runtime: python3

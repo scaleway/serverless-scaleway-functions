@@ -1,7 +1,7 @@
 const BbPromise = require('bluebird');
 const setUpDeployment = require('../shared/setUpDeployment');
 const getJwt = require('./lib/getJwt');
-const { Api } = require('../shared/api');
+const scalewayApi = require('../shared/api/endpoint');
 
 class ScalewayJwt {
   constructor(serverless, options) {
@@ -10,8 +10,7 @@ class ScalewayJwt {
     this.provider = this.serverless.getProvider('scaleway');
     this.provider.initialize(this.serverless, this.options);
 
-    const credentials = this.provider.getCredentials();
-    const api = new Api(credentials.apiUrl, credentials.token);
+    const api = scalewayApi.getApi(this);
 
     Object.assign(
       this,

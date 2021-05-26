@@ -1,5 +1,4 @@
 const BbPromise = require('bluebird');
-const { Api } = require('../shared/api');
 const validate = require('../shared/validate');
 const setUpDeployment = require('../shared/setUpDeployment');
 const createNamespace = require('./lib/createNamespace');
@@ -10,6 +9,7 @@ const uploadCode = require('./lib/uploadCode');
 const deployFunctions = require('./lib/deployFunctions');
 const deployContainers = require('./lib/deployContainers');
 const deployTriggers = require('./lib/deployTriggers');
+const scalewayApi = require('../shared/api/endpoint');
 
 class ScalewayDeploy {
   constructor(serverless, options) {
@@ -18,8 +18,7 @@ class ScalewayDeploy {
     this.provider = this.serverless.getProvider('scaleway');
     this.provider.initialize(this.serverless, this.options);
 
-    const credentials = this.provider.getCredentials();
-    const api = new Api(credentials.apiUrl, credentials.token);
+    const api = scalewayApi.getApi(this);
 
     Object.assign(
       this,

@@ -205,7 +205,7 @@ You may link Events to your **Containers too** (See section `Managing containers
 ```yaml
 custom:
   containers:
-    myContainer:
+    mycontainer:
       directory: my-directory
       # Events key
       events:
@@ -230,7 +230,7 @@ Each container must specify the relative path of its application directory (cont
 ```yml
 custom:
   containers:
-    myContainer:
+    mycontainer:
       directory: my-container-directory
       # Environment only available in this container 
       env:
