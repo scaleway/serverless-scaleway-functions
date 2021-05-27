@@ -17,7 +17,7 @@ module.exports = {
 
     // For each Functions
     const promises = applications.map(
-      application => this.getTriggersForApplication(application)
+      application => this.getTriggersForApplication(application, isFunction)
         .then(appWithTriggers => this.deletePreviousTriggersForApplication(appWithTriggers))
         .then(() => this.createNewTriggersForApplication(application, isFunction))
         .then(triggers => this.printDeployedTriggersForApplication(application, triggers)),
@@ -26,8 +26,8 @@ module.exports = {
     return Promise.all(promises);
   },
 
-  getTriggersForApplication(application) {
-    return this.listTriggersForApplication(application.id)
+  getTriggersForApplication(application, isFunction) {
+    return this.listTriggersForApplication(application.id, isFunction)
       .then(triggers => ({
         ...application,
         currentTriggers: [...triggers],
@@ -57,7 +57,7 @@ module.exports = {
     }
 
     const createTriggersPromises = serverlessApp.events.map(
-      event => this.createTrigger(application.id, {
+      event => this.createTrigger(application.id, isFunction, {
         schedule: event.schedule.rate,
         args: event.schedule.input || {},
       }),

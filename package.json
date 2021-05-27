@@ -1,6 +1,6 @@
 {
   "name": "serverless-scaleway-functions",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Provider plugin for the Serverless Framework v1.x which adds support for Scaleway Functions.",
   "main": "index.js",
   "author": "scaleway.com",
@@ -54,6 +54,6 @@
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.0",
     "fs-extra": "^8.1.0",
-    "jest": "^24.8.0"
+    "jest": "^27.0.1"
   }
 }

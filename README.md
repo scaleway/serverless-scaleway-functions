@@ -262,10 +262,10 @@ You may use the [container example](https://github.com/scaleway/serverless-scale
 
 The `serverless logs` command lets you watch the logs of a specific function or container.
 
-Pass the function or container name you want to fetch the logs for with `-f`:
+Pass the function or container name you want to fetch the logs for with `--function`:
 
 ```bash
-serverless logs -f <function_or_container_name>
+serverless logs --function <function_or_container_name>
 ```
 
 ## Documentation and useful Links
