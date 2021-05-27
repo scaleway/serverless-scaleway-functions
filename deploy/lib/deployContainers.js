@@ -21,7 +21,7 @@ module.exports = {
   printContainerEndpointsAfterDeployment() {
     return this.waitContainersAreDeployed(this.namespace.id)
       .then(containers => containers.forEach(
-        container => this.serverless.cli.log(`Container ${container.name} has been deployed to: ${container.endpoint}`),
+        container => this.serverless.cli.log(`Container ${container.name} has been deployed to: https://${container.domain_name}`),
       ));
   },
 };

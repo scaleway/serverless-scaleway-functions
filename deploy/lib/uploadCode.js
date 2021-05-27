@@ -54,7 +54,8 @@ module.exports = {
           method: 'put',
           url: func.uploadUrl,
           headers: func.uploadHeader,
-          maxContentLength: 1000000000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity
         }));
     });
 

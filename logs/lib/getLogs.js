@@ -14,17 +14,19 @@ module.exports = {
   },
 
   listApplications(namespace) {
-    return [this.listFunctions(namespace.id), this.listContainers(namespace.id)];
+    if (typeof this.listFunctions === "function") {
+      return this.listFunctions(namespace.id)
+    }
+    return this.listContainers(namespace.id)
   },
 
-  getApplicationId([functions, containers]) {
-    const apps = functions.concat(containers);
+  getApplicationId(apps) {
     for (let i = 0; i < apps.length; i += 1) {
-      if (apps[i].name === this.options.f) {
-        return apps[i].id;
+      if (apps[i].name === this.options.function) {
+        return apps[i];
       }
     }
-    throw new Error(`application "${this.options.f}" not found`);
+    throw new Error(`application "${this.options.function}" not found`);
   },
 
   printLines(logs) {

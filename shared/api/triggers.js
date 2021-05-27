@@ -3,18 +3,28 @@
 const { manageError } = require('./utils');
 
 module.exports = {
-  listTriggersForApplication(applicationId) {
-    const triggersUrl = `crons?application_id=${applicationId}`;
+  listTriggersForApplication(applicationId, isFunction) {
+    let triggersUrl = `crons?function_id=${applicationId}`;
+    if (!isFunction) {
+      triggersUrl = `crons?container_id=${applicationId}`;
+    }
     return this.apiManager.get(triggersUrl)
       .then(response => response.data.crons)
       .catch(manageError);
   },
 
-  createTrigger(applicationId, params) {
-    return this.apiManager.post('crons', {
+  createTrigger(applicationId, isFunction, params) {
+    let payload = {
       ...params,
-      application_id: applicationId,
-    })
+      function_id: applicationId,
+    }
+    if (!isFunction) {
+      payload = {
+        ...params,
+        container_id: applicationId,
+      }
+    }
+    return this.apiManager.post('crons', payload)
       .then(response => response.data)
       .catch(manageError);
   },
