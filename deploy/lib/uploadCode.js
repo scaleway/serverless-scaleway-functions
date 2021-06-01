@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const BbPromise = require('bluebird');
-const constants = require('./constants');
 
 module.exports = {
   uploadCode() {
@@ -17,7 +16,7 @@ module.exports = {
     // get archive size
     // get presigned url
     const promises = this.functions.map((func) => {
-      const archivePath = path.resolve(constants.SERVERLESS_DIRECTORY, `${this.namespaceName}.zip`);
+      const archivePath = path.resolve(this.serverless.config.servicePath, '.serverless', `${this.namespaceName}.zip`);
       const stats = fs.statSync(archivePath);
       const archiveSize = stats.size;
 
@@ -42,7 +41,7 @@ module.exports = {
     this.serverless.cli.log('Uploading source code...');
     // Upload functions to s3
     const promises = functions.map((func) => {
-      const archivePath = path.resolve(constants.SERVERLESS_DIRECTORY, `${this.namespaceName}.zip`);
+      const archivePath = path.resolve(this.serverless.config.servicePath, '.serverless', `${this.namespaceName}.zip`);
       return new Promise((resolve, reject) => {
         fs.readFile(archivePath, (err, data) => {
           if (err) reject(err);
