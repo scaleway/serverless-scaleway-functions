@@ -17,7 +17,7 @@ describe('Service Lifecyle Integration Test', () => {
   const tmpDir = getTmpDirPath();
   let oldCwd;
   let serviceName;
-  const scwOrganization = process.env.SCW_ORGANIZATION;
+  const scwProject = process.env.SCW_PROJECT;
   const scwToken = process.env.SCW_TOKEN;
   const apiUrl = FUNCTIONS_API_URL;
   let api;
@@ -41,7 +41,7 @@ describe('Service Lifecyle Integration Test', () => {
     execSync('npm i');
     replaceTextInFile('serverless.yml', 'scaleway-container', serviceName);
     replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
-    replaceTextInFile('serverless.yml', '<scw-organization-id>', scwOrganization);
+    replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
     expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'my-container'))).to.be.equal(true);
   });

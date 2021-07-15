@@ -9,7 +9,7 @@ provider:
     test: test
   # the path to the credentials file needs to be absolute
   scwToken: <scw-token>
-  scwOrganization: <scw-organization-id>
+  scwProject: <scw-project-id>
 
 plugins:
   - serverless-scaleway-functions

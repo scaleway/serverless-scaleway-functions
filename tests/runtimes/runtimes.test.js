@@ -13,7 +13,7 @@ const { FUNCTIONS_API_URL } = require('../../shared/constants');
 const serverlessExec = 'serverless';
 
 let oldCwd;
-const scwOrganization = process.env.SCW_ORGANIZATION;
+const scwProject = process.env.SCW_PROJECT;
 const scwToken = process.env.SCW_TOKEN;
 const apiUrl = FUNCTIONS_API_URL;
 const devModuleDir = path.resolve(__dirname, '..', '..');
@@ -48,10 +48,10 @@ describe.each(exampleRepositories)(
       serviceName: runtimeServiceName,
       runCurrentVersion: true,
       serverlessConfigHook: (config) => {
-        // use right SCW token and organization for the deployment as well as service name
+        // use right SCW token and project for the deployment as well as service name
         const newConfig = Object.assign({}, config);
         newConfig.provider.scwToken = scwToken;
-        newConfig.provider.scwOrganization = scwOrganization;
+        newConfig.provider.scwProject = scwProject;
         return newConfig;
       },
     });
