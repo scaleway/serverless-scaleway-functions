@@ -27,11 +27,11 @@ Scaleway's Serverless plugin requires access to Scaleway resources for your acco
 
 ### Retrieve Scaleway Credentials
 
-You will need to provide both `organization ID` and `secret key`. You may retrieve these inside the [console's credentials page](https://console.scaleway.com/account/credentials):
+You will need to provide both `project ID` and `secret key`. You may retrieve these inside the [console's credentials page](https://console.scaleway.com/account/credentials):
 
 - Login/Register to [Scaleway console](https://console.scaleway.com)
 - Go to your [credentials management page](https://console.scaleway.com/account/credentials)
-- Retrieve your `organization ID` and generate a token (see following picture):
+- Retrieve your `project ID` and generate a token (see following picture):
 ![credentials section](./assets/credentials_section.png)
 - Retrieve lastly created token's `secret key`:
 ![token secret key](./assets/secret_key.png)
@@ -40,7 +40,7 @@ Now, when running `serverless` commands from your project directory, serverless 
 
 ### Use your credentials
 
-Now that your retrieved your `organization ID` and created a new `token`, you will have to use these credentiasl with the Serverless Framework.
+Now that your retrieved your `project ID` and created a new `token`, you will have to use these credentiasl with the Serverless Framework.
 
 There are multiple ways to do it:
 
@@ -48,16 +48,16 @@ There are multiple ways to do it:
 ```yml
 provider:
   scwToken: <scw-token>
-  scwOrganization: <scw-organization-id>
+  scwProject: <scw-project-id>
 ```
 - **CLI arguments**:
 ```
-serverless deploy --scw-token=<scw-token> --scw-organization=<scw-organization-id>
+serverless deploy --scw-token=<scw-token> --scw-project=<scw-project-id>
 ```
 - **Environment variables**:
 ```
 export SCW_TOKEN=<scw-token>
-export SCW_ORGANIZATION=<scw-organization-id>
+export SCW_PROJECT=<scw-project-id>
 serverless deploy
 ```
 
@@ -65,7 +65,7 @@ The priority order is the following (from top: + priority to bottom: - priority)
 - CLI
 - Environment variables
 - serverless.yml
-- scwToken and scwOrganization variables
+- scwToken and scwProject variables
 
 ## Managing resources
 
@@ -99,7 +99,7 @@ provider:
     test: test
   # See documentation in Credentials Section
   scwToken: <scw-token>
-  scwOrganization: <scw-organization-id>
+  scwProject: <scw-project-id>
 ```
 
 ### Managing functions

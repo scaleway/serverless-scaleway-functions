@@ -35,7 +35,7 @@ module.exports = {
     this.serverless.cli.log('Creating namespace...');
     const params = {
       name: this.namespaceName,
-      project_id: this.provider.getScwOrganization(),
+      project_id: this.provider.getScwProject(),
       environment_variables: this.namespaceVariables,
     };
 

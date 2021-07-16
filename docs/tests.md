@@ -19,12 +19,12 @@ To run your tests locally, you have to make sure of the following:
 
 In order to run tests locally, you have to configure your test suite (for `authentication`).
 
-To do so, I recommend following the [guide on how to retrieve a token and your organization ID](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md).
+To do so, I recommend following the [guide on how to retrieve a token and your project ID](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md).
 
 Then, add it to your environment variables:
 ```bash
 export SCW_TOKEN=<scw-token>
-export SCW_ORGANIZATION=<scw-organization>
+export SCW_PROJECT=<scw-project>
 ```
 
 Optionally, you may change the URL of our `functions` API endpoint (if you need to test different environments for example):

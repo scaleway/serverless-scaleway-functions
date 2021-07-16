@@ -44,9 +44,9 @@ module.exports = {
   },
 
   validateCredentials() {
-    if (this.provider.scwToken.length !== 36 || this.provider.getScwOrganization().length !== 36) {
+    if (this.provider.scwToken.length !== 36 || this.provider.getScwProject().length !== 36) {
       const errorMessage = [
-        'Either "scwToken" or "scwOrganization" is invalid.',
+        'Either "scwToken" or "scwProject" is invalid.',
         ' Credentials to deploy on your Scaleway Account are required, please read the documentation.',
       ].join('');
       throw new Error(errorMessage);

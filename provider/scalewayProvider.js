@@ -17,8 +17,8 @@ class ScalewayProvider {
     this.serverless.setProvider(providerName, this);
   }
 
-  getScwOrganization() {
-    return this.scwOrganization;
+  getScwProject() {
+    return this.scwProject;
   }
 
   getFunctionCredentials() {
@@ -36,18 +36,18 @@ class ScalewayProvider {
   }
 
   setCredentials(options) {
-    if (options['scw-token'] && options['scw-organization']) {
+    if (options['scw-token'] && options['scw-project']) {
       this.serverless.cli.log('Using credentials from command line parameters');
       this.scwToken = options['scw-token'];
-      this.scwOrganization = options['scw-organization'];
-    } else if (process.env.SCW_TOKEN && process.env.SCW_ORGANIZATION) {
+      this.scwProject = options['scw-project'];
+    } else if (process.env.SCW_TOKEN && process.env.SCW_PROJECT) {
       this.serverless.cli.log('Using credentials from system environment');
       this.scwToken = process.env.SCW_TOKEN;
-      this.scwOrganization = process.env.SCW_ORGANIZATION;
+      this.scwProject = process.env.SCW_PROJECT;
     } else {
       this.serverless.cli.log('Using credentials from yml');
       this.scwToken = this.serverless.service.provider.scwToken || '';
-      this.scwOrganization = this.serverless.service.provider.scwOrganization || '';
+      this.scwProject = this.serverless.service.provider.scwProject || '';
     }
   }
 

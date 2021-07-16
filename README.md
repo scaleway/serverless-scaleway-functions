@@ -60,7 +60,7 @@ provider:
   env:
     test: test
   scwToken: <scw-token>
-  scwOrganization: <scw-organization-id>
+  scwProject: <scw-project-id>
 
 plugins:
   - serverless-scaleway-functions
@@ -89,7 +89,7 @@ The different parameters are:
 * `provider.runtime`: the runtime of your functions (check the supported runtimes above)
 * `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
 * `scwToken`: Scaleway token you got in prerequisites
-* `scwOrganization`: Scaleway org id you got in prerequisites
+* `scwProject`: Scaleway org id you got in prerequisites
 * `package.exclude`: usually, you don't need to configure it. Enable to exclude directories from the deployment
 * `functions`: Configure of your fonctions. It's a yml dictionary, with the key being the function name
   * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
