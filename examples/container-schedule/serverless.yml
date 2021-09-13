@@ -1,5 +1,4 @@
-service:
-  name: scaleway-container
+service: scaleway-container
 configValidationMode: off
 provider:
   name: scaleway
@@ -14,10 +13,10 @@ plugins:
   - serverless-scaleway-functions
 
 package:
-  exclude:
-    - node_modules/**
-    - .gitignore
-    - .git/**
+  patterns:
+    - '!node_modules/**'
+    - '!.gitignore'
+    - '!.git/**'
 
 custom:
   containers:

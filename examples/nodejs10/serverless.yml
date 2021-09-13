@@ -1,5 +1,4 @@
-service:
-  name: scaleway-node10
+service: scaleway-node10
 configValidationMode: off
 provider:
   name: scaleway
@@ -15,9 +14,9 @@ plugins:
   - serverless-scaleway-functions
 
 package:
-  exclude:
-    - .gitignore
-    - .git/**
+  patterns:
+    - '!.gitignore'
+    - '!.git/**'
 
 functions:
   first:
