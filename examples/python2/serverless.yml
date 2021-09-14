@@ -1,5 +1,4 @@
-service:
-  name: scaleway-python2
+service: scaleway-python2
 configValidationMode: off
 provider:
   name: scaleway
@@ -15,10 +14,10 @@ plugins:
   - serverless-scaleway-functions
 
 package:
-  exclude:
-    - node_modules/**
-    - .gitignore
-    - .git/**
+  patterns:
+    - '!node_modules/**'
+    - '!.gitignore'
+    - '!.git/**'
 
 functions:
   first:

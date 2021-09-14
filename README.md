@@ -50,8 +50,8 @@ Note: these packages are only used by serverless, they are not shipped with your
 Your functions are defined in the `serverless.yml` file created:
 
 ```yml
-service:
-  name: scaleway-python3
+service: scaleway-python3
+configValidationMode: off
 
 provider:
   name: scaleway
@@ -66,10 +66,10 @@ plugins:
   - serverless-scaleway-functions
   
 package:
-  exclude:
-    - node_modules/**
-    - .gitignore
-    - .git/**
+  patterns:
+    - '!node_modules/**'
+    - '!.gitignore'
+    - '!.git/**'
 
 functions:
   first:
@@ -85,12 +85,12 @@ This file contains the configuration of one namespace containing one or more fun
 of the same runtime (here `python3`)
 
 The different parameters are:
-* `service.name`: your namespace name
+* `service`: your namespace name
 * `provider.runtime`: the runtime of your functions (check the supported runtimes above)
 * `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
 * `scwToken`: Scaleway token you got in prerequisites
 * `scwProject`: Scaleway org id you got in prerequisites
-* `package.exclude`: usually, you don't need to configure it. Enable to exclude directories from the deployment
+* `package.patterns`: usually, you don't need to configure it. Enable to include/exclude directories to/from the deployment
 * `functions`: Configure of your fonctions. It's a yml dictionary, with the key being the function name
   * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
   * `env` (Optional): environment variables specifics for the current function

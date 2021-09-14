@@ -1,6 +1,6 @@
 {
   "name": "serverless-scaleway-functions",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Provider plugin for the Serverless Framework v1.x which adds support for Scaleway Functions.",
   "main": "index.js",
   "author": "scaleway.com",
@@ -43,7 +43,7 @@
     "verbose": true
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "bluebird": "^3.5.5",
     "dockerode": "^2.5.8",
     "tar-fs": "^2.0.0"
