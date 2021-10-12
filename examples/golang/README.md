@@ -10,8 +10,8 @@ package main
 import (
 	"encoding/json"
   // Import both of these packages
-	"gitlab.infra.online.net/paas/scaleway-functions-go/events"
-	"gitlab.infra.online.net/paas/scaleway-functions-go/lambda"
+	"github.com/scaleway/scaleway-functions-go/events"
+	"github.com/scaleway/scaleway-functions-go/lambda"
 )
 
 // Handler - Your handler function, uses APIGatewayProxy event type as your function will always get HTTP formatted events, even for CRON
