@@ -1,13 +1,8 @@
 # Serverless Framework: Deploy on Scaleway Functions
 
-This plugin allows [Serverless Framework](https://serverless.com) users to deploy their functions and containers to Scaleway Functions with a simple `serverless deploy` 
+The Scaleway functions plugin for [Serverless Framework](https://serverless.com/) allows users to deploy their functions and containers to Scaleway Functions with a simple serverless deploy.
 
-Serverless Framework will handle everything from the namespace creation to the function/code deployment by calling APIs endpoint under the hood.
-	
-We do it in three steps:
-* We create a serverless project
-* We configure/develop our functions
-* We deploy
+Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.	
 
 ## Requirements
 	
@@ -20,11 +15,6 @@ Let's work into ~/my-srvless-projects
 # cd ~/my-srvless-projects
 ```
 
-Clone [Scaleway Serverless Plugin](https://github.com/scaleway/serverless-scaleway-functions) locally:
-```bash
-# git clone https://github.com/scaleway/serverless-scaleway-functions.git ./serverless-scaleway-functions
-```
-
 ## Create a Project
 
 The easiest way to create a project is to use one of our templates. The list of templates is [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples))
@@ -32,7 +22,7 @@ The easiest way to create a project is to use one of our templates. The list of 
 Let's use python3
 
 ```bash
-serverless create --template-path=~/my-srvless-projects/serverless-scaleway-functions/examples/python3 --path=mypython3functions
+serverless create --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/python3 --path myService
 ```
 
 *Important*: template-path *MUST* be absolute
@@ -270,21 +260,17 @@ serverless logs --function <function_or_container_name>
 
 ## Documentation and useful Links
 
-- [Get started with Serverless Framework on Scaleway Functions](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md)
+- [Official Scaleway Serverless Functions Documentation](https://www.scaleway.com/en/docs/compute/functions/api-cli/fun-uploading-with-serverless-framework/)
+- [Official Scaleway Serverless Containers Documentation](https://www.scaleway.com/en/docs/compute/containers/api-cli/cont-uploading-with-serverless-framework/)
 - [Scaleway Functions Golang Runtime](https://github.com/scaleway/scaleway-functions-go) (you `MUST` use this library if you plan to develop with Golang).
 - [Serverless Framework documentation](https://serverless.com)
 - [Scaleway Cloud Provider](https://scaleway.com)
 - [Examples/Templates](https://github.com/scaleway/serverless-scaleway-functions/blob/master/examples) for different runtimes on Scaleway Functions
 
-As `Scaleway Functions` is only in `early phase`, the platform's documentation is private and will be linked to users invited to test the product.
-
-We will obviously keep this plugin up-to-date based on the platform's development.
 
 ## Contributing
 
-As said above, we are only in `early access phase`, so this plugin is mainly developed and maintained by `Scaleway Serverless Team`. When the platform will reach a stable release, contributions via Pull Requests will be open.
-
-Until then, you are free to open issues or discuss with us on our [Community Slack Channels](https://slack.online.net/).
+This plugin is mainly developed and maintained by `Scaleway Serverless Team` but you are free to open issues or discuss with us on our [Community Slack Channels](https://slack.online.net/).
 
 ## License
 
