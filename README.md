@@ -20,11 +20,6 @@ Let's work into ~/my-srvless-projects
 # cd ~/my-srvless-projects
 ```
 
-Clone [Scaleway Serverless Plugin](https://github.com/scaleway/serverless-scaleway-functions) locally:
-```bash
-# git clone https://github.com/scaleway/serverless-scaleway-functions.git ./serverless-scaleway-functions
-```
-
 ## Create a Project
 
 The easiest way to create a project is to use one of our templates. The list of templates is [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples))
