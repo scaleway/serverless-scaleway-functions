@@ -11,9 +11,9 @@ Here is a list of the available templates for Node.js:
 
 `v10`:
 - [node.js starter kit](../examples/nodejs10)
-- [node.js/GraphQL](../examples/nodejs-graphql)
-- [TypeScript starter kit](../examples/typescript)
-- [TypeScript/GraphQL](../examples/typescript-graphql)
+
+`v14`:
+- [node.js starter kit](../examples/nodejs14)
 
 ## Golang
 
