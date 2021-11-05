@@ -18,7 +18,7 @@ In order to start development on this plugin, you will have to run through multi
 Some template examples are available [inside this plugin's examples directory](../examples) (More informations about available templates/examples [in this page of the documentation](./templates.md)), you may create a project boilerplate from one of these templates with the following command:
 
 ```
-serverless create --template-path=path/to/plugin/directory --path=my-awesome-project
+serverless create --template-path=~/my-srvless-projects/serverless-scaleway-functions/examples/{template} --path=my-function
 ```
 
 ## Authenticate to Scaleway
