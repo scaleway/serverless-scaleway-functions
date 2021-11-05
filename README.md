@@ -270,7 +270,7 @@ serverless logs --function <function_or_container_name>
 
 ## Contributing
 
-This plugin is mainly developed and maintained by `Scaleway Serverless Team` but you are free to open issues or discuss with us on our [Community Slack Channels](https://slack.online.net/).
+This plugin is mainly developed and maintained by `Scaleway Serverless Team` but you are free to open issues or discuss with us on our [Community Slack Channels](https://scaleway-community.slack.com/) #serverless-containers and #serverless-functions.
 
 ## License
 
