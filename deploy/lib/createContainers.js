@@ -36,6 +36,7 @@ module.exports = {
       max_scale: container.maxScale,
       timeout: container.timeout,
       privacy: container.privacy,
+      port: container.port,
     };
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
@@ -53,6 +54,7 @@ module.exports = {
       max_scale: container.maxScale,
       timeout: container.timeout,
       privacy: container.privacy,
+      port: container.port,
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);

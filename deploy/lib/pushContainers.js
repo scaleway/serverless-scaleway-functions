@@ -9,7 +9,7 @@ const docker = new Docker();
 const promisifyStream = (stream, verbose) => new BbPromise((resolve, reject) => {
   stream.on('data', (data) => {
     if (verbose) {
-      this.serverless.cli.log(data.toString().replace('\n', ''));
+      console.log(data.toString().replace('\n', ''));
     }
   });
   stream.on('end', resolve);
