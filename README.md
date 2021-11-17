@@ -222,6 +222,7 @@ custom:
   containers:
     mycontainer:
       directory: my-container-directory
+      # port: 8080
       # Environment only available in this container 
       env:
         MY_VARIABLE: "my-value"
@@ -244,7 +245,7 @@ Here is an example of the files you should have, the `directory` containing your
 └── serverless.yml
 ```
 
-Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080.
+Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080. You may change the `port` in your `serverless.yml`. 
 
 You may use the [container example](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) to getting started.
 
