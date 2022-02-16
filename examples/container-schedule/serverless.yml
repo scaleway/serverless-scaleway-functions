@@ -32,6 +32,7 @@ custom:
       # memoryLimit: 256
       # maxScale: 2
       # timeout: 20000
+      # httpOption: "redirected" (default)
       # Local environment variables - used only in given function
       env:
         local: local

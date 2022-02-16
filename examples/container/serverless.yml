@@ -27,6 +27,7 @@ custom:
       # maxScale: 2
       # timeout: 20000
       # port: 8080
+      # httpOption: "enabled"
       # Local environment variables - used only in given function
       env:
         local: local

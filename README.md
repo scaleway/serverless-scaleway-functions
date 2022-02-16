@@ -81,7 +81,7 @@ The different parameters are:
 * `scwToken`: Scaleway token you got in prerequisites
 * `scwProject`: Scaleway org id you got in prerequisites
 * `package.patterns`: usually, you don't need to configure it. Enable to include/exclude directories to/from the deployment
-* `functions`: Configure of your fonctions. It's a yml dictionary, with the key being the function name
+* `functions`: Configure of your functions. It's a yml dictionary, with the key being the function name
   * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
   * `env` (Optional): environment variables specifics for the current function
   * `minScale` (Optional): how many function instances we keep running (default: 0)
@@ -89,6 +89,9 @@ The different parameters are:
   * `memoryLimit`: ram allocated to the function instances. See the introduction for the list of supported values 
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
+  * `httpOption`(Optional): Configure how HTTP and HTTPS requests are handled (default `redirected`)
+    * `redirected`: Responds to HTTP request with a 302 redirect to ask the clients to use HTTPS.
+    * `enabled`: Serve both HTTP and HTTPS traffic.
 
 ## Functions Handler
 
