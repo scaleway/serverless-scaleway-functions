@@ -40,7 +40,7 @@ module.exports = {
       handler: func.handler,
       privacy: func.privacy,
       domain_name: func.domain_name,
-      http_option: func.http_option,
+      http_option: func.httpOption,
     };
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
@@ -60,7 +60,7 @@ module.exports = {
     params.handler = func.handler;
     params.privacy = func.privacy;
     params.domain_name = func.domain_name;
-    params.http_option = func.http_option;
+    params.http_option = func.httpOption;
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
     return this.updateFunction(foundFunc.id, params)

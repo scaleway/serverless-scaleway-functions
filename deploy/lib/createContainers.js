@@ -37,7 +37,7 @@ module.exports = {
       timeout: container.timeout,
       privacy: container.privacy,
       port: container.port,
-      http_option: container.http_option,
+      http_option: container.httpOption,
     };
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
@@ -56,7 +56,7 @@ module.exports = {
       timeout: container.timeout,
       privacy: container.privacy,
       port: container.port,
-      http_option: container.http_option,
+      http_option: container.httpOption,
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
