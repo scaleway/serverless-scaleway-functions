@@ -9,6 +9,11 @@ module.exports = {
       .then(this.createIfNotExists);
   },
 
+  updateServerlessNamespace() {
+    return BbPromise.bind(this)
+      .then(() => this.updateNamespaceConfiguration());
+  },
+
   saveNamespaceToProvider(namespace) {
     this.namespace = namespace;
   },
@@ -16,19 +21,17 @@ module.exports = {
   createIfNotExists(foundNamespace) {
     // If Space already exists -> Do not create
     if (foundNamespace && foundNamespace.status === 'error') {
+      this.saveNamespaceToProvider(foundNamespace);
       throw new Error(foundNamespace.error_message);
     }
 
-    const isReady = foundNamespace && foundNamespace.status === 'ready';
-    if (isReady) {
+    if (foundNamespace && foundNamespace.status === 'ready') {
       this.saveNamespaceToProvider(foundNamespace);
-      this.updateNamespaceConfiguration(foundNamespace);
       return BbPromise.resolve();
     }
 
-    if (foundNamespace && !isReady) {
+    if (foundNamespace && foundNamespace.status !== 'ready') {
       this.serverless.cli.log('Waiting for Namespace to become ready...');
-      this.updateNamespaceConfiguration(foundNamespace);
       return this.waitNamespaceIsReadyAndSave();
     }
 
@@ -44,11 +47,12 @@ module.exports = {
       .then(() => this.waitNamespaceIsReadyAndSave());
   },
 
-  updateNamespaceConfiguration(namespace) {
+  updateNamespaceConfiguration() {
     if (this.namespaceVariables) {
-      const params = {};
-      params.environment_variables = this.namespaceVariables;
-      return this.updateNamespace(namespace.id, params);
+      const params = {
+        environment_variables: this.namespaceVariables
+      };
+      return this.updateNamespace(this.namespace.id, params);
     }
     return undefined;
   },
