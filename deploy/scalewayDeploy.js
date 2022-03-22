@@ -71,6 +71,7 @@ class ScalewayDeploy {
         .then(this.createServerlessNamespace)
         .then(chainContainers)
         .then(chainFunctions)
+        .then(this.updateServerlessNamespace)
         .then(this.deployTriggers),
     };
   }
