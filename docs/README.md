@@ -9,13 +9,16 @@ In order to start development on this plugin, you will have to run through multi
 - Install [Serverless](https://serverless.com) CLI
 - Clone this repository locally
 
-# Serverless Deploy - Deploy a FAAS Project
+# Serverless Deploy - Deploy a FaaS Project
 
 ## Create a Project
 
 **Make sure** that you cloned/downloaded this repository locally.
 
 Some template examples are available [inside this plugin's examples directory](../examples) (More informations about available templates/examples [in this page of the documentation](./templates.md)), you may create a project boilerplate from one of these templates with the following command:
+
+
+**Important**: template-path *MUST* be absolute
 
 ```
 serverless create --template-path=~/my-srvless-projects/serverless-scaleway-functions/examples/{template} --path=my-function
@@ -40,22 +43,22 @@ Now, when running `serverless` commands from your project directory, serverless 
 
 ### Use your credentials
 
-Now that your retrieved your `project ID` and created a new `token`, you will have to use these credentiasl with the Serverless Framework.
+Once you retrieved your `project ID` and created a new `token`, you will have to use these credentiasl with the Serverless Framework.
 
 There are multiple ways to do it:
 
-- **serverless.yml manifest**. Inside your manifest, you may inquire your credentials with the following structure under the `provider` key:
+- **serverless.yml** manifest. Inside your manifest, you may inquire your credentials with the following structure under the `provider` key:
 ```yml
 provider:
   scwToken: <scw-token>
   scwProject: <scw-project-id>
 ```
 - **CLI arguments**:
-```
-serverless deploy --scw-token=<scw-token> --scw-project=<scw-project-id>
-```
+
+[link to CLI documentation](https://github.com/scaleway/scaleway-cli/blob/master/docs/commands/function.md)
+
 - **Environment variables**:
-```
+```bash
 export SCW_TOKEN=<scw-token>
 export SCW_PROJECT=<scw-project-id>
 serverless deploy
@@ -86,10 +89,7 @@ service:
 
 provider:
   name: scaleway
-  # Available Runtimes are:
-  # node8, node10 for JavaScript
-  # python (2.7), python3 (3.7) for Python
-  # golang
+  # Runtimes are listed in documentation
   # You don't need to specify a runtime if you deploy only containers
   # This is the default runtime for your functions
   # You can define a specific runtime for each function
@@ -164,14 +164,14 @@ It is not necessary if you wish to deploy containers only.
 #### Runtimes
 
 Available runtimes are:
-- `node8` and `node10` for JavaScript
-- `python` (2.7) and `python3` (3.7) for Python
-- `golang`
+- `node10`, `node14`, `node16`, `node17` for JavaScript
+- `python3` (3.7) for Python
+- `go113`, `go117`, `go118`
 
 #### Functions Handler
 
 Based on the chosen runtime, the `handler` variable on function might vary:
-- `node` (8 or 10): Path to your handler file (from serverless.yml), omit `./`, `../`, suffixed by the exported function to use (example: `myFunction.handle` => file `myFunction.js` exports a function `handle`).
+- `node` : Path to your handler file (from serverless.yml), omit `./`, `../`, suffixed by the exported function to use (example: `myFunction.handle` => file `myFunction.js` exports a function `handle`).
   ```
   - src
     - handlers
@@ -183,14 +183,14 @@ Based on the chosen runtime, the `handler` variable on function might vary:
   ```yml
   provider:
     # ...
-    runtime: node8 # or node10
+    runtime: node16 # or node10, node16, node17
   functions:
     first:
       handler: src/handlers/firstHandler.myFirstHandler
     second:
       handler: src/handlers/secondHandler.mySecondHandler
   ```
-- `python` (2.7 and 3.7): Similar to `node`, path to handler file, suffixed with exported function to use: `src/testing/handler.handle` => file `handler.py` defines a method `handle`, inside directory `src/testing`.
+- `python3X`: Similar to `node`, path to handler file, suffixed with exported function to use: `src/testing/handler.handle` => file `handler.py` defines a method `handle`, inside directory `src/testing`.
   ```
   - src
     - handlers
@@ -223,7 +223,7 @@ Based on the chosen runtime, the `handler` variable on function might vary:
   ```yml
   provider:
     # ...
-    runtime: golang
+    runtime: go118
   functions:
     root:
       handler: "."
@@ -232,22 +232,6 @@ Based on the chosen runtime, the `handler` variable on function might vary:
     second:
       handler: src/second
   ```
-
-#### Authentication
-
-By default your functions and containers are public. You can set the privacy to `private` to protect them. Here is an example to deploy one private function and one private container:
-
-```yml
-functions:
-  myFunction:
-    handler: path/to/handler/file
-  containers:
-    first:
-      directory: my-container
-      env:
-        local: local
-      privacy: private
-```
 
 After you deployed them with `serverless deploy`, you can do `serverless jwt` to get the JWT tokens for your namespace and private functions / containers.
 
