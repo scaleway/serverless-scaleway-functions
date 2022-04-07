@@ -8,7 +8,7 @@ module.exports = {
     return BbPromise.bind(this)
       .then(this.deployEachFunction)
       .then(() => this.serverless.cli.log('Waiting for function deployments, this may take multiple minutes...'))
-      .then(this.printFunctionEndpointsAfterDeployment);
+      .then(this.printFunctionInformationAfterDeployment);
   },
 
   deployEachFunction() {
@@ -19,10 +19,24 @@ module.exports = {
     return Promise.all(promises);
   },
 
-  printFunctionEndpointsAfterDeployment() {
-    return this.waitFunctionsAreDeployed(this.namespace.id)
-      .then((functions) => {
-        functions.forEach(func => this.serverless.cli.log(`Function ${func.name} has been deployed to: https://${func.domain_name}`));
-      });
+  printFunctionInformationAfterDeployment() {
+    return this.waitFunctionsAreDeployed(this.namespace.id).then(
+      (functions) => {
+        functions.forEach((func) => {
+          this.serverless.cli.log(
+            `Function ${func.name} has been deployed to: https://${func.domain_name}`
+          );
+
+          if (
+            func.runtime_message !== undefined &&
+            func.runtime_message !== ""
+          ) {
+            this.serverless.cli.log(
+              `Runtime information : \x1b[34m${func.runtime_message}\x1b[0m`
+            );
+          }
+        });
+      }
+    );
   },
 };
