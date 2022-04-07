@@ -4,13 +4,23 @@ const BbPromise = require('bluebird');
 const fs = require('fs');
 const path = require('path');
 
+// COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes that are considered as "compiled runtimes".
+// If you fill this array with "go" it will match all runtimes that starts with "go".
+// For example "golang", "go113" matches this filter.
+const COMPILED_RUNTIMES_PREFIXES = ["go"];
+
 const RUNTIMES_EXTENSIONS = {
   node8: ['ts', 'js'],
   node10: ['ts', 'js'],
   node14: ['ts', 'js'],
+  node16: ['ts', 'js'],
+  node17: ['ts', 'js'],
   python: ['py'],
   python3: ['py'],
-  golang: ['go'],
+  golang: ['go'], 
+  go113: ['go'],
+  go117: ['go'],
+  go118: ['go'],
 };
 
 const cronScheduleRegex = new RegExp(
@@ -93,8 +103,10 @@ module.exports = {
       functionNames.forEach((functionName) => {
         const func = functions[functionName];
 
-        if (func.runtime === 'golang' || (!func.runtime && this.runtime === 'golang')) {
-          return; // Golang runtime does not work like other runtimes, we should ignore validation for it
+        for (const compiledRT of COMPILED_RUNTIMES_PREFIXES) {
+          if (func.runtime.startsWith(compiledRT) || (!func.runtime && this.runtime.startsWith(compiledRT))) {
+            return; // for compiled runtimes there is no need to validate specific files
+          }
         }
 
         // Check that function's runtime is authorized if existing
