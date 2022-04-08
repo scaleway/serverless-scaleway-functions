@@ -4,6 +4,21 @@ The Scaleway functions plugin for [Serverless Framework](https://serverless.com/
 
 Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.	
 
+- [Serverless Framework: Deploy on Scaleway Functions](#serverless-framework-deploy-on-scaleway-functions)
+  - [Requirements](#requirements)
+  - [Create a Project](#create-a-project)
+  - [Configure your functions](#configure-your-functions)
+  - [Functions Handler](#functions-handler)
+    - [Node](#node)
+    - [Python](#python)
+    - [Golang](#golang)
+    - [Events](#events)
+    - [Managing containers](#managing-containers)
+  - [Logs](#logs)
+  - [Documentation and useful Links](#documentation-and-useful-links)
+  - [Contributing](#contributing)
+  - [License](#license)
+
 ## Requirements
 	
 - Install node.js

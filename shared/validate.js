@@ -7,23 +7,14 @@ const path = require('path');
 // COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes that are considered as "compiled runtimes".
 // If you fill this array with "go" it will match all runtimes that starts with "go".
 // For example "golang", "go113" matches this filter.
-const COMPILED_RUNTIMES_PREFIXES = ["go"];
+const COMPILED_RUNTIMES_PREFIXES = ['go'];
 
 // const RUNTIMES_EXTENSIONS = {
-//   node8: ['ts', 'js'],
-//   node10: ['ts', 'js'],
-//   node14: ['ts', 'js'],
-//   node16: ['ts', 'js'],
-//   node17: ['ts', 'js'],
-//   python: ['py'],
-//   python3: ['py'],
-//   golang: ['go'], 
-//   go113: ['go'],
-//   go117: ['go'],
-//   go118: ['go'],
-// };
+
+// RUNTIMES_EXTENSIONS is a list of available runtimes, runtimes that are not in the COMPILED_RUNTIMES_PREFIXES,
+// it allows to check if th
 const RUNTIMES_EXTENSIONS = {
-  // tester .ts
+  // tester .ts in node runtime
   node: ['ts', 'js'],
   python: ['py'], 
   go: [],
@@ -121,6 +112,7 @@ module.exports = {
           if (!extensions) {
             const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
             functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
+            // TODO : should return here ?
           }
         }
 

@@ -1,4 +1,4 @@
-service: scaleway-node10
+service: scaleway-6
 configValidationMode: off
 provider:
   name: scaleway
