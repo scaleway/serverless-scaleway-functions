@@ -2,6 +2,23 @@
 
 This is a guide on how to `get started` using Scaleway Functions with Serverless framework.
 
+- [Serverless Framework with Scaleway Functions](#serverless-framework-with-scaleway-functions)
+  - [Requirements](#requirements)
+- [Serverless Deploy - Deploy a FaaS Project](#serverless-deploy---deploy-a-faas-project)
+  - [Create a Project](#create-a-project)
+  - [Authenticate to Scaleway](#authenticate-to-scaleway)
+    - [Retrieve Scaleway Credentials](#retrieve-scaleway-credentials)
+    - [Use your credentials](#use-your-credentials)
+  - [Managing resources](#managing-resources)
+    - [Managing Namespace (Project)](#managing-namespace-project)
+    - [Managing functions](#managing-functions)
+    - [Managing containers](#managing-containers)
+    - [Runtime and Functions Handler](#runtime-and-functions-handler)
+    - [Runtimes](#runtimes)
+      - [Functions Handler](#functions-handler)
+    - [Environment Variables](#environment-variables)
+- [Serverless Remove: Delete a project](#serverless-remove-delete-a-project)
+
 ## Requirements
 
 In order to start development on this plugin, you will have to run through multiple steps:
@@ -161,11 +178,11 @@ If you want to use a different runtime for a specific function, you may define t
 
 It is not necessary if you wish to deploy containers only.
 
-#### Runtimes
+### Runtimes
 
 Available runtimes are:
 - `node10`, `node14`, `node16`, `node17` for JavaScript
-- `python3` (3.7) for Python
+- `python37`, `python38`, `python39`, `python310`
 - `go113`, `go117`, `go118`
 
 #### Functions Handler
@@ -202,7 +219,7 @@ Based on the chosen runtime, the `handler` variable on function might vary:
   ```yml
   provider:
     # ...
-    runtime: python3 # or python for python 2.7
+    runtime: python310
   functions:
     first:
       handler: src/handlers/firstHandler.my_first_handler

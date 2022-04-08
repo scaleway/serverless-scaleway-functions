@@ -106,7 +106,7 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: node14 # or node10, node16, node17
+  runtime: node16 # or node10, node14, node17
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler

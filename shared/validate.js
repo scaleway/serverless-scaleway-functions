@@ -9,18 +9,24 @@ const path = require('path');
 // For example "golang", "go113" matches this filter.
 const COMPILED_RUNTIMES_PREFIXES = ["go"];
 
+// const RUNTIMES_EXTENSIONS = {
+//   node8: ['ts', 'js'],
+//   node10: ['ts', 'js'],
+//   node14: ['ts', 'js'],
+//   node16: ['ts', 'js'],
+//   node17: ['ts', 'js'],
+//   python: ['py'],
+//   python3: ['py'],
+//   golang: ['go'], 
+//   go113: ['go'],
+//   go117: ['go'],
+//   go118: ['go'],
+// };
 const RUNTIMES_EXTENSIONS = {
-  node8: ['ts', 'js'],
-  node10: ['ts', 'js'],
-  node14: ['ts', 'js'],
-  node16: ['ts', 'js'],
-  node17: ['ts', 'js'],
-  python: ['py'],
-  python3: ['py'],
-  golang: ['go'], 
-  go113: ['go'],
-  go117: ['go'],
-  go118: ['go'],
+  // tester .ts
+  node: ['ts', 'js'],
+  python: ['py'], 
+  go: [],
 };
 
 const cronScheduleRegex = new RegExp(

@@ -9,6 +9,8 @@ package main
 
 import (
 	"encoding/json"
+	"http"
+	
   // Import both of these packages
 	"github.com/scaleway/scaleway-functions-go/events"
 	"github.com/scaleway/scaleway-functions-go/lambda"
@@ -18,7 +20,7 @@ import (
 func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		Body:       "Your response",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 	}, nil
 }
 
@@ -30,10 +32,7 @@ func main() {
 
 ## Run
 
-Make sure that `dep` is installed on your local machine. Then, you must run the following command to install dependencies (Scaleway's lambda types/helpers):
-```
-dep ensure
-```
+Additonnaly you may run `go mod vendor`.
 
 We are building `golang` binaries inside our APIs, although we need you to package all your code with `vendors` (dependencies), so a `go build` command would work properly without prior installations on our side.
 
