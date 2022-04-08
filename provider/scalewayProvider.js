@@ -40,8 +40,14 @@ class ScalewayProvider {
       this.serverless.cli.log('Using credentials from command line parameters');
       this.scwToken = options['scw-token'];
       this.scwProject = options['scw-project'];
+    } else if (process.env.SCW_SECRET_KEY && process.env.SCW_DEFAULT_PROJECT_ID) {
+      this.serverless.cli.log('Using credentials from system environment');
+      this.scwToken = process.env.SCW_SECRET_KEY;
+      this.scwProject = process.env.SCW_DEFAULT_PROJECT_ID;
     } else if (process.env.SCW_TOKEN && process.env.SCW_PROJECT) {
       this.serverless.cli.log('Using credentials from system environment');
+      this.serverless.cli.log('NOTICE: you are using deprecated environment variable notation,');
+      this.serverless.cli.log('please update to SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID'); 
       this.scwToken = process.env.SCW_TOKEN;
       this.scwProject = process.env.SCW_PROJECT;
     } else {
