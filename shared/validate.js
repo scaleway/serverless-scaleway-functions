@@ -101,17 +101,27 @@ module.exports = {
         const func = functions[functionName];
 
         for (const compiledRT of COMPILED_RUNTIMES_PREFIXES) {
-          if (func.runtime.startsWith(compiledRT) || (!func.runtime && this.runtime.startsWith(compiledRT))) {
+          if (func.runtime !== undefined && func.runtime.startsWith(compiledRT) || (!func.runtime && this.runtime.startsWith(compiledRT))) {
             return; // for compiled runtimes there is no need to validate specific files
           }
         }
 
+
+
         // Check that function's runtime is authorized if existing
         if (func.runtime) {
-          const extensions = RUNTIMES_EXTENSIONS[func.runtime];
-          if (!extensions) {
+          let RTexists = false;
+
+          for (const availableRT of Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS)) {
+
+             if (func.runtime.startsWith(availableRT)) {
+              RTexists = true;
+             } 
+          }
+
+          if (!RTexists) {
             const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
-            functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
+            functionErrors.push(`Runtime ${func.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
             // TODO : should return here ?
           }
         }
@@ -134,7 +144,7 @@ module.exports = {
             if (fs.existsSync(path.resolve('./', handler))) {
               handlerFileExists = true;
             }
-          }
+          } 
           // If Handler file does not exist, throw an error
           if (!handlerFileExists) {
             throw new Error('File does not exists');
