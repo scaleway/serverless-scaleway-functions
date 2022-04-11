@@ -1,5 +1,5 @@
 module mypackage
 
-go 1.13
+go 1.18
 
-require github.com/scaleway/scaleway-functions-go v0.0.0-20190913090627-dce37b40fe59
+require github.com/scaleway/scaleway-functions-go v0.0.0-20211103103919-280251df088b

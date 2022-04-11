@@ -1,6 +1,2 @@
-github.com/scaleway/scaleway-functions-go v0.0.0-20190627151544-e550fb379304 h1:GMJJ5JAaly69v986vi3kG5k/3rO2Yu8s5PxQeMWvFeY=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190627151544-e550fb379304/go.mod h1:bpwyJakDwy3vzlVI6EydCG3uK50TrH46S65+bfTRAfM=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190913090627-dce37b40fe59 h1:ZoLNx15W3012xe7IxVKw+NXU0L+lYcnTHSTJtj2tTwQ=
-github.com/scaleway/scaleway-functions-go v0.0.0-20190913090627-dce37b40fe59/go.mod h1:bpwyJakDwy3vzlVI6EydCG3uK50TrH46S65+bfTRAfM=
-github.com/scaleway/scaleway-functions-go v0.0.0-20200226164347-b68e0ea4ad8d h1:sX0L76Zx/pdLmH9B9UOthCKDLqEBsSr3HDkC8I46t4A=
-github.com/scaleway/scaleway-functions-go v0.0.0-20200226164347-b68e0ea4ad8d/go.mod h1:ZG2iMjqoQTZ8TMHA6wHAdfbRRsVr+2dPTmnlCu0sNWs=
+github.com/scaleway/scaleway-functions-go v0.0.0-20211103103919-280251df088b h1:eka9SeAYikcsQfbZGg3vEmea9+1AngpPkXUrkv7ByOc=
+github.com/scaleway/scaleway-functions-go v0.0.0-20211103103919-280251df088b/go.mod h1:bpwyJakDwy3vzlVI6EydCG3uK50TrH46S65+bfTRAfM=
