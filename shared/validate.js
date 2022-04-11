@@ -9,8 +9,6 @@ const path = require('path');
 // For example "golang", "go113" matches this filter.
 const COMPILED_RUNTIMES_PREFIXES = ['go'];
 
-// const RUNTIMES_EXTENSIONS = {
-
 // RUNTIMES_EXTENSIONS is a list of available runtimes, runtimes that are not in the COMPILED_RUNTIMES_PREFIXES,
 // it allows to check if th
 const RUNTIMES_EXTENSIONS = {
@@ -51,6 +49,7 @@ module.exports = {
   },
 
   validateCredentials() {
+    // todo : check this according to last PR for new variables
     if (this.provider.scwToken.length !== 36 || this.provider.getScwProject().length !== 36) {
       const errorMessage = [
         'Either "scwToken" or "scwProject" is invalid.',
@@ -86,15 +85,23 @@ module.exports = {
     let functionErrors = [];
     let containers = [];
 
+    let extensions = []
+
     const { functions } = this.serverless.service;
+
     if (functions && Object.keys(functions).length !== 0) {
       functionNames = Object.keys(functions);
 
-      // Check that default runtime is authorized
-      const extensions = RUNTIMES_EXTENSIONS[this.runtime];
-      if (!extensions) {
-        const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
-        functionErrors.push(`Runtime ${this.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
+      let defaultRTexists = false;
+      for (const availableRT of Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS)) {
+        if (this.runtime.startsWith(availableRT)) {
+          defaultRTexists = true;
+          extensions = RUNTIMES_EXTENSIONS[availableRT]
+        } 
+     }
+
+      if (!defaultRTexists) {
+        functionErrors.push(`Runtime ${this.runtime} is not supported, please check documentation for available runtimes`);
       }
 
       functionNames.forEach((functionName) => {
@@ -106,23 +113,20 @@ module.exports = {
           }
         }
 
-
-
         // Check that function's runtime is authorized if existing
         if (func.runtime) {
           let RTexists = false;
 
           for (const availableRT of Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS)) {
-
              if (func.runtime.startsWith(availableRT)) {
               RTexists = true;
-             } 
+              extensions = RUNTIMES_EXTENSIONS[availableRT]
+              break
+             }
           }
 
           if (!RTexists) {
-            const availableRuntimesMessage = Object.keys(RUNTIMES_EXTENSIONS).join(', ');
-            functionErrors.push(`Runtime ${func.runtime} is not supported. Function runtime must be one of the following: ${availableRuntimesMessage}`);
-            // TODO : should return here ?
+            functionErrors.push(`Runtime ${func.runtime} is not supported, please check documentation for available runtimes`);
           }
         }
 
@@ -134,23 +138,26 @@ module.exports = {
             throw new Error(`Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`);
           }
           const handlerPath = splitHandlerPath[0];
-
+    
+          
           // For each extensions linked to a language (node: .ts,.js, python: .py ...),
           // check that a handler file exists with one of the extensions
           let handlerFileExists = false;
+
           for (let i = 0; i < extensions.length; i += 1) {
-            const extension = extensions[i];
-            const handler = `${handlerPath}.${extension}`;
+            const handler = `${handlerPath}.${extensions[i]}`;
+
             if (fs.existsSync(path.resolve('./', handler))) {
               handlerFileExists = true;
+              break;
             }
-          } 
+          }
           // If Handler file does not exist, throw an error
           if (!handlerFileExists) {
             throw new Error('File does not exists');
           }
         } catch (error) {
-          const message = `Handler file defined for function ${functionName} does not exist (${func.handler}).`;
+          const message = `Handler file defined for function ${functionName} does not exist (${func.handler}, err : ${error} ).`;
           functionErrors.push(message);
         }
 
