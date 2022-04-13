@@ -5,7 +5,7 @@ const { manageError } = require('./utils');
 module.exports = {
   getLines(application) {
     let logsUrl = `functions/${application.id}/logs`;
-    if (!application.runtime){
+    if (!application.runtime) {
       logsUrl = `containers/${application.id}/logs`;
     }
     return this.apiManager.get(logsUrl)

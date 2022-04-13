@@ -24,19 +24,19 @@ module.exports = {
       (functions) => {
         functions.forEach((func) => {
           this.serverless.cli.log(
-            `Function ${func.name} has been deployed to: https://${func.domain_name}`
+            `Function ${func.name} has been deployed to: https://${func.domain_name}`,
           );
 
           if (
-            func.runtime_message !== undefined &&
-            func.runtime_message !== ""
+            func.runtime_message !== undefined
+            && func.runtime_message !== ''
           ) {
             this.serverless.cli.log(
-              `Runtime information : \x1b[34m${func.runtime_message}\x1b[0m`
+              `Runtime information : \x1b[34m${func.runtime_message}\x1b[0m`,
             );
           }
         });
-      }
+      },
     );
   },
 };
