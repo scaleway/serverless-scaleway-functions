@@ -4,17 +4,20 @@ const BbPromise = require('bluebird');
 const fs = require('fs');
 const path = require('path');
 
-// COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes that are considered as "compiled runtimes".
+// COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes
+// that are considered as "compiled runtimes".
 // If you fill this array with "go" it will match all runtimes that starts with "go".
 // For example "golang", "go113" matches this filter.
 const COMPILED_RUNTIMES_PREFIXES = ['go'];
 
-// RUNTIMES_EXTENSIONS is a list of available runtimes, runtimes that are not in the COMPILED_RUNTIMES_PREFIXES,
-// it allows to check if th
+// RUNTIMES_EXTENSIONS serves two purposes :
+// - the struct key is used to list different runtimes families (go, python etc...)
+// - the content is used to list file extensions of the runtime, file extensions are only
+// required on non-compiled runtimes.
 const RUNTIMES_EXTENSIONS = {
   // tester .ts in node runtime
   node: ['ts', 'js'],
-  python: ['py'], 
+  python: ['py'],
   go: [],
 };
 
@@ -85,7 +88,7 @@ module.exports = {
     let functionErrors = [];
     let containers = [];
 
-    let extensions = []
+    let extensions = [];
 
     const { functions } = this.serverless.service;
 
@@ -93,12 +96,17 @@ module.exports = {
       functionNames = Object.keys(functions);
 
       let defaultRTexists = false;
-      for (const availableRT of Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS)) {
-        if (this.runtime.startsWith(availableRT)) {
+
+      const rtKeys = Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS);
+      for (let i = 0; i < rtKeys.length; i += 1) {
+        if (this.runtime.startsWith(rtKeys[i])) {
           defaultRTexists = true;
-          extensions = RUNTIMES_EXTENSIONS[availableRT]
-        } 
-     }
+          extensions = RUNTIMES_EXTENSIONS[rtKeys[i]];
+
+          break;
+        }
+      }
+
 
       if (!defaultRTexists) {
         functionErrors.push(`Runtime ${this.runtime} is not supported, please check documentation for available runtimes`);
@@ -107,8 +115,12 @@ module.exports = {
       functionNames.forEach((functionName) => {
         const func = functions[functionName];
 
-        for (const compiledRT of COMPILED_RUNTIMES_PREFIXES) {
-          if (func.runtime !== undefined && func.runtime.startsWith(compiledRT) || (!func.runtime && this.runtime.startsWith(compiledRT))) {
+        // check if runtime is compiled runtime, if so we skip validations
+        for (let i = 0; i < COMPILED_RUNTIMES_PREFIXES.length; i += 1) {
+          if (
+            func.runtime !== undefined
+            && (func.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i])
+            || (!func.runtime && this.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i])))) {
             return; // for compiled runtimes there is no need to validate specific files
           }
         }
@@ -117,16 +129,18 @@ module.exports = {
         if (func.runtime) {
           let RTexists = false;
 
-          for (const availableRT of Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS)) {
-             if (func.runtime.startsWith(availableRT)) {
+          for (let i = 0; i < rtKeys.length; i += 1) {
+            if (func.runtime.startsWith(rtKeys[i])) {
               RTexists = true;
-              extensions = RUNTIMES_EXTENSIONS[availableRT]
-              break
-             }
+              extensions = RUNTIMES_EXTENSIONS[rtKeys[i]];
+              break;
+            }
           }
 
           if (!RTexists) {
-            functionErrors.push(`Runtime ${func.runtime} is not supported, please check documentation for available runtimes`);
+            functionErrors.push(
+              `Runtime ${func.runtime} is not supported, please check documentation for available runtimes`,
+            );
           }
         }
 
@@ -137,9 +151,9 @@ module.exports = {
           if (splitHandlerPath.length !== 2) {
             throw new Error(`Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`);
           }
+
           const handlerPath = splitHandlerPath[0];
-    
-          
+
           // For each extensions linked to a language (node: .ts,.js, python: .py ...),
           // check that a handler file exists with one of the extensions
           let handlerFileExists = false;
@@ -152,6 +166,7 @@ module.exports = {
               break;
             }
           }
+
           // If Handler file does not exist, throw an error
           if (!handlerFileExists) {
             throw new Error('File does not exists');
