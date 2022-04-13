@@ -39,7 +39,7 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
     process.chdir(tmpDir);
     execSync('npm i');
-    replaceTextInFile('serverless.yml', 'scaleway-node16', serviceName);
+    replaceTextInFile('serverless.yml', 'scaleway-node10', serviceName);
     replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
     replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
     expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
@@ -105,7 +105,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should throw error runtime does not exist', () => {
-    replaceTextInFile('serverless.yml', 'node16', 'doesnotexist');
+    replaceTextInFile('serverless.yml', 'node10', 'doesnotexist');
     try {
       expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
     } catch (err) {
