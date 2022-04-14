@@ -1,6 +1,7 @@
 'use strict';
 
 const BbPromise = require('bluebird');
+const secrets = require('../../shared/secrets');
 
 module.exports = {
   createServerlessNamespace() {
@@ -40,6 +41,9 @@ module.exports = {
       name: this.namespaceName,
       project_id: this.provider.getScwProject(),
       environment_variables: this.namespaceVariables,
+      secret_environment_variables: secrets.convertObjectToModelSecretsArray(
+        this.namespaceSecretVariables,
+      ),
     };
 
     return this.createNamespace(params)
@@ -47,11 +51,18 @@ module.exports = {
       .then(() => this.waitNamespaceIsReadyAndSave());
   },
 
-  updateNamespaceConfiguration() {
-    if (this.namespaceVariables) {
-      const params = {
-        environment_variables: this.namespaceVariables,
-      };
+  async updateNamespaceConfiguration() {
+    if (this.namespaceVariables || this.namespaceSecretVariables) {
+      const params = {};
+      if (this.namespaceVariables) {
+        params.environment_variables = this.namespaceVariables;
+      }
+      if (this.namespaceSecretVariables) {
+        params.secret_environment_variables = await secrets.mergeSecretEnvVars(
+          this.namespace.secret_environment_variables,
+          secrets.convertObjectToModelSecretsArray(this.namespaceSecretVariables),
+        );
+      }
       return this.updateNamespace(this.namespace.id, params);
     }
     return undefined;

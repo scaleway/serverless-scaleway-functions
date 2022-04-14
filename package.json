@@ -44,6 +44,7 @@
     "verbose": true
   },
   "dependencies": {
+    "argon2": "^0.28.5",
     "axios": "^0.21.2",
     "bluebird": "^3.5.5",
     "dockerode": "^2.5.8",
