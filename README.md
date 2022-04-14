@@ -4,6 +4,21 @@ The Scaleway functions plugin for [Serverless Framework](https://serverless.com/
 
 Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.	
 
+- [Serverless Framework: Deploy on Scaleway Functions](#serverless-framework-deploy-on-scaleway-functions)
+  - [Requirements](#requirements)
+  - [Create a Project](#create-a-project)
+  - [Configure your functions](#configure-your-functions)
+  - [Functions Handler](#functions-handler)
+    - [Node](#node)
+    - [Python](#python)
+    - [Golang](#golang)
+    - [Events](#events)
+    - [Managing containers](#managing-containers)
+  - [Logs](#logs)
+  - [Documentation and useful Links](#documentation-and-useful-links)
+  - [Contributing](#contributing)
+  - [License](#license)
+
 ## Requirements
 	
 - Install node.js
@@ -17,15 +32,13 @@ Let's work into ~/my-srvless-projects
 
 ## Create a Project
 
-The easiest way to create a project is to use one of our templates. The list of templates is [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples))
+The easiest way to create a project is to use one of our templates. The list of templates is [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples)
 
 Let's use python3
 
 ```bash
 serverless create --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/python3 --path myService
 ```
-
-*Important*: template-path *MUST* be absolute
 
 Once it's done, we can install mandatory node packages used by serverless
 ```bash
@@ -45,7 +58,7 @@ configValidationMode: off
 
 provider:
   name: scaleway
-  runtime: python3
+  runtime: python310
   # Global Environment variables - used in every functions
   env:
     test: test
@@ -97,8 +110,7 @@ Based on the chosen runtime, the `handler` variable on function might vary.
 ### Node
 
 Path to your handler file (from serverless.yml), omit `./`, `../`, and add the exported function to use as a handler:
-```
-# ls
+```yml
 - src
   - handlers
     - firstHandler.js  => module.exports.myFirstHandler = ...
@@ -109,7 +121,7 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: node8 # or node10 or node14
+  runtime: node16 # or node10, node14, node17
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler
@@ -119,7 +131,7 @@ functions:
 ### Python
 
 Similar to `node`, path to handler file `src/testing/handler.py`:
-```
+```yml
 - src
   - handlers
     - firstHandler.py  => def my_first_handler
@@ -130,7 +142,7 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: python3 # or python for python 2.7
+  runtime: python310 # or python37, python38, python39
 functions:
   first:
     handler: src/handlers/firstHandler.my_first_handler
@@ -141,7 +153,7 @@ functions:
 ### Golang
 	
 Path to your handler's **package**, for example if I have the following structure:
-```
+```yml
 - src
   - testing
     - handler.go -> package main in src/testing subdirectory
@@ -154,7 +166,7 @@ Your serverless.yml `functions` should look something like this:
 ```yml
 provider:
   # ...
-  runtime: golang
+  runtime: go118
 functions:
   main:
     handler: "."

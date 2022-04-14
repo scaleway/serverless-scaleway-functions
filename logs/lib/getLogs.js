@@ -3,21 +3,21 @@
 const BbPromise = require('bluebird');
 
 module.exports = {
-
   getLogs() {
     return BbPromise.bind(this)
       .then(() => this.getNamespaceFromList(this.namespaceName))
-      .then(this.listApplications).all()
+      .then(this.listApplications)
+      .all()
       .then(this.getApplicationId)
       .then(this.getLines)
       .then(this.printLines);
   },
 
   listApplications(namespace) {
-    if (typeof this.listFunctions === "function") {
-      return this.listFunctions(namespace.id)
+    if (typeof this.listFunctions === 'function') {
+      return this.listFunctions(namespace.id);
     }
-    return this.listContainers(namespace.id)
+    return this.listContainers(namespace.id);
   },
 
   getApplicationId(apps) {

@@ -1,5 +1,5 @@
 {
-  "name": "python-scaleway-starter",
+  "name": "node-scaleway-starter",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
-    "serverless-scaleway-functions": ">=0.2.3"
+    "serverless-scaleway-functions": "^0.2.7"
   },
   "description": ""
 }

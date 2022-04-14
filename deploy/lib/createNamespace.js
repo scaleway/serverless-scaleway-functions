@@ -50,7 +50,7 @@ module.exports = {
   updateNamespaceConfiguration() {
     if (this.namespaceVariables) {
       const params = {
-        environment_variables: this.namespaceVariables
+        environment_variables: this.namespaceVariables,
       };
       return this.updateNamespace(this.namespace.id, params);
     }

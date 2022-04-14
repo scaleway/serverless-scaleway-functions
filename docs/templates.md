@@ -4,29 +4,18 @@ In order to help users getting started and generate a project boilerplate for Se
 
 ## Node.js
 
-Here is a list of the available templates for Node.js:
+Here is the default template for `Node`, you can customize `runtime` if you don't want default value :
 
-`v8`:
-- [node.js starter kit v8](../examples/nodejs8)
+- [node.js starter kit](../examples/nodejs)
 
-`v10`:
-- [node.js starter kit](../examples/nodejs10)
+## Go
 
-`v14`:
-- [node.js starter kit](../examples/nodejs14)
+Here is the default template for `Go`, you can customize `runtime` if you don't want default value :
 
-## Golang
-
-Here is a list of the available templates for `Golang`:
-
-- [Golang starter kit](../examples/golang)
+- [Go starter kit](../examples/go)
 
 ## Python
 
-Here is a list of the available templates for `Python`:
+Here is the default template for `Python`, you can customize `runtime` if you don't want default value :
 
-`2.7`:
-- [Python 2 starter kit](../examples/python2)
-
-`3.7`:
 - [Python 3 starter kit](../examples/python3)

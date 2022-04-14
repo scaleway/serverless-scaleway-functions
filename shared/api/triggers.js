@@ -17,12 +17,13 @@ module.exports = {
     let payload = {
       ...params,
       function_id: applicationId,
-    }
+    };
+
     if (!isFunction) {
       payload = {
         ...params,
         container_id: applicationId,
-      }
+      };
     }
     return this.apiManager.post('crons', payload)
       .then(response => response.data)

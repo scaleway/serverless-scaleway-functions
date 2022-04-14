@@ -1,8 +1,8 @@
-service: scaleway-node8
+service: scaleway-golang
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: node8
+  runtime: go118 # Available go runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
@@ -15,12 +15,18 @@ plugins:
 
 package:
   patterns:
+    - '!node_modules/**'
     - '!.gitignore'
     - '!.git/**'
 
 functions:
   first:
-    handler: handler.handle
+    # If handler is at the root of your serverless project
+    handler: "."
     # Local environment variables - used only in given function
     env:
       local: local
+
+  mypackage:
+    # if your handler is in a custom package
+    handler: mypackage

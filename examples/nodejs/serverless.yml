@@ -1,8 +1,8 @@
-service: scaleway-node10
+service: scaleway-nodeXX
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: node10
+  runtime: node16 # Available node runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
@@ -21,12 +21,6 @@ package:
 functions:
   first:
     handler: handler.handle
-    events:
-      - schedule:
-          rate: '1 * * * *'
-          input:
-            myInput: myValue
-            mySecondInput: 1
     # Local environment variables - used only in given function
     env:
       local: local

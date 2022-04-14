@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/scaleway/scaleway-functions-go/events"
 	"github.com/scaleway/scaleway-functions-go/lambda"
@@ -22,7 +23,7 @@ func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 
 	return events.APIGatewayProxyResponse{
 		Body:       string(responseB),
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 	}, nil
 }
 
