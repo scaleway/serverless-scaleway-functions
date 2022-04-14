@@ -52,7 +52,6 @@ module.exports = {
   },
 
   validateCredentials() {
-    // todo : check this according to last PR for new variables
     if (this.provider.scwToken.length !== 36 || this.provider.getScwProject().length !== 36) {
       const errorMessage = [
         'Either "scwToken" or "scwProject" is invalid.',

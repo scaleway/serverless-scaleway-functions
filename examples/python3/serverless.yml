@@ -2,7 +2,7 @@ service: scaleway-python3
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: python310 # Available pyton runtimes are listed in documentation
+  runtime: python310 # Available python runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
