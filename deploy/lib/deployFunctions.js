@@ -32,7 +32,7 @@ module.exports = {
             && func.runtime_message !== ''
           ) {
             this.serverless.cli.log(
-              `Runtime information : \x1b[34m${func.runtime_message}\x1b[0m`,
+              `Runtime information : ${func.runtime_message}`,
             );
           }
         });
