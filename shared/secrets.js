@@ -1,6 +1,7 @@
-const argon2 = require('argon2');
-
 module.exports = {
+  // converts an object from serverless framework ({"a": "b", "c": "d"})
+  // to an array of secrets expected by the API :
+  // [{"key": "a", "value": "b"}, {"key": "c", "value": "d"}]
   convertObjectToModelSecretsArray(obj) {
     if (obj === {} || obj === null || obj === undefined) {
       return [];
@@ -12,9 +13,12 @@ module.exports = {
       }));
   },
 
+  // resolves a value from a secret
+  // if this is a raw value, return the value
+  // if this is a reference to a local environment variable, return the value of that env var
   resolveSecretValue(key, value) {
-    const re = /^\${([^}]*)}$/;
-    const found = value.match(re);
+    const envVarRe = /^\${([^}]*)}$/;
+    const found = value.match(envVarRe);
 
     if (!found) {
       return value;
@@ -27,6 +31,9 @@ module.exports = {
     return process.env[found[1]];
   },
 
+  // returns the secret env vars to send to the API
+  // it is computed by making the difference between existing secrets and secrets sent via the framework
+  // see unit tests for all use cases
   async mergeSecretEnvVars(existingSecretEnvVars, newSecretEnvVars) {
     const existingSecretEnvVarsByKey = new Map(existingSecretEnvVars.map(
       i => [i.key, i.hashed_value],
@@ -61,3 +68,5 @@ module.exports = {
     return result;
   },
 };
+
+const argon2 = require('argon2');
