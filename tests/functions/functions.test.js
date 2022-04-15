@@ -4,11 +4,13 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const { expect } = require('chai');
+const { expect: jestExpect } = require('@jest/globals');
 const { execSync } = require('../utils/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { validateRuntime } = require('../../deploy/lib/createFunctions');
 
 const serverlessExec = path.join('serverless');
 
@@ -115,5 +117,75 @@ describe('Service Lifecyle Integration Test', () => {
     } catch (err) {
       // if not try catch, test would fail
     }
+  });
+});
+
+describe('validateRuntimes', () => {
+  it('should throw an error if runtime does not exist', () => {
+    const func = { runtime: 'bash4' };
+    const existingRuntimes = [
+      { name: 'node17', language: 'Node' },
+      { name: 'go118', language: 'Go' },
+    ];
+    const actual = () => validateRuntime(func, existingRuntimes);
+    expect(actual).to.throw(Error);
+    expect(actual).to.throw('Runtime "bash4" does not exist, must be one of: node17, go118');
+  });
+
+  it('should throw an error if no runtime exists', () => {
+    const func = { runtime: 'node17' };
+    const existingRuntimes = [];
+    const actual = () => validateRuntime(func, existingRuntimes);
+    expect(actual).to.throw(Error);
+    expect(actual).to.throw('Runtime "node17" does not exist: cannot list runtimes');
+  });
+
+  it('should work if runtime is available', () => {
+    const func = { runtime: 'node17' };
+    const existingRuntimes = [
+      { name: 'node17', language: 'Node', status: 'available' },
+      { name: 'go118', language: 'Go', status: 'available' },
+    ];
+    const actual = validateRuntime(func, existingRuntimes);
+    const expected = 'node17';
+    expect(actual).to.equal(expected);
+  });
+
+  it('should work and print a message if runtime is not available and no status message', () => {
+    const func = { runtime: 'bash4' };
+    const existingRuntimes = [
+      { name: 'node17', language: 'Node', status: 'available' },
+      { name: 'go118', language: 'Go', status: 'available' },
+      { name: 'bash4', language: 'Bash', status: 'beta' },
+    ];
+
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    consoleSpy.mockClear();
+
+    const actual = validateRuntime(func, existingRuntimes);
+    const expected = 'bash4';
+    expect(actual).to.equal(expected);
+    jestExpect(console.warn).toHaveBeenCalledTimes(1);
+    jestExpect(console.warn).toHaveBeenLastCalledWith('WARNING: Runtime bash4 is in status beta');
+  });
+
+  it('should work and print a message if runtime is not available and there is a status message', () => {
+    const func = { runtime: 'bash4' };
+    const existingRuntimes = [
+      { name: 'node17', language: 'Node', status: 'available' },
+      { name: 'go118', language: 'Go', status: 'available' },
+      { name: 'bash4', language: 'Bash', status: 'beta', status_message: 'use with caution' },
+    ];
+
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    consoleSpy.mockClear();
+
+    const actual = validateRuntime(func, existingRuntimes);
+    const expected = 'bash4';
+    expect(actual).to.equal(expected);
+    jestExpect(console.warn).toHaveBeenCalledTimes(1);
+    jestExpect(console.warn).toHaveBeenLastCalledWith(
+      'WARNING: Runtime bash4 is in status beta: use with caution',
+    );
   });
 });
