@@ -61,6 +61,7 @@ module.exports = {
         params.secret_environment_variables = await secrets.mergeSecretEnvVars(
           this.namespace.secret_environment_variables,
           secrets.convertObjectToModelSecretsArray(this.namespaceSecretVariables),
+          this.serverless.cli,
         );
       }
       return this.updateNamespace(this.namespace.id, params);

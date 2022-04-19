@@ -56,6 +56,7 @@ module.exports = {
       secret_environment_variables: await secrets.mergeSecretEnvVars(
         foundContainer.secret_environment_variables,
         secrets.convertObjectToModelSecretsArray(container.secret),
+        this.serverless.cli,
       ),
       memory_limit: container.memoryLimit,
       min_scale: container.minScale,
