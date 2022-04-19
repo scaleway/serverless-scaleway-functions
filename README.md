@@ -93,6 +93,7 @@ The different parameters are:
 * `service`: your namespace name
 * `provider.runtime`: the runtime of your functions (check the supported runtimes above)
 * `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
+* `provider.secret`: secret environment variables attached to your namespace are injected to all your namespace functions, see [this example project](./examples/secrets)
 * `scwToken`: Scaleway token you got in prerequisites
 * `scwProject`: Scaleway org id you got in prerequisites
 * `scwRegion`: Scaleway region in which the deployment will take place (default: `fr-par`)

@@ -1,3 +1,5 @@
+const argon2 = require('argon2');
+
 module.exports = {
   // converts an object from serverless framework ({"a": "b", "c": "d"})
   // to an array of secrets expected by the API :
@@ -24,11 +26,12 @@ module.exports = {
       return value;
     }
 
-    if (process.env[found[1]] === null || process.env[found[1]] === undefined) {
-      console.warn(`Env var ${found[1]} used in secret ${key} does not exist: this secret will not be created.`);
+    if (found[1] in process.env) {
+      return process.env[found[1]];
     }
 
-    return process.env[found[1]];
+    console.warn(`WARNING: Env var ${found[1]} used in secret ${key} does not exist: this secret will not be created`);
+    return null;
   },
 
   // returns the secret env vars to send to the API
@@ -47,13 +50,13 @@ module.exports = {
     for (const [key, hashedValue] of existingSecretEnvVarsByKey) {
       if (newSecretEnvVarsByKey.get(key) === undefined || newSecretEnvVarsByKey.get(key) === null) {
         // secret is removed
-        result.push({ key, value: null });
+        result.push({key, value: null});
       } else { // exists in both
         const hashMatches = await argon2.verify(hashedValue, newSecretEnvVarsByKey.get(key));
 
         if (!hashMatches) {
           // secret has changed
-          result.push({ key, value: newSecretEnvVarsByKey.get(key) });
+          result.push({key, value: newSecretEnvVarsByKey.get(key)});
         }
 
         newSecretEnvVarsByKey.delete(key);
@@ -62,11 +65,9 @@ module.exports = {
 
     // new secrets
     newSecretEnvVarsByKey.forEach((value, key) => {
-      result.push({ key, value });
+      result.push({key, value});
     });
 
     return result;
   },
 };
-
-const argon2 = require('argon2');

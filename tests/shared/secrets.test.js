@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const { expect: jestExpect } = require('@jest/globals');
 const argon2 = require('argon2');
 const secrets = require('../../shared/secrets');
 
@@ -23,16 +24,22 @@ describe('convertObjectToModelSecretsArray', () => {
 });
 
 describe('resolveSecretValue', () => {
+  const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+  beforeEach(() => consoleSpy.mockClear());
+
   it('should get a raw secret', () => {
     const actual = secrets.resolveSecretValue('env_secretA', 'valueA');
     const expected = 'valueA';
     expect(actual).to.eql(expected);
+    jestExpect(console.warn).toHaveBeenCalledTimes(0);
   });
 
   it('should get a raw secret with special characters', () => {
     const actual = secrets.resolveSecretValue('env_secretA', 'value composed of special characters $^/;');
     const expected = 'value composed of special characters $^/;';
     expect(actual).to.eql(expected);
+    jestExpect(console.warn).toHaveBeenCalledTimes(0);
   });
 
   it('should get a secret from an environment variable', () => {
@@ -44,17 +51,30 @@ describe('resolveSecretValue', () => {
 
     const expected = process.env.ENV_SECRETA;
     expect(actual).to.eql(expected);
+    jestExpect(console.warn).toHaveBeenCalledTimes(0);
   });
 
-  it('should get return null if environment variable does not exist', () => {
+  it('should get a secret with empty value from an environment variable', () => {
     const OLD_ENV = process.env;
-    process.env.ENV_SECRETA = null;
+    process.env.ENV_SECRETA = '';
 
     const actual = secrets.resolveSecretValue('env_secretA', '${ENV_SECRETA}');
     process.env = OLD_ENV;
 
     const expected = process.env.ENV_SECRETA;
     expect(actual).to.eql(expected);
+    jestExpect(console.warn).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return null if environment variable does not exist', () => {
+    delete process.env.ENV_SECRETA
+    const actual = secrets.resolveSecretValue('env_secretA', '${ENV_SECRETA}');
+
+    const expected = null;
+    expect(actual).to.eql(expected);
+
+    jestExpect(console.warn).toHaveBeenCalledTimes(1);
+    jestExpect(console.warn).toHaveBeenLastCalledWith('WARNING: Env var ENV_SECRETA used in secret env_secretA does not exist: this secret will not be created');
   });
 });
 
