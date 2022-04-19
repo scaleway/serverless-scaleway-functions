@@ -2,8 +2,7 @@
 
 const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
-
-const RUNTIME_STATUS_AVAILABLE = 'available';
+const { RUNTIME_STATUS_AVAILABLE } = require('../../shared/runtimes');
 
 module.exports = {
   createFunctions() {
@@ -30,7 +29,7 @@ module.exports = {
       });
   },
 
-  validateRuntime(func, existingRuntimes) {
+  validateRuntime(func, existingRuntimes, logger) {
     const existingRuntimesGroupedByLanguage = existingRuntimes
       .reduce((r, a) => {
         r[a.language] = r[a.language] || [];
@@ -54,7 +53,7 @@ module.exports = {
         if (runtime.statusMessage !== null && runtime.statusMessage !== undefined && runtime.statusMessage !== '') {
           warnMessage += `: ${runtime.statusMessage}`;
         }
-        console.warn(warnMessage);
+        logger.log(warnMessage);
       }
       return currentRuntime;
     }
@@ -87,7 +86,7 @@ module.exports = {
     };
 
     const availableRuntimes = await this.listRuntimes();
-    params.runtime = this.validateRuntime(func, availableRuntimes);
+    params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
     return this.createFunction(params)

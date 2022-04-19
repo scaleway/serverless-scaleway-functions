@@ -121,6 +121,11 @@ describe('Service Lifecyle Integration Test', () => {
 });
 
 describe('validateRuntimes', () => {
+  beforeEach(() => {
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleSpy.mockClear();
+  });
+
   it('should throw an error if runtime does not exist', () => {
     const func = { runtime: 'bash4' };
     const existingRuntimes = [
@@ -130,6 +135,7 @@ describe('validateRuntimes', () => {
     const actual = () => validateRuntime(func, existingRuntimes);
     expect(actual).to.throw(Error);
     expect(actual).to.throw('Runtime "bash4" does not exist, must be one of: node17, go118');
+    jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
   it('should throw an error if no runtime exists', () => {
@@ -138,6 +144,7 @@ describe('validateRuntimes', () => {
     const actual = () => validateRuntime(func, existingRuntimes);
     expect(actual).to.throw(Error);
     expect(actual).to.throw('Runtime "node17" does not exist: cannot list runtimes');
+    jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
   it('should work if runtime is available', () => {
@@ -149,6 +156,7 @@ describe('validateRuntimes', () => {
     const actual = validateRuntime(func, existingRuntimes);
     const expected = 'node17';
     expect(actual).to.equal(expected);
+    jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
   it('should work and print a message if runtime is not available and no status message', () => {
@@ -159,14 +167,11 @@ describe('validateRuntimes', () => {
       { name: 'bash4', language: 'Bash', status: 'beta' },
     ];
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-    consoleSpy.mockClear();
-
-    const actual = validateRuntime(func, existingRuntimes);
+    const actual = validateRuntime(func, existingRuntimes, console);
     const expected = 'bash4';
     expect(actual).to.equal(expected);
-    jestExpect(console.warn).toHaveBeenCalledTimes(1);
-    jestExpect(console.warn).toHaveBeenLastCalledWith('WARNING: Runtime bash4 is in status beta');
+    jestExpect(console.log).toHaveBeenCalledTimes(1);
+    jestExpect(console.log).toHaveBeenLastCalledWith('WARNING: Runtime bash4 is in status beta');
   });
 
   it('should work and print a message if runtime is not available and there is a status message', () => {
@@ -177,14 +182,11 @@ describe('validateRuntimes', () => {
       { name: 'bash4', language: 'Bash', status: 'beta', status_message: 'use with caution' },
     ];
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-    consoleSpy.mockClear();
-
-    const actual = validateRuntime(func, existingRuntimes);
+    const actual = validateRuntime(func, existingRuntimes, console);
     const expected = 'bash4';
     expect(actual).to.equal(expected);
-    jestExpect(console.warn).toHaveBeenCalledTimes(1);
-    jestExpect(console.warn).toHaveBeenLastCalledWith(
+    jestExpect(console.log).toHaveBeenCalledTimes(1);
+    jestExpect(console.log).toHaveBeenLastCalledWith(
       'WARNING: Runtime bash4 is in status beta: use with caution',
     );
   });
