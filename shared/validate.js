@@ -21,6 +21,8 @@ const RUNTIMES_EXTENSIONS = {
   go: [],
 };
 
+const REGION_LIST = ['fr-par', 'nl-ams', 'pl-waw'];
+
 const cronScheduleRegex = new RegExp(
   /^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$/,
 );
@@ -38,6 +40,7 @@ module.exports = {
     return BbPromise.bind(this)
       .then(this.validateServicePath)
       .then(this.validateCredentials)
+      .then(this.validateRegion)
       .then(this.validateNamespace)
       .then(this.validateApplications)
       .then(this.checkErrors);
@@ -58,6 +61,12 @@ module.exports = {
         ' Credentials to deploy on your Scaleway Account are required, please read the documentation.',
       ].join('');
       throw new Error(errorMessage);
+    }
+  },
+
+  validateRegion() {
+    if (!REGION_LIST.includes(this.provider.scwRegion)) {
+      throw new Error('unknown region');
     }
   },
 

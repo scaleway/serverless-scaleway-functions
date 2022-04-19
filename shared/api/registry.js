@@ -3,12 +3,11 @@
 const axios = require('axios');
 const https = require('https');
 const { manageError } = require('./utils');
-const { REGISTRY_API_URL } = require('../constants');
 
 class RegistryApi {
-  constructor(token) {
+  constructor(registryApiUrl, token) {
     this.apiManager = axios.create({
-      baseURL: REGISTRY_API_URL,
+      baseURL: registryApiUrl,
       headers: {
         'X-Auth-Token': token,
       },

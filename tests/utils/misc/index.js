@@ -48,6 +48,7 @@ function replaceEnv(values) {
 
 function createTestService(
   tmpDir,
+  repoDir,
   options = {
     devModuleDir: '',
     templateName: 'nodejs10', // Name of the template inside example directory to use for test service
@@ -66,7 +67,7 @@ function createTestService(
   execSync(`${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`);
   process.chdir(tmpDir);
   // Install dependencies
-  execSync('npm i');
+  execSync(`npm link ${repoDir}`);
   // Copy current directory to run current version of Serverless Framework
   if (options.runCurrentVersion && options.devModuleDir !== '') {
     const tmpModulePath = path.join(tmpDir, '/node_modules/serverless-scaleway-functions');

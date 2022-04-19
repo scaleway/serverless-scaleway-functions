@@ -7,15 +7,17 @@ const { expect } = require('chai');
 const { execSync } = require('../utils/child-process');
 const { getTmpDirPath } = require('../utils/fs');
 const { getServiceName, createTestService, sleep } = require('../utils/misc');
-const { Api, RegistryApi } = require('../../shared/api');
-const { FUNCTIONS_API_URL } = require('../../shared/constants');
+const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
+const { FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 
 const serverlessExec = 'serverless';
 
 let oldCwd;
+const scwRegion = 'nl-ams';
 const scwProject = process.env.SCW_PROJECT;
 const scwToken = process.env.SCW_TOKEN;
-const apiUrl = FUNCTIONS_API_URL;
+const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
+const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
 const devModuleDir = path.resolve(__dirname, '..', '..');
 const examplesDir = path.resolve(devModuleDir, 'examples');
 let api;
@@ -23,8 +25,7 @@ let registryApi;
 
 beforeAll(() => {
   oldCwd = process.cwd();
-  api = new Api(apiUrl, scwToken);
-  registryApi = new RegistryApi(scwToken);
+  registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 });
 
 afterAll(() => {
@@ -42,7 +43,7 @@ describe.each(exampleRepositories)(
 
     const isContainer = ['container', 'container-schedule'].includes(runtime);
 
-    createTestService(tmpDir, {
+    createTestService(tmpDir, oldCwd, {
       devModuleDir,
       templateName: path.resolve(examplesDir, runtime),
       serviceName: runtimeServiceName,
@@ -52,6 +53,7 @@ describe.each(exampleRepositories)(
         const newConfig = Object.assign({}, config);
         newConfig.provider.scwToken = scwToken;
         newConfig.provider.scwProject = scwProject;
+        newConfig.provider.scwRegion = scwRegion;
         return newConfig;
       },
     });
@@ -64,11 +66,14 @@ describe.each(exampleRepositories)(
     it(`should deploy service for runtime ${runtime} to scaleway`, async () => {
       process.chdir(tmpDir);
       execSync(`${serverlessExec} deploy`);
-      namespace = await api.getNamespaceFromList(runtimeServiceName);
       // If runtime is container => get container
       if (isContainer) {
+        api = new ContainerApi(containerApiUrl, scwToken);
+        namespace = await api.getNamespaceFromList(runtimeServiceName);
         namespace.containers = await api.listContainers(namespace.id);
       } else {
+        api = new FunctionApi(functionApiUrl, scwToken);
+        namespace = await api.getNamespaceFromList(runtimeServiceName);
         namespace.functions = await api.listFunctions(namespace.id);
       }
     });
@@ -81,7 +86,7 @@ describe.each(exampleRepositories)(
         deployedApplication = namespace.functions[0];
       }
       await sleep(6000);
-      const response = await axios.get(deployedApplication.endpoint);
+      const response = await axios.get(`https://${deployedApplication.domain_name}`);
       expect(response.status).to.be.equal(200);
     });
 

@@ -5,15 +5,18 @@ const { expect } = require('chai');
 const { execSync } = require('../utils/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName } = require('../utils/misc');
-const { Api, RegistryApi } = require('../../shared/api');
+const { FunctionApi, ContainerApi, RegistryApi } = require('../../shared/api');
 const { createTestService } = require('../utils/misc');
-const { FUNCTIONS_API_URL } = require('../../shared/constants');
+const { FUNCTIONS_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 
 const serverlessExec = path.join('serverless');
 const devModuleDir = path.resolve(__dirname, '..', '..');
+const scwRegion = 'pl-waw';
 const scwProject = process.env.SCW_PROJECT;
 const scwToken = process.env.SCW_TOKEN;
-const apiUrl = FUNCTIONS_API_URL;
+const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
+const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
+
 let api;
 let registryApi;
 
@@ -21,8 +24,7 @@ let oldCwd;
 
 beforeAll(() => {
   oldCwd = process.cwd();
-  api = new Api(apiUrl, scwToken);
-  registryApi = new RegistryApi(scwToken);
+  registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 });
 
 afterAll(() => {
@@ -30,7 +32,7 @@ afterAll(() => {
 });
 
 const runtimesToTest = [
-  { name: 'nodejs10-schedule', isFunction: true },
+  { name: 'nodejs-schedule', isFunction: true },
   { name: 'container-schedule', isFunction: false },
 ];
 
@@ -43,7 +45,7 @@ describe.each(runtimesToTest)(
 
     it(`${runtime.name}: should create function service in tmp directory`, () => {
       const templateName = path.resolve(devModuleDir, 'examples', runtime.name);
-      createTestService(tmpDir, {
+      createTestService(tmpDir, oldCwd, {
         templateName,
         devModuleDir,
         serviceName: runtimeServiceName,
@@ -53,6 +55,7 @@ describe.each(runtimesToTest)(
           const newConfig = Object.assign({}, config);
           newConfig.provider.scwToken = scwToken;
           newConfig.provider.scwProject = scwProject;
+          newConfig.provider.scwRegion = scwRegion;
           return newConfig;
         },
       });
@@ -61,9 +64,15 @@ describe.each(runtimesToTest)(
 
     it(`${runtime.name}: should deploy function service to scaleway`, async () => {
       execSync(`${serverlessExec} deploy`);
-      namespace = await api.getNamespaceFromList(runtimeServiceName);
-      namespace.functions = await api.listFunctions(namespace.id);
-      namespace.containers = await api.listContainers(namespace.id);
+      if (runtime.isFunction) {
+        api = new FunctionApi(functionApiUrl, scwToken);
+        namespace = await api.getNamespaceFromList(runtimeServiceName);
+        namespace.functions = await api.listFunctions(namespace.id);
+      } else {
+        api = new ContainerApi(containerApiUrl, scwToken);
+        namespace = await api.getNamespaceFromList(runtimeServiceName);
+        namespace.containers = await api.listContainers(namespace.id);
+      }
     });
 
     it(`${runtime.name}: should create cronjob for function`, async () => {
