@@ -126,9 +126,11 @@ module.exports = {
         // check if runtime is compiled runtime, if so we skip validations
         for (let i = 0; i < COMPILED_RUNTIMES_PREFIXES.length; i += 1) {
           if (
-            func.runtime !== undefined
-            && (func.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i])
-            || (!func.runtime && this.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i])))) {
+            (func.runtime !== undefined &&
+              func.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i])) ||
+            (!func.runtime &&
+              this.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i]))
+          ) {
             return; // for compiled runtimes there is no need to validate specific files
           }
         }
