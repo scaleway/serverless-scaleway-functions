@@ -57,7 +57,11 @@ describe.each(exampleRepositories)(
 
     it(`should deploy service for runtime ${runtime} to scaleway`, async () => {
       process.chdir(tmpDir);
-      execSync(`${serverlessExec} deploy`);
+      let options = {};
+      if (runtime === 'secrets') {
+        options = { env: {'PATH': process.env.PATH, 'ENV_SECRETC': 'valueC', 'ENV_SECRET3': 'value3'} }
+      }
+      execSync(`${serverlessExec} deploy`, options);
       // If runtime is container => get container
       if (isContainer) {
         api = new ContainerApi(containerApiUrl, scwToken);
@@ -80,6 +84,15 @@ describe.each(exampleRepositories)(
       await sleep(30000);
       const response = await axios.get(`https://${deployedApplication.domain_name}`);
       expect(response.status).to.be.equal(200);
+
+      if (runtime === "secrets") {
+        await sleep(30000); // wait to be sure that function have been redeployed because namespace have been updated
+        expect(response.data.env_vars).to.eql([
+          "env_notSecret1", "env_notSecretA",
+          "env_secret1", "env_secret2", "env_secret3",
+          "env_secretA", "env_secretB", "env_secretC",
+        ]);
+      }
     });
 
     it(`should remove service for runtime ${runtime} from scaleway`, async () => {

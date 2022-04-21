@@ -11,10 +11,12 @@ def handle(event, context):
 
     # print all environment variables beginning with "env"
     return {
-        "env_vars": list(
-            filter(
-                lambda x: x.startswith("env"),
-                dict(os.environ).keys()
+        "env_vars": sorted(
+            list(
+                filter(
+                    lambda x: x.startswith("env"),
+                    dict(os.environ).keys()
+                )
             )
         )
     }
