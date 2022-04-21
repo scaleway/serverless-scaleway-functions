@@ -28,7 +28,7 @@ const runtimesToTest = [
 ];
 
 describe.each(runtimesToTest)(
-  'test runtimes',
+  'test triggers',
   (runtime) => {
     const runtimeServiceName = getServiceName(runtime.name);
     const tmpDir = getTmpDirPath();
