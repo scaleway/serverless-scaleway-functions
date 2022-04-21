@@ -1,35 +1,26 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 const { expect } = require('chai');
 const { execSync } = require('../utils/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName } = require('../utils/misc');
-const { FunctionApi, ContainerApi, RegistryApi } = require('../../shared/api');
-const { createTestService } = require('../utils/misc');
-const { FUNCTIONS_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { getServiceName, createTestService } = require('../utils/misc');
+const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
+const { FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 
-const serverlessExec = path.join('serverless');
-const devModuleDir = path.resolve(__dirname, '..', '..');
+const serverlessExec = 'serverless';
+
+const oldCwd = process.cwd();
 const scwRegion = 'pl-waw';
-const scwProject = process.env.SCW_PROJECT;
-const scwToken = process.env.SCW_TOKEN;
+const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
+const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
-
+const devModuleDir = path.resolve(__dirname, '..', '..');
+const examplesDir = path.resolve(devModuleDir, 'examples');
 let api;
-let registryApi;
-
-let oldCwd;
-
-beforeAll(() => {
-  oldCwd = process.cwd();
-  registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
-});
-
-afterAll(() => {
-  process.chdir(oldCwd);
-});
+const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 
 const runtimesToTest = [
   { name: 'nodejs-schedule', isFunction: true },
@@ -37,32 +28,35 @@ const runtimesToTest = [
 ];
 
 describe.each(runtimesToTest)(
-  'Test triggers',
+  'test triggers',
   (runtime) => {
     const runtimeServiceName = getServiceName(runtime.name);
     const tmpDir = getTmpDirPath();
+
     let namespace = {};
 
-    it(`${runtime.name}: should create function service in tmp directory`, () => {
-      const templateName = path.resolve(devModuleDir, 'examples', runtime.name);
-      createTestService(tmpDir, oldCwd, {
-        templateName,
-        devModuleDir,
-        serviceName: runtimeServiceName,
-        runCurrentVersion: true,
-        serverlessConfigHook: (config) => {
-          // use right SCW token and project for the deployment as well as service name
-          const newConfig = Object.assign({}, config);
-          newConfig.provider.scwToken = scwToken;
-          newConfig.provider.scwProject = scwProject;
-          newConfig.provider.scwRegion = scwRegion;
-          return newConfig;
-        },
-      });
-      process.chdir(tmpDir);
+    createTestService(tmpDir, oldCwd, {
+      devModuleDir,
+      templateName: path.resolve(examplesDir, runtime.name),
+      serviceName: runtimeServiceName,
+      runCurrentVersion: true,
+      serverlessConfigHook: (config) => {
+        // use right SCW token and project for the deployment as well as service name
+        const newConfig = Object.assign({}, config);
+        newConfig.provider.scwToken = scwToken;
+        newConfig.provider.scwProject = scwProject;
+        newConfig.provider.scwRegion = scwRegion;
+        return newConfig;
+      },
+    });
+
+    it(`${runtime.name}: should create service in tmp directory`, () => {
+      expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
+      expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
     });
 
     it(`${runtime.name}: should deploy function service to scaleway`, async () => {
+      process.chdir(tmpDir);
       execSync(`${serverlessExec} deploy`);
       if (runtime.isFunction) {
         api = new FunctionApi(functionApiUrl, scwToken);
@@ -123,5 +117,7 @@ describe.each(runtimesToTest)(
       );
       expect(response.status).to.be.equal(200);
     });
+
+    process.chdir(oldCwd);
   },
 );

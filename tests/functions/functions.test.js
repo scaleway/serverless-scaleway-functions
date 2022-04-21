@@ -18,8 +18,8 @@ describe('Service Lifecyle Integration Test', () => {
   let oldCwd;
   let serviceName;
   const scwRegion = 'fr-par';
-  const scwProject = process.env.SCW_PROJECT;
-  const scwToken = process.env.SCW_TOKEN;
+  const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
+  const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
   const apiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
   const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
   let api;
@@ -56,7 +56,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke function from scaleway', async () => {
-    await sleep(6000);
+    await sleep(30000);
     const deployedFunction = namespace.functions[0];
     const response = await axios.get(`https://${deployedFunction.domain_name}`);
     expect(response.data.message).to.be.equal('Hello from Serverless Framework and Scaleway Functions :D');
@@ -78,7 +78,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke updated function from scaleway', async () => {
-    await sleep(20000);
+    await sleep(30000);
     const deployedFunction = namespace.functions[0];
     const response = await axios.get(`https://${deployedFunction.domain_name}`);
     expect(response.data.body.message).to.be.equal('Serverless Update Succeeded');

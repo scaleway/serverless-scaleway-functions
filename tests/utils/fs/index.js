@@ -27,11 +27,11 @@ function replaceTextInFile(filePath, subString, newSubString) {
 
 function readYamlFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
-  return YAML.safeLoad(content);
+  return YAML.load(content);
 }
 
 function writeYamlFile(filePath, content) {
-  const yaml = YAML.safeDump(content);
+  const yaml = YAML.dump(content);
   fs.writeFileSync(filePath, yaml);
   return yaml;
 }

@@ -12,6 +12,7 @@
     "test": "jest --maxWorkers 5",
     "test:functions": "jest --maxWorkers 5 functions",
     "test:containers": "jest --maxWorkers 5 containers",
+    "test:multi-region": "jest --maxWorkers 5 multi-region",
     "test:runtimes": "jest --maxWorkers 5 runtimes",
     "test:triggers": "jest --maxWorkers 5 triggers",
     "coverage": "jest --coverage",
@@ -54,6 +55,7 @@
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.0",
     "fs-extra": "^8.1.0",
-    "jest": "^27.5.1"
+    "jest": "^27.5.1",
+    "js-yaml": "^4.1.0"
   }
 }
