@@ -19,8 +19,8 @@ const removeAllTestNamespaces = async (api, registryApi) => {
   });
 };
 
-const api = new Api(FUNCTIONS_API_URL, process.env.SCW_TOKEN);
-const registryApi = new RegistryApi(process.env.SCW_TOKEN);
+const api = new Api(FUNCTIONS_API_URL, process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN);
+const registryApi = new RegistryApi(process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN);
 
 removeAllTestNamespaces(api, registryApi);
 

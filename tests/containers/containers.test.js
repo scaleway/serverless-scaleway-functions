@@ -18,8 +18,8 @@ describe('Service Lifecyle Integration Test', () => {
   let oldCwd;
   let serviceName;
   const scwRegion = 'fr-par';
-  const scwProject = process.env.SCW_PROJECT;
-  const scwToken = process.env.SCW_TOKEN;
+  const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
+  const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
   const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
   let api;
@@ -56,7 +56,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke container from scaleway', async () => {
-    await sleep(6000);
+    await sleep(30000);
     const deployedContainer = namespace.containers[0];
     const response = await axios.get(`https://${deployedContainer.domain_name}`);
     expect(response.data.message).to.be.equal('Hello, World from Scaleway Container !');
@@ -68,7 +68,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke updated container from scaleway', async () => {
-    await sleep(10000);
+    await sleep(30000);
     const deployedContainer = namespace.containers[0];
     const response = await axios.get(`https://${deployedContainer.domain_name}`);
     expect(response.data.message).to.be.equal('Container successfully updated');

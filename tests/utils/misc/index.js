@@ -68,18 +68,6 @@ function createTestService(
   process.chdir(tmpDir);
   // Install dependencies
   execSync(`npm link ${repoDir}`);
-  // Copy current directory to run current version of Serverless Framework
-  if (options.runCurrentVersion && options.devModuleDir !== '') {
-    const tmpModulePath = path.join(tmpDir, '/node_modules/serverless-scaleway-functions');
-    // Copy the serverless-scaleway-functions module from this repository, exclude node_modules
-    fs.readdirSync(options.devModuleDir)
-      .filter(file => file !== 'node_modules')
-      .forEach((file) => {
-        const filePath = path.join(options.devModuleDir, file);
-        const newPath = path.join(tmpModulePath, file);
-        fs.copySync(filePath, newPath);
-      });
-  }
 
   const serverlessFilePath = path.join(tmpDir, 'serverless.yml');
   let serverlessConfig = readYamlFile(serverlessFilePath);

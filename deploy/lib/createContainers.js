@@ -1,6 +1,7 @@
 'use strict';
 
 const BbPromise = require('bluebird');
+const secrets = require('../../shared/secrets');
 
 module.exports = {
   createContainers() {
@@ -30,6 +31,9 @@ module.exports = {
     const params = {
       name: container.name,
       environment_variables: container.env,
+      secret_environment_variables: secrets.convertObjectToModelSecretsArray(
+        container.secret,
+      ),
       namespace_id: this.namespace.id,
       memory_limit: container.memoryLimit,
       min_scale: container.minScale,
@@ -45,10 +49,15 @@ module.exports = {
       .then(response => Object.assign(response, { directory: container.directory }));
   },
 
-  updateSingleContainer(container, foundContainer) {
+  async updateSingleContainer(container, foundContainer) {
     const params = {
       redeploy: false,
       environment_variables: container.env,
+      secret_environment_variables: await secrets.mergeSecretEnvVars(
+        foundContainer.secret_environment_variables,
+        secrets.convertObjectToModelSecretsArray(container.secret),
+        this.serverless.cli,
+      ),
       memory_limit: container.memoryLimit,
       min_scale: container.minScale,
       max_scale: container.maxScale,
