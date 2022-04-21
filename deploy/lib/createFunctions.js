@@ -1,6 +1,7 @@
 'use strict';
 
 const BbPromise = require('bluebird');
+const secrets = require('../../shared/secrets');
 
 module.exports = {
   createFunctions() {
@@ -31,6 +32,9 @@ module.exports = {
     const params = {
       name: func.name,
       environment_variables: func.env,
+      secret_environment_variables: secrets.convertObjectToModelSecretsArray(
+        func.secret,
+      ),
       namespace_id: this.namespace.id,
       memory_limit: func.memoryLimit,
       min_scale: func.minScale,
@@ -47,18 +51,23 @@ module.exports = {
       .then(response => Object.assign(response, { handler: func.handler }));
   },
 
-  updateSingleFunction(func, foundFunc) {
-    const params = {};
-
-    params.redeploy = false;
-    params.environment_variables = func.env;
-    params.memory_limit = func.memoryLimit;
-    params.min_scale = func.minScale;
-    params.max_scale = func.maxScale;
-    params.timeout = func.timeout;
-    params.handler = func.handler;
-    params.privacy = func.privacy;
-    params.domain_name = func.domain_name;
+  async updateSingleFunction(func, foundFunc) {
+    const params = {
+      redeploy: false,
+      environment_variables: func.env,
+      secret_environment_variables: await secrets.mergeSecretEnvVars(
+        foundFunc.secret_environment_variables,
+        secrets.convertObjectToModelSecretsArray(func.secret),
+        this.serverless.cli,
+      ),
+      memory_limit: func.memoryLimit,
+      min_scale: func.minScale,
+      max_scale: func.maxScale,
+      timeout: func.timeout,
+      handler: func.handler,
+      privacy: func.privacy,
+      domain_name: func.domain_name,
+    };
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
     return this.updateFunction(foundFunc.id, params)

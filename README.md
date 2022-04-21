@@ -93,13 +93,15 @@ The different parameters are:
 * `service`: your namespace name
 * `provider.runtime`: the runtime of your functions (check the supported runtimes above)
 * `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
+* `provider.secret`: secret environment variables attached to your namespace are injected to all your namespace functions, see [this example project](./examples/secrets)
 * `scwToken`: Scaleway token you got in prerequisites
 * `scwProject`: Scaleway org id you got in prerequisites
 * `scwRegion`: Scaleway region in which the deployment will take place (default: `fr-par`)
 * `package.patterns`: usually, you don't need to configure it. Enable to include/exclude directories to/from the deployment
 * `functions`: Configure of your fonctions. It's a yml dictionary, with the key being the function name
   * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
-  * `env` (Optional): environment variables specifics for the current function
+  * `env` (Optional): environment variables specific for the current function
+  * `secret` (Optional): secret environment variables specific for the current function, see [this example project](./examples/secrets)
   * `minScale` (Optional): how many function instances we keep running (default: 0)
   * `maxScale` (Optional): maximum number of instances this function can scale to (default: 20)
   * `memoryLimit`: ram allocated to the function instances. See the introduction for the list of supported values
