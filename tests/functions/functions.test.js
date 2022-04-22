@@ -90,16 +90,16 @@ describe('Service Lifecyle Integration Test', () => {
     // example: python3
     replaceTextInFile('serverless.yml', 'node16', 'python3');
     const pythonHandler = `
-    def handle(event, context):
-      """handle a request to the function
-      Args:
-          event (dict): request params
-          context (dict): function call metadata
-      """
-    
-      return {
-          "message": "Hello From Python3 runtime on Serverless Framework and Scaleway Functions"
-      }
+def handle(event, context):
+  """handle a request to the function
+  Args:
+      event (dict): request params
+      context (dict): function call metadata
+  """
+
+  return {
+      "message": "Hello From Python3 runtime on Serverless Framework and Scaleway Functions"
+  }
     `;
     fs.writeFileSync(path.join(tmpDir, 'handler.py'), pythonHandler);
     execSync(`${serverlessExec} deploy`);
@@ -205,7 +205,9 @@ describe('validateRuntimes', () => {
     const existingRuntimes = [
       { name: 'node17', language: 'Node', status: 'available' },
       { name: 'go118', language: 'Go', status: 'available' },
-      { name: 'bash4', language: 'Bash', status: 'beta', status_message: 'use with caution' },
+      {
+        name: 'bash4', language: 'Bash', status: 'beta', status_message: 'use with caution',
+      },
     ];
 
     const actual = validateRuntime(func, existingRuntimes, console);
