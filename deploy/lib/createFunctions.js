@@ -111,6 +111,9 @@ module.exports = {
       domain_name: func.domain_name,
     };
 
+    const availableRuntimes = await this.listRuntimes();
+    params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
+
     this.serverless.cli.log(`Updating function ${func.name}...`);
     return this.updateFunction(foundFunc.id, params)
       .then(response => Object.assign(response, { handler: func.handler }));

@@ -86,6 +86,32 @@ describe('Service Lifecyle Integration Test', () => {
     expect(response.data.body.message).to.be.equal('Serverless Update Succeeded');
   });
 
+  it('should deploy function with another available runtime', async () => {
+    // example: python310
+    replaceTextInFile('serverless.yml', 'node16', 'python310');
+    const pythonHandler = `
+def handle(event, context):
+  """handle a request to the function
+  Args:
+      event (dict): request params
+      context (dict): function call metadata
+  """
+
+  return {
+      "message": "Hello From Python310 runtime on Serverless Framework and Scaleway Functions"
+  }
+    `;
+    fs.writeFileSync(path.join(tmpDir, 'handler.py'), pythonHandler);
+    execSync(`${serverlessExec} deploy`);
+  });
+
+  it('should invoke function with runtime updated from scaleway', async () => {
+    await sleep(30000);
+    const deployedFunction = namespace.functions[0];
+    const response = await axios.get(`https://${deployedFunction.domain_name}`);
+    expect(response.data.message).to.be.equal('Hello From Python310 runtime on Serverless Framework and Scaleway Functions');
+  });
+
   it('should remove service from scaleway', async () => {
     execSync(`${serverlessExec} remove`);
     try {
@@ -179,7 +205,9 @@ describe('validateRuntimes', () => {
     const existingRuntimes = [
       { name: 'node17', language: 'Node', status: 'available' },
       { name: 'go118', language: 'Go', status: 'available' },
-      { name: 'bash4', language: 'Bash', status: 'beta', status_message: 'use with caution' },
+      {
+        name: 'bash4', language: 'Bash', status: 'beta', status_message: 'use with caution',
+      },
     ];
 
     const actual = validateRuntime(func, existingRuntimes, console);
