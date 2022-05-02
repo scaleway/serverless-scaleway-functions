@@ -87,8 +87,8 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should deploy function with another available runtime', async () => {
-    // example: python3
-    replaceTextInFile('serverless.yml', 'node16', 'python3');
+    // example: python310
+    replaceTextInFile('serverless.yml', 'node16', 'python310');
     const pythonHandler = `
 def handle(event, context):
   """handle a request to the function
@@ -98,18 +98,18 @@ def handle(event, context):
   """
 
   return {
-      "message": "Hello From Python3 runtime on Serverless Framework and Scaleway Functions"
+      "message": "Hello From Python310 runtime on Serverless Framework and Scaleway Functions"
   }
     `;
     fs.writeFileSync(path.join(tmpDir, 'handler.py'), pythonHandler);
     execSync(`${serverlessExec} deploy`);
   });
 
-  it('should invoke updated function from scaleway', async () => {
+  it('should invoke function with runtime updated from scaleway', async () => {
     await sleep(30000);
     const deployedFunction = namespace.functions[0];
     const response = await axios.get(`https://${deployedFunction.domain_name}`);
-    expect(response.data.body.message).to.be.equal('Hello From Python3 runtime on Serverless Framework and Scaleway Functions');
+    expect(response.data.message).to.be.equal('Hello From Python310 runtime on Serverless Framework and Scaleway Functions');
   });
 
   it('should remove service from scaleway', async () => {

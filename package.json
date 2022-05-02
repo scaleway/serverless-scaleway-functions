@@ -10,11 +10,11 @@
   },
   "scripts": {
     "test": "jest --maxWorkers 5",
-    "test:functions": "jest --maxWorkers 5 functions",
-    "test:containers": "jest --maxWorkers 5 containers",
-    "test:multi-region": "jest --maxWorkers 5 multi-region",
-    "test:runtimes": "jest --maxWorkers 5 runtimes",
-    "test:triggers": "jest --maxWorkers 5 triggers",
+    "test:functions": "jest --maxWorkers 5 tests/functions",
+    "test:containers": "jest --maxWorkers 5 tests/containers",
+    "test:multi-region": "jest --maxWorkers 5 tests/multi-region",
+    "test:runtimes": "jest --maxWorkers 5 tests/runtimes",
+    "test:triggers": "jest --maxWorkers 5 tests/triggers",
     "coverage": "jest --coverage",
     "lint": "eslint . --cache"
   },
