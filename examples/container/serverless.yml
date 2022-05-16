@@ -8,7 +8,7 @@ provider:
   # the path to the credentials file needs to be absolute
   scwToken: <scw-token>
   scwProject: <scw-project-id>
-  # region in which the deployment will happen, 
+  # region in which the deployment will happen
   scwRegion: fr-par
 
 plugins:
