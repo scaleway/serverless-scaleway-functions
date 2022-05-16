@@ -46,17 +46,17 @@
   "dependencies": {
     "argon2": "^0.28.5",
     "axios": "^0.27.2",
-    "bluebird": "^3.5.5",
-    "dockerode": "^2.5.8",
+    "bluebird": "^3.7.2",
+    "dockerode": "^3.3.1",
     "tar-fs": "^2.1.1"
   },
   "devDependencies": {
     "@jest/globals": "^28.1.0",
     "chai": "^4.3.6",
-    "eslint": "^5.16.0",
-    "eslint-config-airbnb-base": "^13.2.0",
-    "eslint-plugin-import": "^2.18.0",
-    "fs-extra": "^8.1.0",
+    "eslint": "^8.15.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "fs-extra": "^10.1.0",
     "jest": "^28.1.0",
     "js-yaml": "^4.1.0"
   }
