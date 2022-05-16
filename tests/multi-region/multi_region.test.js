@@ -36,7 +36,7 @@ describe.each(regions)(
       replaceTextInFile('serverless.yml', 'scaleway-python3', serviceName);
       replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
       replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-      replaceTextInFile('serverless.yml', '<scw-region>', region);
+      replaceTextInFile('serverless.yml', 'scwRegion: fr-par', `scwRegion: ${region}`);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'handler.py'))).to.be.equal(true);
 

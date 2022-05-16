@@ -10,7 +10,7 @@ provider:
   scwToken: <scw-token>
   scwProject: <scw-project-id>
   # region in which the deployment will happen
-  scwRegion: <scw-region>
+  scwRegion: fr-par
 
 plugins:
   - serverless-scaleway-functions
