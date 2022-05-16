@@ -127,13 +127,18 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: node16 # or node10, node14, node17
+  runtime: node16 # or node10, node14, node17, node18 (ES modules only for node 18)
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler
   second:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
+
+** ES Modules** (`"type": "module"`) : this type of package is supported on Node >= 18 runtimes.
+If your package.json is type of `"type": "commonjs"` please use Node <18 runtimes.
+
+
 ### Python
 
 Similar to `node`, path to handler file `src/testing/handler.py`:
