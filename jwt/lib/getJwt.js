@@ -23,14 +23,19 @@ module.exports = {
   },
 
   getJwtNamespace() {
+    console.log("getJwtNamespace")
+
+    console.log("this.namespace.id", this.namespace.id)
+    console.log("this.tokenExpirationDate", this.tokenExpirationDate)
     return this.issueJwtNamespace(this.namespace.id, this.tokenExpirationDate)
       .then(response => Object.assign(this.namespace, { token: response.token }))
       .then(() => this.serverless.cli.log(`Namespace <${this.namespace.name}> token (valid until ${this.tokenExpirationDate}):\n${this.namespace.token}\n`));
   },
 
   getJwtFunctions(functions) {
+    console.log("getJwtFunctions")
     const promises = functions.map((func) => {
-      if (func.privacy === PRIVACY_PRIVATE) {
+      if (func.hasOwnProperty('privacy')  && func.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(func.id, this.tokenExpirationDate)
           .then(response => Object.assign(func, { token: response.token }))
           .then(() => this.serverless.cli.log(`Function <${func.name}> token (valid until ${this.tokenExpirationDate}):\n${func.token}\n`));
@@ -41,8 +46,9 @@ module.exports = {
   },
 
   getJwtContainers(containers) {
+    console.log("getJwtContainers")
     const promises = containers.map((container) => {
-      if (container.privacy === PRIVACY_PRIVATE) {
+      if (container.hasOwnProperty('privacy') !== undefined && container.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(container.id, this.tokenExpirationDate)
           .then(response => Object.assign(container, { token: response.token }))
           .then(() => this.serverless.cli.log(`Container <${container.name}> token (valid until ${this.tokenExpirationDate}):\n${container.token}\n`));
