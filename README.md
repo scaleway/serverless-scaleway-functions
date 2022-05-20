@@ -119,7 +119,7 @@ Based on the chosen runtime, the `handler` variable on function might vary.
 
 [Official ESM documentaton](https://nodejs.org/api/esm.html) 
 
-ES-Modules are available from `node16` runtime @ on Scaleway Serverless Functions. 
+ES-Modules are available since `node16` runtime @ on Scaleway Serverless Functions. 
 Recent versions of Node introduce a modern way to re-use your code. By default Node treats your code with `CommonJS`.
 
 According to the official documentation you can enable module by specifying module type in `package.json`, example :
