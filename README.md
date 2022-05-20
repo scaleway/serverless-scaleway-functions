@@ -9,6 +9,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
   - [Create a Project](#create-a-project)
   - [Configure your functions](#configure-your-functions)
   - [Functions Handler](#functions-handler)
+    - [Node ES Modules](#node-es-modules)
     - [Node](#node)
     - [Python](#python)
     - [Golang](#golang)
@@ -113,9 +114,41 @@ The different parameters are:
 
 Based on the chosen runtime, the `handler` variable on function might vary.
 
+
+### Node ES Modules
+
+[Official ESM documentaton](https://nodejs.org/api/esm.html) 
+
+ES-Modules are available from `node16` runtime @ on Scaleway Serverless Functions. 
+Recent versions of Node introduce a modern way to re-use your code. By default Node treats your code with `CommonJS`.
+
+According to the official documentation you can enable module by specifying module type in `package.json`, example :
+
+```json
+  ...
+  "type": "module",
+  ...
+```
+
+And then you can write down your code ESM way : 
+
+```javascript
+export {handle};
+
+function handle (event, context, cb) {
+    return {
+        body: process.version,
+        statusCode: 200,
+    };
+};
+```
+
+Note that switching from `CommonJS` to `ES-Modules` can break your code not working if you use old import style such as  `require()` function.
+
 ### Node
 
-Path to your handler file (from serverless.yml), omit `./`, `../`, and add the exported function to use as a handler:
+Path to your handler file (from serverless.yml), omit `./`, `../`, and add the exported function to use as a handler :
+
 ```yml
 - src
   - handlers
@@ -127,16 +160,13 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: node16 # or node10, node14, node17, node18 (ES modules only for node 18)
+  runtime: node16
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler
   second:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
-
-** ES Modules** (`"type": "module"`) : this type of package is supported on Node >= 18 runtimes.
-If your package.json is type of `"type": "commonjs"` please use Node <18 runtimes.
 
 
 ### Python
