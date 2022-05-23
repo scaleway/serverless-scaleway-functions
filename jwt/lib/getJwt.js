@@ -5,14 +5,21 @@ const { PRIVACY_PRIVATE } = require('../../shared/constants');
 
 module.exports = {
   getJwt() {
-    return BbPromise.bind(this)
-      .then(() => this.getNamespaceFromList(this.namespaceName))
-      .then(this.setNamespace)
-      .then(this.getJwtNamespace)
-      .then(() => this.listFunctions(this.namespace.id))
-      .then(this.getJwtFunctions)
-      .then(() => this.listContainers(this.namespace.id))
-      .then(this.getJwtContainers);
+    if (typeof this.listFunctions === 'function') {
+      return BbPromise.bind(this)
+        .then(() => this.getNamespaceFromList(this.namespaceName))
+        .then(this.setNamespace)
+        .then(this.getJwtNamespace)
+        .then(() => this.listFunctions(this.namespace.id))
+        .then(this.getJwtFunctions);
+    } if (typeof this.listContainers === 'function') {
+      return BbPromise.bind(this)
+        .then(() => this.getNamespaceFromList(this.namespaceName))
+        .then(this.setNamespace)
+        .then(this.getJwtNamespace)
+        .then(() => this.listContainers(this.namespace.id))
+        .then(this.getJwtContainers);
+    }
   },
 
   setNamespace(namespace) {
@@ -23,17 +30,12 @@ module.exports = {
   },
 
   getJwtNamespace() {
-    console.log("getJwtNamespace")
-
-    console.log("this.namespace.id", this.namespace.id)
-    console.log("this.tokenExpirationDate", this.tokenExpirationDate)
     return this.issueJwtNamespace(this.namespace.id, this.tokenExpirationDate)
       .then(response => Object.assign(this.namespace, { token: response.token }))
       .then(() => this.serverless.cli.log(`Namespace <${this.namespace.name}> token (valid until ${this.tokenExpirationDate}):\n${this.namespace.token}\n`));
   },
 
   getJwtFunctions(functions) {
-    console.log("getJwtFunctions")
     const promises = functions.map((func) => {
       if (func.hasOwnProperty('privacy')  && func.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(func.id, this.tokenExpirationDate)
@@ -46,7 +48,6 @@ module.exports = {
   },
 
   getJwtContainers(containers) {
-    console.log("getJwtContainers")
     const promises = containers.map((container) => {
       if (container.hasOwnProperty('privacy') !== undefined && container.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(container.id, this.tokenExpirationDate)

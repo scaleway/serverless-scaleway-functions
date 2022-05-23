@@ -4,15 +4,9 @@ const { manageError } = require('./utils');
 
 module.exports = {
   listContainers(namespaceId) {
-
-    let emptyFunc = function() {
-      return undefined
-    };
-
     const containersUrl = `namespaces/${namespaceId}/containers`;
-
     return this.apiManager.get(containersUrl)
-      .then(response => response.data.containers || emptyFunc())
+      .then(response => response.data.containers || [])
       .catch(manageError);
   },
 
