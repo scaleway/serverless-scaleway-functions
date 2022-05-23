@@ -37,7 +37,7 @@ module.exports = {
 
   getJwtFunctions(functions) {
     const promises = functions.map((func) => {
-      if (func.hasOwnProperty('privacy')  && func.privacy === PRIVACY_PRIVATE) {
+      if (func.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(func.id, this.tokenExpirationDate)
           .then(response => Object.assign(func, { token: response.token }))
           .then(() => this.serverless.cli.log(`Function <${func.name}> token (valid until ${this.tokenExpirationDate}):\n${func.token}\n`));
@@ -49,7 +49,7 @@ module.exports = {
 
   getJwtContainers(containers) {
     const promises = containers.map((container) => {
-      if (container.hasOwnProperty('privacy') !== undefined && container.privacy === PRIVACY_PRIVATE) {
+      if (container.privacy === PRIVACY_PRIVATE) {
         return this.issueJwtFunction(container.id, this.tokenExpirationDate)
           .then(response => Object.assign(container, { token: response.token }))
           .then(() => this.serverless.cli.log(`Container <${container.name}> token (valid until ${this.tokenExpirationDate}):\n${container.token}\n`));
