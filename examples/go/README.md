@@ -2,12 +2,12 @@
 
 ## Requirements
 
-- your code must be a valid Go module: a `go.mod` file is expected at the root
+- your code must be a valid Go module: a `go.mod` file is expected in the root directory
 - your handler function should be in a file at the root of your module
-- your handler must be exported: `Handle` is correct, `handle` is not
+- your handler must be exported, example: `Handle` is correct, `handle` is not because it is not exported
 - `main` package is reserved: you must not have any package named `main` in your module
 
-Example of a right structure:
+Suggested code layout:
 
 ```
 .
@@ -21,3 +21,5 @@ Example of a right structure:
 ## Run
 
 If your code depends on private dependencies, you will need to run `go mod vendor` before deploying your function.
+
+See [Official Go Vendoring reference](https://go.dev/ref/mod#go-mod-vendor).
