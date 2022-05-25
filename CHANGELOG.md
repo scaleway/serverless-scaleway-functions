@@ -1,7 +1,9 @@
 # Changelog
 
 ## 0.3.2
+### Fixed
 
+- `serverless jwt` command was using old jwt API
 ### Changed
 
 - Configuration files now have a default region instead of placeholder
