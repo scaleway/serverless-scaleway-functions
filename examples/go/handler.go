@@ -1,15 +1,13 @@
-package main
+package myfunc
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-
-	"github.com/scaleway/scaleway-functions-go/events"
-	"github.com/scaleway/scaleway-functions-go/lambda"
 )
 
-// Handler - Handle event
-func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+// Handle - Handle event
+func Handle(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"message": "We're all good",
 		"healthy": true,
@@ -18,15 +16,10 @@ func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse,
 
 	responseB, err := json.Marshal(response)
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	return events.APIGatewayProxyResponse{
-		Body:       string(responseB),
-		StatusCode: http.StatusOK,
-	}, nil
-}
-
-func main() {
-	lambda.Start(Handler)
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, string(responseB))
 }

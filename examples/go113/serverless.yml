@@ -2,7 +2,7 @@ service: scaleway-golang
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: go118 # Available go runtimes are listed in documentation
+  runtime: go113 # Available go runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
@@ -23,13 +23,12 @@ package:
 
 functions:
   first:
-    # handler is just the name of the exported handler function
-    handler: Handle
+    # If handler is at the root of your serverless project
+    handler: "."
     # Local environment variables - used only in given function
     env:
       local: local
 
-  mymodule:
-    # if your handler is defined at the root of a file on the module `mypackage`
-    # `mypackage` folder must be a valid Go module (with a go.mod)
-    handler: "mypackage/Handle"
+  mypackage:
+    # if your handler is in a custom package
+    handler: mypackage
