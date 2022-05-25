@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.2
+### Fixed
+
+- `serverless jwt` command was using old jwt API
+### Changed
+
+- Configuration files now have a default region instead of placeholder
+- Upgrade major version on outdated packages
+
+## 0.3.1
+
+### Added
+
+- Runtime validation using API
+- Runtimes can now be changed on update function
+
 ## 0.3.0
 
 ### Added
