@@ -5,6 +5,7 @@
 - your code must be a valid Go module: a `go.mod` file is expected in the root directory
 - your handler function should be in a file at the root of your module
 - your handler must be exported, example: `Handle` is correct, `handle` is not because it is not exported
+- your handler must have the following signature: `func Handle(w http.ResponseWriter, r *http.Request)`
 - `main` package is reserved: you must not have any package named `main` in your module
 
 Suggested code layout:
