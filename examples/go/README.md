@@ -19,6 +19,22 @@ Suggested code layout:
     └── hello.go  # with files inside
 ```
 
+## Handler name
+
+The `handler name` is the name of your handler function (example: `Handle`).
+
+If your code is in a subfolder, like this:
+
+```
+.
+└── subfolder
+   ├── go.mod
+   ├── go.sum
+   └── myfunc.go # Handle function in that file
+```
+
+The `handler name` must be composed of the folder name and the handler function name, separated by `/`. For the example above, `subfolder/Handle` is the right `handler name`.
+
 ## Run
 
 If your code depends on private dependencies, you will need to run `go mod vendor` before deploying your function.
