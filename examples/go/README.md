@@ -1,38 +1,42 @@
-# Golang Runtime with Dep as Dependencies Manager
+# Go Runtime (>= 1.17)
 
 ## Requirements
 
-Every handler must be in its own package, identified by `package main`, and exporting a main function with the following `lambda.Start` statement:
-```go
-// Must Always be package main
-package main
+- your code must be a valid Go module: a `go.mod` file is expected in the root directory
+- your handler function should be in a file at the root of your module
+- your handler must be exported, example: `Handle` is correct, `handle` is not because it is not exported
+- your handler must have the following signature: `func Handle(w http.ResponseWriter, r *http.Request)`
+- `main` package is reserved: you must not have any package named `main` in your module
 
-import (
-	"encoding/json"
-	"http"
-	
-  // Import both of these packages
-	"github.com/scaleway/scaleway-functions-go/events"
-	"github.com/scaleway/scaleway-functions-go/lambda"
-)
+Suggested code layout:
 
-// Handler - Your handler function, uses APIGatewayProxy event type as your function will always get HTTP formatted events, even for CRON
-func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		Body:       "Your response",
-		StatusCode: http.StatusOK,
-	}, nil
-}
-
-// Main function is mandatory -> Must call lambda.Start(yourHandler) otherwhise your handler will not be called properly.
-func main() {
-	lambda.Start(Handler)
-}
 ```
+.
+├── go.mod        # your go.mod defines your module
+├── go.sum        # not always necessary 
+├── myfunc.go     # your handler method (exported) must be defined here
+└── subpackage    # you can have subpackages
+    └── hello.go  # with files inside
+```
+
+## Handler name
+
+The `handler name` is the name of your handler function (example: `Handle`).
+
+If your code is in a subfolder, like this:
+
+```
+.
+└── subfolder
+   ├── go.mod
+   ├── go.sum
+   └── myfunc.go # Handle function in that file
+```
+
+The `handler name` must be composed of the folder name and the handler function name, separated by `/`. For the example above, `subfolder/Handle` is the right `handler name`.
 
 ## Run
 
-Additonnaly you may run `go mod vendor`.
+If your code depends on private dependencies, you will need to run `go mod vendor` before deploying your function.
 
-We are building `golang` binaries inside our APIs, although we need you to package all your code with `vendors` (dependencies), so a `go build` command would work properly without prior installations on our side.
-
+See [Official Go Vendoring reference](https://go.dev/ref/mod#go-mod-vendor).
