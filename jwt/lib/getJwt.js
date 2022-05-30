@@ -5,14 +5,21 @@ const { PRIVACY_PRIVATE } = require('../../shared/constants');
 
 module.exports = {
   getJwt() {
-    return BbPromise.bind(this)
-      .then(() => this.getNamespaceFromList(this.namespaceName))
-      .then(this.setNamespace)
-      .then(this.getJwtNamespace)
-      .then(() => this.listFunctions(this.namespace.id))
-      .then(this.getJwtFunctions)
-      .then(() => this.listContainers(this.namespace.id))
-      .then(this.getJwtContainers);
+    if (typeof this.listFunctions === 'function') {
+      return BbPromise.bind(this)
+        .then(() => this.getNamespaceFromList(this.namespaceName))
+        .then(this.setNamespace)
+        .then(this.getJwtNamespace)
+        .then(() => this.listFunctions(this.namespace.id))
+        .then(this.getJwtFunctions);
+    } if (typeof this.listContainers === 'function') {
+      return BbPromise.bind(this)
+        .then(() => this.getNamespaceFromList(this.namespaceName))
+        .then(this.setNamespace)
+        .then(this.getJwtNamespace)
+        .then(() => this.listContainers(this.namespace.id))
+        .then(this.getJwtContainers);
+    }
   },
 
   setNamespace(namespace) {

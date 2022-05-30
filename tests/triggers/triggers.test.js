@@ -42,7 +42,7 @@ describe.each(runtimesToTest)(
       runCurrentVersion: true,
       serverlessConfigHook: (config) => {
         // use right SCW token and project for the deployment as well as service name
-        const newConfig = Object.assign({}, config);
+        const newConfig = { ...config };
         newConfig.provider.scwToken = scwToken;
         newConfig.provider.scwProject = scwProject;
         newConfig.provider.scwRegion = scwRegion;

@@ -1,20 +1,15 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs-extra');
 
 const { execSync } = require('../child-process');
 const { readYamlFile, writeYamlFile } = require('../fs');
 
 const logger = console;
 
-const region = 'us-east-1';
-
 const testServiceIdentifier = 'scwtestsls';
 
 const serverlessExec = 'serverless';
-
-const serviceNameRegex = new RegExp(`${testServiceIdentifier}-d+`);
 
 function getServiceName(identifier = '') {
   const hrtime = process.hrtime();
@@ -82,15 +77,13 @@ function createTestService(
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {
   logger,
-  region,
   testServiceIdentifier,
   serverlessExec,
-  serviceNameRegex,
   getServiceName,
   deployService,
   removeService,

@@ -8,13 +8,13 @@ const { execSync } = require('../utils/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
-const { REGISTRY_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { REGISTRY_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
 
 const serverlessExec = path.join('serverless');
 
 const functionTemplateName = path.resolve(__dirname, '..', '..', 'examples', 'python3');
-let oldCwd = process.cwd();
-let serviceName = getServiceName();
+const oldCwd = process.cwd();
+const serviceName = getServiceName();
 const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
 const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
 let apiUrl;
@@ -36,7 +36,7 @@ describe.each(regions)(
       replaceTextInFile('serverless.yml', 'scaleway-python3', serviceName);
       replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
       replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-      replaceTextInFile('serverless.yml', '<scw-region>', region);
+      replaceTextInFile('serverless.yml', 'scwRegion: fr-par', `scwRegion: ${region}`);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'handler.py'))).to.be.equal(true);
 

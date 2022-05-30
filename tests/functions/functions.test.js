@@ -46,7 +46,7 @@ describe('Service Lifecyle Integration Test', () => {
     replaceTextInFile('serverless.yml', 'scaleway-nodeXX', serviceName);
     replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
     replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-    replaceTextInFile('serverless.yml', '<scw-region>', scwRegion);
+    replaceTextInFile('serverless.yml', 'scwRegion: fr-par', `scwRegion: ${scwRegion}`);
     expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
   });
