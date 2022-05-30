@@ -9,6 +9,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
   - [Create a Project](#create-a-project)
   - [Configure your functions](#configure-your-functions)
   - [Functions Handler](#functions-handler)
+    - [Using ES Modules](#using-es-modules)
     - [Node](#node)
     - [Python](#python)
     - [Golang](#golang)
@@ -113,9 +114,44 @@ The different parameters are:
 
 Based on the chosen runtime, the `handler` variable on function might vary.
 
+### Using ES Modules
+
+Node has two module systems: `CommonJS` modules and `ECMAScript` (`ES`) modules. By default, Node treats your code files as CommonJS modules, however [ES modules](https://nodejs.org/api/esm.html) have also been available since the release of `node16` runtime on Scaleway Serverless Functions. ES modules give you a more modern way to re-use your code.
+
+According to the official documentation, to use ES modules you can specify the module type in `package.json`, as in the following example:
+
+```json
+  ...
+  "type": "module",
+  ...
+```
+
+This then enables you to write your code for ES modules:
+
+```javascript
+export {handle};
+
+function handle (event, context, cb) {
+    return {
+        body: process.version,
+        statusCode: 200,
+    };
+};
+```
+
+The use of ES modules is encouraged, since they are more efficient and make setup and debugging much easier.
+
+Note that using `"type": "module"` or `"type": "commonjs"` in your package.json will enable/disable some features in
+Node runtime. For a comprehensive list of differences, please refer to the [official documentation](https://nodejs.org/api/esm.html), the following is a summary only:
+- `commonjs` is used as default value
+- `commonjs` allows you to use `require/module.exports` (synchronous code loading, it basically copies all file contents)
+- `module` allows you to use `import/export` ES6 instructions (asynchronous loading, more optimized as it
+imports only the pieces of code you need)
+
 ### Node
 
-Path to your handler file (from serverless.yml), omit `./`, `../`, and add the exported function to use as a handler:
+Path to your handler file (from serverless.yml), omit `./`, `../`, and add the exported function to use as a handler :
+
 ```yml
 - src
   - handlers
@@ -127,13 +163,14 @@ In serverless.yml:
 ```yml
 provider:
   # ...
-  runtime: node16 # or node10, node14, node17
+  runtime: node16
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler
   second:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
+
 ### Python
 
 Similar to `node`, path to handler file `src/testing/handler.py`:
