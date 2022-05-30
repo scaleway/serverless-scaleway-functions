@@ -119,7 +119,7 @@ Based on the chosen runtime, the `handler` variable on function might vary.
 
 [Official ESM documentaton](https://nodejs.org/api/esm.html) 
 
-ES-Modules are available since `node16` runtime @ on Scaleway Serverless Functions. 
+ES-Modules are available since `node16` runtime on Scaleway Serverless Functions.
 Recent versions of Node introduce a modern way to re-use your code. By default Node treats your code with `CommonJS`.
 
 According to the official documentation you can enable module by specifying module type in `package.json`, example :
@@ -143,7 +143,12 @@ function handle (event, context, cb) {
 };
 ```
 
-Note that switching from `CommonJS` to `ES-Modules` can break your code not working if you use old import style such as  `require()` function.
+Note that using `"type": "module"` or `"type": "commonjs"` in your package.json will enable/disable some features in
+Node runtime, for comprehensive differences please read official documentation, this is a summary :
+- `commonjs` is used as default value
+- `commonjs` allows you to use `require/module.exports` (synchronous code loading, it basically copy all file content)
+- `module` allows you to use `import/export` ES6 instructions (asynchronous loading, it's more optimized as it
+imports pieces of code you need)
 
 ### Node
 
@@ -167,7 +172,6 @@ functions:
   second:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
-
 
 ### Python
 
