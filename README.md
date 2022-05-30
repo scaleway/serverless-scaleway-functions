@@ -9,7 +9,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
   - [Create a Project](#create-a-project)
   - [Configure your functions](#configure-your-functions)
   - [Functions Handler](#functions-handler)
-    - [Node ES Modules](#node-es-modules)
+    - [Using ES Modules](#using-es-modules)
     - [Node](#node)
     - [Python](#python)
     - [Golang](#golang)
@@ -114,15 +114,11 @@ The different parameters are:
 
 Based on the chosen runtime, the `handler` variable on function might vary.
 
+### Using ES Modules
 
-### Node ES Modules
+Node has two module systems: `CommonJS` modules and `ECMAScript` (`ES`) modules. By default, Node treats your code files as CommonJS modules, however [ES modules](https://nodejs.org/api/esm.html) have also been available since the release of `node16` runtime on Scaleway Serverless Functions. ES modules give you a more modern way to re-use your code.
 
-[Official ESM documentaton](https://nodejs.org/api/esm.html) 
-
-ES-Modules are available since `node16` runtime on Scaleway Serverless Functions.
-Recent versions of Node introduce a modern way to re-use your code. By default Node treats your code with `CommonJS`.
-
-According to the official documentation you can enable module by specifying module type in `package.json`, example :
+According to the official documentation, to use ES modules you can specify the module type in `package.json`, as in the following example:
 
 ```json
   ...
@@ -130,7 +126,7 @@ According to the official documentation you can enable module by specifying modu
   ...
 ```
 
-And then you can write down your code ESM way : 
+This then enables you to write your code for ES modules:
 
 ```javascript
 export {handle};
@@ -143,12 +139,14 @@ function handle (event, context, cb) {
 };
 ```
 
+The use of ES modules is encouraged, since they are more efficient and make setup and debugging much easier.
+
 Note that using `"type": "module"` or `"type": "commonjs"` in your package.json will enable/disable some features in
-Node runtime, for comprehensive differences please read official documentation, this is a summary :
+Node runtime. For a comprehensive list of differences, please refer to the [official documentation](https://nodejs.org/api/esm.html), the following is a summary only:
 - `commonjs` is used as default value
-- `commonjs` allows you to use `require/module.exports` (synchronous code loading, it basically copy all file content)
-- `module` allows you to use `import/export` ES6 instructions (asynchronous loading, it's more optimized as it
-imports pieces of code you need)
+- `commonjs` allows you to use `require/module.exports` (synchronous code loading, it basically copies all file contents)
+- `module` allows you to use `import/export` ES6 instructions (asynchronous loading, more optimized as it
+imports only thie pieces of code you need)
 
 ### Node
 
