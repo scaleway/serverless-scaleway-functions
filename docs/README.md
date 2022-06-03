@@ -60,25 +60,47 @@ Now, when running `serverless` commands from your project directory, serverless 
 
 ### Use your credentials
 
-Once you retrieved your `project ID` and created a new `token`, you will have to use these credentiasl with the Serverless Framework.
+Once you retrieved your `project ID` and created a new `token`, you will have to use these credentials with the Serverless Framework.
 
 There are multiple ways to do it:
 
-- **serverless.yml** manifest. Inside your manifest, you may inquire your credentials with the following structure under the `provider` key:
-```yml
-provider:
-  scwToken: <scw-token>
-  scwProject: <scw-project-id>
-```
-- **CLI arguments**:
+- **Using `.env` file** (recommanded):
 
-[link to CLI documentation](https://github.com/scaleway/scaleway-cli/blob/master/docs/commands/function.md)
+```yml
+# This will alow the plugin to read your .env file
+useDotenv: true
+
+provider:
+  name: scaleway
+  runtime: node16
+
+  scwToken: ${env:SCW_SECRET_KEY}
+  scwProject: ${env:SCW_DEFAULT_PROJECT_ID}
+```
+
+Create a `.env` file next to your `serverless.yml` file : 
+
+```bash
+SCW_SECRET_KEY=XXX
+SCW_DEFAULT_PROJECT_ID=XXX
+```
 
 - **Environment variables**:
 ```bash
 export SCW_TOKEN=<scw-token>
 export SCW_PROJECT=<scw-project-id>
 serverless deploy
+```
+
+- **CLI arguments**:
+
+[link to CLI documentation](https://github.com/scaleway/scaleway-cli/blob/master/docs/commands/function.md)
+
+- **serverless.yml** (discouraged) manifest. Inside your manifest, you may inquire your credentials with the following structure under the `provider` key:
+```yml
+provider:
+  scwToken: <scw-token>
+  scwProject: <scw-project-id>
 ```
 
 The priority order is the following (from top: + priority to bottom: - priority):

@@ -8,6 +8,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
   - [Requirements](#requirements)
   - [Create a Project](#create-a-project)
   - [Configure your functions](#configure-your-functions)
+    - [Security and secret management](#security-and-secret-management)
   - [Functions Handler](#functions-handler)
     - [Using ES Modules](#using-es-modules)
     - [Node](#node)
@@ -57,15 +58,18 @@ Your functions are defined in the `serverless.yml` file created:
 service: scaleway-python3
 configValidationMode: off
 
+useDotenv: true
+
 provider:
   name: scaleway
   runtime: python310
   # Global Environment variables - used in every functions
   env:
     test: test
+  # Storing credentials in this file is strongly not recommanded for security concerns, please refer to README.md about best practices
   scwToken: <scw-token>
   scwProject: <scw-project-id>
-  # region in which the deployment will happen, (default fr-par)
+  # region in which the deployment will happen (default: fr-par)
   scwRegion: <scw-region>
 
 plugins:
@@ -92,6 +96,8 @@ of the same runtime (here `python3`)
 
 The different parameters are:
 * `service`: your namespace name
+* `useDotenv`: Load environment variables from .env files (default: false), read [Security and secret management](#security-and-secret-management)
+* `configValidationMode`: Configuration validation: 'error' (fatal error), 'warn' (logged to the output) or 'off' (default: warn)
 * `provider.runtime`: the runtime of your functions (check the supported runtimes above)
 * `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
 * `provider.secret`: secret environment variables attached to your namespace are injected to all your namespace functions, see [this example project](./examples/secrets)
@@ -109,6 +115,40 @@ The different parameters are:
   * `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
+
+### Security and secret management
+
+You configuration file may contains sensitive data, your project ID and your Token must not be shared and must not be commited in VCS.
+
+To keep your informations safe and be able to share or commit your `serverles.yml` file you should remove your credentials from the file. Then
+you can :
+- use global environment variables
+- use `.env` file and keep it secret
+
+To use `.env` file you can modify your `serverless.yml` file as following :
+
+```yml
+# This will alow the plugin to read your .env file
+useDotenv: true
+
+provider:
+  name: scaleway
+  runtime: node16
+
+  scwToken: ${env:SCW_SECRET_KEY}
+  scwProject: ${env:SCW_DEFAULT_PROJECT_ID}
+  scwRegion: ${env:SCW_REGION}
+```
+
+And then create a `.env` file next to your `serverless.yml` file, containing following values :
+
+```bash
+SCW_SECRET_KEY=XXX
+SCW_DEFAULT_PROJECT_ID=XXX
+SCW_REGION=fr-par
+```
+
+You can use this pattern to hide your secrets (for example a connexion string to a database or a S3 bucket).
 
 ## Functions Handler
 
