@@ -8,6 +8,8 @@ Here is the default template for `Node`, you can customize `runtime` if you don'
 
 - [node.js starter kit](../examples/nodejs)
 
+For ES6 node modules please refer to [node modules](../examples/nodejs-es-modules)
+
 ## Go
 
 Here is the default template for `Go`, you can customize `runtime` if you don't want default value :
