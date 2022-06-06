@@ -203,7 +203,7 @@ It is not necessary if you wish to deploy containers only.
 ### Runtimes
 
 Available runtimes are:
-- `node10`, `node14`, `node16`, `node17` for JavaScript
+- `node10`, `node14`, `node16`, `node18` for JavaScript
 - `python37`, `python38`, `python39`, `python310`
 - `go113`, `go117`, `go118`
 
@@ -222,7 +222,7 @@ Based on the chosen runtime, the `handler` variable on function might vary:
   ```yml
   provider:
     # ...
-    runtime: node16 # or node10, node16, node17
+    runtime: node16 # or node18
   functions:
     first:
       handler: src/handlers/firstHandler.myFirstHandler

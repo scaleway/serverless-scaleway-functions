@@ -2,7 +2,7 @@ service: scaleway-esmodule-nodeXX
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: node16
+  runtime: node16 # Available node runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test

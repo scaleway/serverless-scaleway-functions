@@ -302,7 +302,7 @@ custom:
 ```
 
 You may refer to the follow examples:
-- [NodeJS-10 with schedule trigger](./examples/nodejs10-schedule)
+- [NodeJS with schedule trigger](./examples/nodejs-schedule)
 - [Container with Schedule Trigger](./examples/container-schedule)
 
 ### Managing containers
