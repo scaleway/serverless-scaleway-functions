@@ -36,45 +36,54 @@ module.exports = {
   applyDomains(funcId, custom_domains) {
     // we make a diff to know which domains to add or delete
     let domainsToCreate = [];
-    let domainsToDelete = [];
+    let domainsIdToDelete = [];
     let existingDomains = [];
 
     this.listDomains(funcId).then(
       (domains) => {
       domains.forEach((domain) => {
-          existingDomains.push(domain.hostname);
+          // existingDomains.push(domain.hostname);
+          existingDomains.push({hostname: domain.hostname, id: domain.id});
         });
         
+        
+        for (let idx = 0; idx < existingDomains.length; idx++) {
+          const existingDom = existingDomains[idx].hostname;
+          if (!custom_domains.includes(existingDom)) {
+            domainsToCreate.push()
+          }
+        }
+
         custom_domains.forEach((customDomain) => {
-          if (!existingDomains.includes(customDomain)) {
+          let hnFound = false;
+          for (let idx = 0; idx < existingDomains.length; idx++) {
+            const existing = existingDomains[idx].hostname;
+            if (existing === customDomain) {
+              hnFound = true;
+              break;
+            }
+          }
+
+          if(!hnFound) {
             domainsToCreate.push(customDomain);
-          } 
+          }
         });
 
         existingDomains.forEach((existingDomain) => {
-          if (!custom_domains.includes(existingDomain)) {
-            domainsToDelete.push(existingDomain);
+          if (!custom_domains.includes(existingDomain.hostname)) {
+            domainsIdToDelete.push(existingDomain.id);
           } 
         });
 
-        console.log("to create : ", domainsToCreate);
-        console.log("to delete : ", domainsToDelete);
-        console.log("existing : ", existingDomains);
-
-        // now call the API$
-
         domainsToCreate.forEach((newDomain) => {
-          this.createDomain({function_id: funcId, hostname: newDomain}).
+          this.createDomain({ function_id: funcId, hostname: newDomain }).
           then((res) => console.log("create domain : ", res.data))
         });
 
-        // // todo : for deletion we need the ID
-        // domainsToDelete.forEach((deleteDomain) => {
-        //   this.deleteDomain({function_id: funcId, hostname: deleteDomain}).
-        //   then((res) => console.log("delete domain : ", res))
-        // });
-
-
+        domainsIdToDelete.forEach((domainId) => {
+          this.deleteDomain( domainId).
+          then((res) => console.log("delete domain : ", res))
+        });
       },
     );
     
