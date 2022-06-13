@@ -4,10 +4,6 @@ const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
 const { RUNTIME_STATUS_AVAILABLE } = require('../../shared/runtimes');
 
-const util = require('util');
-
-// const util = require('util')
-
 module.exports = {
   createFunctions() {
     return BbPromise.bind(this)
@@ -42,8 +38,7 @@ module.exports = {
     this.listDomains(funcId).then(
       (domains) => {
       domains.forEach((domain) => {
-          // existingDomains.push(domain.hostname);
-          existingDomains.push({hostname: domain.hostname, id: domain.id});
+          existingDomains.push({ hostname: domain.hostname, id: domain.id });
         });
         
         
@@ -155,21 +150,6 @@ module.exports = {
   },
 
   async updateSingleFunction(func, foundFunc) {
-    // console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
-    // console.log(util.inspect(foundFunc, {showHidden: false, depth: null, colors: true}))
-    // console.log("this.listDomains updateSingleFunction");
-    // this.listDomains(foundFunc.id).then(
-    //   // let domains;
-    //   (domains) => {
-        
-    //     domains.forEach((domain) => {
-    //         this.serverless.cli.log(
-    //           `Related function domain(s) : ${domain.hosname}`
-    //         )
-    //     })
-    //   }
-    // );
-    
     const params = {
       redeploy: false,
       environment_variables: func.env,
@@ -185,10 +165,7 @@ module.exports = {
       handler: func.handler,
       privacy: func.privacy,
       domain_name: func.domain_name,
-      // custom_domains: func.custom_domains,
     };
-
-    console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
 
     const availableRuntimes = await this.listRuntimes();
     params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
@@ -197,9 +174,8 @@ module.exports = {
 
     // assign domains
     this.applyDomains(foundFunc.id, func.custom_domains);
-      // .then((response) => console.log("apply domains ", response));
 
     return this.updateFunction(foundFunc.id, params)
-      .then(response => Object.assign(response, { handler: func.handler }));
+      .then((response) => Object.assign(response, { handler: func.handler }));
   },
 };

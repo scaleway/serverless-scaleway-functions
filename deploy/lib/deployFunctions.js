@@ -2,8 +2,6 @@
 
 const BbPromise = require('bluebird');
 
-const util = require('util');
-
 module.exports = {
   deployFunctions() {
     this.serverless.cli.log('Deploying Functions...');

@@ -14,19 +14,6 @@ const runtimesApi = require('./runtimes');
 const RegistryApi = require('./registry');
 
 function getApiManager(apiUrl, token) {
-  // axios.interceptors.request.use(request => {
-  //   //console.log('Starting Request', JSON.stringify(request, null, 2))
-  //   console.log('Starting Request', request)
-  //   return request
-  // })
-  
-  // axios.interceptors.response.use(response => {
-
-  //   console.log('Starting Request', response);
-  //   //console.log('Response:', JSON.stringify(response, null, 2))
-  //   return response
-  // })
-
   return axios.create({
     baseURL: apiUrl,
     headers: {
