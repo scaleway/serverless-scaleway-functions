@@ -1,6 +1,7 @@
 const https = require('https');
 const axios = require('axios');
 
+const domainApi = require('./domain');
 const namespacesApi = require('./namespaces');
 const functionsApi = require('./functions');
 const containersApi = require('./containers');
@@ -13,6 +14,19 @@ const runtimesApi = require('./runtimes');
 const RegistryApi = require('./registry');
 
 function getApiManager(apiUrl, token) {
+  // axios.interceptors.request.use(request => {
+  //   //console.log('Starting Request', JSON.stringify(request, null, 2))
+  //   console.log('Starting Request', request)
+  //   return request
+  // })
+  
+  // axios.interceptors.response.use(response => {
+
+  //   console.log('Starting Request', response);
+  //   //console.log('Response:', JSON.stringify(response, null, 2))
+  //   return response
+  // })
+
   return axios.create({
     baseURL: apiUrl,
     headers: {
@@ -26,9 +40,11 @@ function getApiManager(apiUrl, token) {
 
 class FunctionApi {
   constructor(apiUrl, token) {
+    console.log("call constructor FunctionApi")
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
+      domainApi,
       namespacesApi,
       functionsApi,
       triggersApi,
@@ -44,6 +60,7 @@ class ContainerApi {
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
+      domainApi,
       namespacesApi,
       containersApi,
       triggersApi,

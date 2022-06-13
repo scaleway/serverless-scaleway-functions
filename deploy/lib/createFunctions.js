@@ -4,6 +4,8 @@ const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
 const { RUNTIME_STATUS_AVAILABLE } = require('../../shared/runtimes');
 
+// const util = require('util')
+
 module.exports = {
   createFunctions() {
     return BbPromise.bind(this)
@@ -94,6 +96,21 @@ module.exports = {
   },
 
   async updateSingleFunction(func, foundFunc) {
+    // console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
+    // console.log(util.inspect(foundFunc, {showHidden: false, depth: null, colors: true}))
+    console.log("this.listDomains updateSingleFunction");
+    this.listDomains(foundFunc.id).then(
+      // let domains;
+      (domains) => {
+        
+        domains.forEach((domain) => {
+            this.serverless.cli.log(
+              `First Related function domain(s) : ${domain.hosname}`
+            )
+        })
+      }
+    );
+    
     const params = {
       redeploy: false,
       environment_variables: func.env,
