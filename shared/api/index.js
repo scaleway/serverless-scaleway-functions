@@ -40,7 +40,6 @@ function getApiManager(apiUrl, token) {
 
 class FunctionApi {
   constructor(apiUrl, token) {
-    console.log("call constructor FunctionApi")
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,

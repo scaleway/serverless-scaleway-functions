@@ -2,7 +2,7 @@
 
 const BbPromise = require('bluebird');
 
-const util = require('util')
+const util = require('util');
 
 module.exports = {
   deployFunctions() {
@@ -22,30 +22,27 @@ module.exports = {
   },
 
   printFunctionInformationAfterDeployment() {
-    // console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
-    
-
     return this.waitFunctionsAreDeployed(this.namespace.id).then(
       (functions) => {
-        console.log("return this.waitFunctionsAreDeployed updateSingleFunction");
-
-      
+        functions.forEach((func) => {
           this.serverless.cli.log(
             `Function ${func.name} has been deployed to: https://${func.domain_name}`,
           );
 
-          functions.forEach((func) => {
-            this.listDomains(func.id).then(
-              (domains) => {
-                domains.forEach((domain) => {
-                    this.serverless.cli.log(
-                      `First Related function domain(s) : ${domain}`
-                    )
-                })
-              }
-            );
-            
+          let printableDomains = '';
+          this.listDomains(func.id).then(
+            (domains) => {
+              domains.forEach((domain) => {
+                printableDomains += `\t\n - ${domain.hostname}`;
+              });
 
+              if (domains.length > 0) {
+                this.serverless.cli.log(
+                  `Related function domain(s) : ${printableDomains}`,
+                );
+              }
+            },
+          );
 
           if (
             func.runtime_message !== undefined

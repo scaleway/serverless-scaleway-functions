@@ -4,6 +4,8 @@ const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
 const { RUNTIME_STATUS_AVAILABLE } = require('../../shared/runtimes');
 
+const util = require('util');
+
 // const util = require('util')
 
 module.exports = {
@@ -29,6 +31,53 @@ module.exports = {
       .then((updatedFunctions) => {
         this.functions = updatedFunctions;
       });
+  },
+
+  applyDomains(funcId, custom_domains) {
+    // we make a diff to know which domains to add or delete
+    let domainsToCreate = [];
+    let domainsToDelete = [];
+    let existingDomains = [];
+
+    this.listDomains(funcId).then(
+      (domains) => {
+      domains.forEach((domain) => {
+          existingDomains.push(domain.hostname);
+        });
+        
+        custom_domains.forEach((customDomain) => {
+          if (!existingDomains.includes(customDomain)) {
+            domainsToCreate.push(customDomain);
+          } 
+        });
+
+        existingDomains.forEach((existingDomain) => {
+          if (!custom_domains.includes(existingDomain)) {
+            domainsToDelete.push(existingDomain);
+          } 
+        });
+
+        console.log("to create : ", domainsToCreate);
+        console.log("to delete : ", domainsToDelete);
+        console.log("existing : ", existingDomains);
+
+        // now call the API$
+
+        domainsToCreate.forEach((newDomain) => {
+          this.createDomain({function_id: funcId, hostname: newDomain}).
+          then((res) => console.log("create domain : ", res.data))
+        });
+
+        // // todo : for deletion we need the ID
+        // domainsToDelete.forEach((deleteDomain) => {
+        //   this.deleteDomain({function_id: funcId, hostname: deleteDomain}).
+        //   then((res) => console.log("delete domain : ", res))
+        // });
+
+
+      },
+    );
+    
   },
 
   validateRuntime(func, existingRuntimes, logger) {
@@ -71,6 +120,7 @@ module.exports = {
   },
 
   async createSingleFunction(func) {
+    console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
     const params = {
       name: func.name,
       environment_variables: func.env,
@@ -98,18 +148,18 @@ module.exports = {
   async updateSingleFunction(func, foundFunc) {
     // console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
     // console.log(util.inspect(foundFunc, {showHidden: false, depth: null, colors: true}))
-    console.log("this.listDomains updateSingleFunction");
-    this.listDomains(foundFunc.id).then(
-      // let domains;
-      (domains) => {
+    // console.log("this.listDomains updateSingleFunction");
+    // this.listDomains(foundFunc.id).then(
+    //   // let domains;
+    //   (domains) => {
         
-        domains.forEach((domain) => {
-            this.serverless.cli.log(
-              `First Related function domain(s) : ${domain.hosname}`
-            )
-        })
-      }
-    );
+    //     domains.forEach((domain) => {
+    //         this.serverless.cli.log(
+    //           `Related function domain(s) : ${domain.hosname}`
+    //         )
+    //     })
+    //   }
+    // );
     
     const params = {
       redeploy: false,
@@ -126,12 +176,20 @@ module.exports = {
       handler: func.handler,
       privacy: func.privacy,
       domain_name: func.domain_name,
+      // custom_domains: func.custom_domains,
     };
+
+    console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
 
     const availableRuntimes = await this.listRuntimes();
     params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
+
+    // assign domains
+    this.applyDomains(foundFunc.id, func.custom_domains);
+      // .then((response) => console.log("apply domains ", response));
+
     return this.updateFunction(foundFunc.id, params)
       .then(response => Object.assign(response, { handler: func.handler }));
   },
