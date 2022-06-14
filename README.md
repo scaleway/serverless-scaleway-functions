@@ -329,8 +329,8 @@ functions:
 
 **Note:** Serverless Framework will consider the configuration file as the source of truth.
 
-If you create a domain with other tools (Scaleway's Console, CLI or API) you may refer created domain into you serverless
-configuation file. Otherwise it will be deleted as Serverless Framework will give the priority to it's configuration.
+If you create a domain with other tools (Scaleway's Console, CLI or API) you may refer created domain into your serverless
+configuration file. Otherwise it will be deleted as Serverless Framework will give the priority to its configuration.
 ### Managing containers
 
 **Requirements:** You need to have Docker installed to be able to build and push your image to your Scaleway registry.

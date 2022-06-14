@@ -28,61 +28,58 @@ module.exports = {
         this.functions = updatedFunctions;
       });
   },
-
-  applyDomains(funcId, custom_domains) {
+  
+  applyDomains(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
-    let domainsToCreate = [];
-    let domainsIdToDelete = [];
-    let existingDomains = [];
+    const domainsToCreate = [];
+    const domainsIdToDelete = [];
+    const existingDomains = [];
 
-    this.listDomains(funcId).then(
-      (domains) => {
+    this.listDomains(funcId).then((domains) => {
       domains.forEach((domain) => {
-          existingDomains.push({ hostname: domain.hostname, id: domain.id });
-        });
-        
-        
+        existingDomains.push({ hostname: domain.hostname, id: domain.id });
+      });
+
+      for (let idx = 0; idx < existingDomains.length; idx++) {
+        const existingDom = existingDomains[idx].hostname;
+        if (!customDomains.includes(existingDom)) {
+          domainsToCreate.push();
+        }
+      }
+
+      customDomains.forEach((customDomain) => {
+        let domainFound = false;
         for (let idx = 0; idx < existingDomains.length; idx++) {
-          const existingDom = existingDomains[idx].hostname;
-          if (!custom_domains.includes(existingDom)) {
-            domainsToCreate.push()
+          const existing = existingDomains[idx].hostname;
+          if (existing === customDomain) {
+            domainFound = true;
+            break;
           }
         }
 
-        custom_domains.forEach((customDomain) => {
-          let hnFound = false;
-          for (let idx = 0; idx < existingDomains.length; idx++) {
-            const existing = existingDomains[idx].hostname;
-            if (existing === customDomain) {
-              hnFound = true;
-              break;
-            }
-          }
+        if (!domainFound) {
+          domainsToCreate.push(customDomain);
+        }
+      });
 
-          if(!hnFound) {
-            domainsToCreate.push(customDomain);
-          }
-        });
+      existingDomains.forEach((existingDomain) => {
+        if (!customDomains.includes(existingDomain.hostname)) {
+          domainsIdToDelete.push(existingDomain.id);
+        }
+      });
 
-        existingDomains.forEach((existingDomain) => {
-          if (!custom_domains.includes(existingDomain.hostname)) {
-            domainsIdToDelete.push(existingDomain.id);
-          } 
-        });
+      domainsToCreate.forEach((newDomain) => {
+        this.createDomain({ function_id: funcId, hostname: newDomain })
+          .then((res) => this.serverless.cli.log(`Creating domain ${res.data.hostname}`));
+      });
 
-        domainsToCreate.forEach((newDomain) => {
-          this.createDomain({ function_id: funcId, hostname: newDomain }).
-          then((res) => console.log("create domain : ", res.data))
-        });
-
-        domainsIdToDelete.forEach((domainId) => {
-          this.deleteDomain( domainId).
-          then((res) => console.log("delete domain : ", res))
-        });
-      },
-    );
-    
+      domainsIdToDelete.forEach((domainId) => {
+        this.deleteDomain(domainId)
+          .then((res) => this.serverless.cli.log(`Deleting domain ${res.data.hostname}`));
+      });
+    });
   },
+
 
   validateRuntime(func, existingRuntimes, logger) {
     const existingRuntimesGroupedByLanguage = existingRuntimes
