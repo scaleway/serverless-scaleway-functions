@@ -124,7 +124,6 @@ module.exports = {
   },
 
   async createSingleFunction(func) {
-    console.log(util.inspect(func, {showHidden: false, depth: null, colors: true}))
     const params = {
       name: func.name,
       environment_variables: func.env,
