@@ -45,4 +45,27 @@ module.exports = {
       .then((response) => response.data)
       .catch(manageError);
   },
+
+  waitDomainsAreDeployed(functionId) {
+    return this.listDomains(functionId)
+      .then((domains) => {
+        let domainssAreReady = true;
+        for (let i = 0; i < domains.length; i += 1) {
+          const domains = domains[i];
+          if (domain.status === 'error') {
+            throw new Error(domain.error_message);
+          }
+          if (domain.status !== 'ready') {
+            domainssAreReady = false;
+            break;
+          }
+        }
+        if (!domainssAreReady) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve(this.waitDomainsAreDeployed(functionId)), 5000);
+          });
+        }
+        return domains;
+      });
+  },
 };
