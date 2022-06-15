@@ -140,9 +140,15 @@ module.exports = {
     const availableRuntimes = await this.listRuntimes();
     params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
 
+    // checking if there is custom_domains set on function creation.
+    if (func.custom_domains.length > 0) {
+      this.serverless.cli.log("WARNING: cutom_domains are available on function update only. "+
+        "Redeploy your function to apply custom domains.")
+    }
+
     this.serverless.cli.log(`Creating function ${func.name}...`);
     return this.createFunction(params)
-      .then(response => Object.assign(response, { handler: func.handler }));
+      .then((response) => Object.assign(response, { handler: func.handler }));
   },
 
   async updateSingleFunction(func, foundFunc) {

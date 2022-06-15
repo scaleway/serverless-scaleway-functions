@@ -327,6 +327,9 @@ functions:
       - func2.scaleway.com
 ```
 
+**Note** As your domain must have a record to your function hostname, you should deploy your function once to read it's hostname.
+Custom Domains confugurations will be available after the frist deploy.
+
 **Note:** Serverless Framework will consider the configuration file as the source of truth.
 
 If you create a domain with other tools (Scaleway's Console, CLI or API) you may refer created domain into your serverless
