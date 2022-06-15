@@ -51,7 +51,7 @@ module.exports = {
       .then((domains) => {
         let domainssAreReady = true;
         for (let i = 0; i < domains.length; i += 1) {
-          const domains = domains[i];
+          const domain = domains[i];
           if (domain.status === 'error') {
             throw new Error(domain.error_message);
           }

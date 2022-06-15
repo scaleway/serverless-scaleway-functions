@@ -28,7 +28,7 @@ module.exports = {
         this.functions = updatedFunctions;
       });
   },
-  
+
   applyDomains(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
     const domainsToCreate = [];

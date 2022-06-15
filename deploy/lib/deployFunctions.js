@@ -27,21 +27,6 @@ module.exports = {
             `Function ${func.name} has been deployed to: https://${func.domain_name}`,
           );
 
-          let printableDomains = '';
-          this.listDomains(func.id).then(
-            (domains) => {
-              domains.forEach((domain) => {
-                printableDomains += `\t\n - ${domain.hostname}`;
-              });
-
-              if (domains.length > 0) {
-                this.serverless.cli.log(
-                  `Related function domain(s) : ${printableDomains}`,
-                );
-              }
-            },
-          );
-
           if (
             func.runtime_message !== undefined
             && func.runtime_message !== ''
@@ -50,6 +35,17 @@ module.exports = {
               `Runtime information : ${func.runtime_message}`,
             );
           }
+
+          this.serverless.cli.log(
+            'Waiting for domains readiness...',
+          );
+
+          this.waitDomainsAreDeployed(func.id)
+            .then((domains) => {
+              domains.forEach((domain) => {
+                this.serverless.cli.log.log(`Domain ready : ${domain.hostname}`);
+              });
+            });
         });
       },
     );
