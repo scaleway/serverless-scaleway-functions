@@ -13,8 +13,6 @@ module.exports = {
   },
 
   getPresignedUrlForFunctions() {
-    // get archive size
-    // get presigned url
     const promises = this.functions.map((func) => {
       const archivePath = path.resolve(this.serverless.config.servicePath, '.serverless', `${this.namespaceName}.zip`);
       const stats = fs.statSync(archivePath);

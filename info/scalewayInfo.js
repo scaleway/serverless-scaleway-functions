@@ -1,15 +1,21 @@
 const BbPromise = require('bluebird');
 const display = require('./lib/display');
 const writeServiceOutputs = require('../shared/write-service-outputs');
+const scalewayApi = require('../shared/api/endpoint');
 
 class ScalewayInfo {
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options || {};
+    this.provider = this.serverless.getProvider('scaleway');
+    this.provider.initialize(this.serverless, this.options);
+
+    const api = scalewayApi.getApi(this);
 
     Object.assign(
       this,
       display,
+      api,
     );
 
     this.commands = {
@@ -18,7 +24,7 @@ class ScalewayInfo {
         commands: {
           info: {
             lifecycleEvents: [
-              'displayEmpty',
+              'displayInfo',
             ],
           },
         },

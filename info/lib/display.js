@@ -1,11 +1,16 @@
-'use strict';
-const YAML = require('js-yaml');
+"use strict"
 
 module.exports = {
-  displayEmpty() {
-    if (this.serverless.processedInput.commands.join(' ') === 'info') {
-      const data = {"scaleway": {"key": "value"}}
-      this.serverless.serviceOutputs.set('Stack Outputs', '\n' + YAML.dump(data));
-    }
+  displayInfo() {
+    this.getNamespaceFromList(this.serverless.configurationInput.service)
+      .then((namespace) => {
+        // Todo : container case
+        this.listFunctions(namespace.id)
+          .then((functions) => {
+            functions.forEach((func) => {
+              this.serverless.cli.log(JSON.stringify(func, null, '\t'));
+            });
+          });
+      });
   },
 };
