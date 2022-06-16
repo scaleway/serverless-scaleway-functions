@@ -33,7 +33,7 @@ class ScalewayInfo {
 
     this.hooks = {
       'info:info': () => this.serverless.pluginManager.spawn('scaleway:info'),
-      'scaleway:info:displayEmpty': async () => BbPromise.bind(this).then(this.displayEmpty),
+      'scaleway:info:displayInfo': async () => BbPromise.bind(this).then(this.displayInfo),
       'finalize': () => {
         if (this.serverless.processedInput.commands.join(' ') !== 'info') return;
         writeServiceOutputs(this.serverless.serviceOutputs);
