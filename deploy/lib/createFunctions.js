@@ -35,6 +35,8 @@ module.exports = {
     const domainsIdToDelete = [];
     const existingDomains = [];
 
+    console.log("custom domains :", customDomains)
+
     this.listDomains(funcId).then((domains) => {
       domains.forEach((domain) => {
         existingDomains.push({ hostname: domain.hostname, id: domain.id });
@@ -42,44 +44,50 @@ module.exports = {
 
       for (let idx = 0; idx < existingDomains.length; idx++) {
         const existingDom = existingDomains[idx].hostname;
-        if (!customDomains.includes(existingDom)) {
+        if (customDomains !== null && !customDomains.includes(existingDom)) {
           domainsToCreate.push();
         }
       }
+      
+      console.log("existing domains : ", existingDomains)
 
-      customDomains.forEach((customDomain) => {
-        let domainFound = false;
-        for (let idx = 0; idx < existingDomains.length; idx++) {
-          const existing = existingDomains[idx].hostname;
-          if (existing === customDomain) {
-            domainFound = true;
-            break;
+      if (customDomains !== null) {
+        customDomains.forEach((customDomain) => {
+          let domainFound = false;
+          for (let idx = 0; idx < existingDomains.length; idx++) {
+            const existing = existingDomains[idx].hostname;
+            if (existing === customDomain) {
+              domainFound = true;
+              break;
+            }
           }
-        }
 
-        if (!domainFound) {
-          domainsToCreate.push(customDomain);
-        }
-      });
+          if (!domainFound) {
+            domainsToCreate.push(customDomain);
+          }
+        });
+      }
 
       existingDomains.forEach((existingDomain) => {
-        if (!customDomains.includes(existingDomain.hostname)) {
+        if (customDomains !== null && !customDomains.includes(existingDomain.hostname)) {
           domainsIdToDelete.push(existingDomain.id);
         }
       });
+
+      console.log("domains to create : ",domainsToCreate);
 
       domainsToCreate.forEach((newDomain) => {
         this.createDomain({ function_id: funcId, hostname: newDomain })
           .then((res) => this.serverless.cli.log(`Creating domain ${res.data.hostname}`));
       });
 
+      console.log("domains to delete : ", domainsIdToDelete);
       domainsIdToDelete.forEach((domainId) => {
         this.deleteDomain(domainId)
           .then((res) => this.serverless.cli.log(`Deleting domain ${res.data.hostname}`));
       });
     });
   },
-
 
   validateRuntime(func, existingRuntimes, logger) {
     const existingRuntimesGroupedByLanguage = existingRuntimes
@@ -142,8 +150,8 @@ module.exports = {
 
     // checking if there is custom_domains set on function creation.
     if (func.custom_domains.length > 0) {
-      this.serverless.cli.log("WARNING: cutom_domains are available on function update only. "+
-        "Redeploy your function to apply custom domains.")
+      this.serverless.cli.log("WARNING: custom_domains are available on function update only. "+
+        "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/")
     }
 
     this.serverless.cli.log(`Creating function ${func.name}...`);

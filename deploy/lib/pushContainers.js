@@ -22,7 +22,6 @@ module.exports = {
       .then(this.buildAndPushContainer);
   },
 
-
   buildAndPushContainer() {
     const auth = {
       username: 'any',
