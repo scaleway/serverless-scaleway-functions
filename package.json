@@ -44,6 +44,7 @@
     "verbose": true
   },
   "dependencies": {
+    "@serverless/utils": "^6.6.0",
     "argon2": "^0.28.5",
     "axios": "^0.27.2",
     "bluebird": "^3.7.2",
