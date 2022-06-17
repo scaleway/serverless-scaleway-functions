@@ -9,10 +9,11 @@ module.exports = {
          namespace.id === undefined || namespace.id === null) {
         return;
       }
+
       if (
-        configInput.service.custom &&
-        configInput.service.custom.containers &&
-        Object.keys(configInput.service.custom.containers).length !== 0
+        configInput.custom &&
+        configInput.custom.containers &&
+        Object.keys(configInput.custom.containers).length !== 0
       ) {
         this.listContainers(namespace.id).then((containers) => {
           containers.forEach((container) => {
