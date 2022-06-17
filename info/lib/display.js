@@ -5,6 +5,10 @@ module.exports = {
     const configInput = this.serverless.configurationInput;
 
     this.getNamespaceFromList(configInput.service).then((namespace) => {
+      if (namespace === undefined || namespace === null ||
+         namespace.id === undefined || namespace.id === null) {
+        return;
+      }
       if (
         configInput.service.custom &&
         configInput.service.custom.containers &&
