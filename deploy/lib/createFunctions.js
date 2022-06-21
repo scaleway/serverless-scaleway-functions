@@ -17,7 +17,7 @@ module.exports = {
     const functionNames = Object.keys(functions);
     const promises = functionNames.map((functionName) => {
       const func = Object.assign(functions[functionName], { name: functionName });
-      const foundFunc = foundFunctions.find(f => f.name === func.name);
+      const foundFunc = foundFunctions.find((f) => f.name === func.name);
       return foundFunc
         ? this.updateSingleFunction(func, foundFunc)
         : this.createSingleFunction(func);
@@ -35,33 +35,23 @@ module.exports = {
     const domainsIdToDelete = [];
     const existingDomains = [];
 
-    console.log("custom domains :", customDomains)
-
     this.listDomains(funcId).then((domains) => {
       domains.forEach((domain) => {
         existingDomains.push({ hostname: domain.hostname, id: domain.id });
       });
 
-      for (let idx = 0; idx < existingDomains.length; idx++) {
-        const existingDom = existingDomains[idx].hostname;
-        if (customDomains !== null && !customDomains.includes(existingDom)) {
-          domainsToCreate.push();
-        }
-      }
-      
-      console.log("existing domains : ", existingDomains)
-
-      if (customDomains !== null) {
+      if (customDomains !== undefined && customDomains !== null && customDomains.length > 0) {
         customDomains.forEach((customDomain) => {
-          let domainFound = false;
-          for (let idx = 0; idx < existingDomains.length; idx++) {
-            const existing = existingDomains[idx].hostname;
-            if (existing === customDomain) {
-              domainFound = true;
-              break;
-            }
-          }
+          domainsIdToDelete.push(customDomain.id);
 
+          let domainFound = false;
+
+          existingDomains.forEach((existingDom) => {
+            if (existingDom.hostname === customDomain) {
+              domainFound = true;
+              return false;
+            }
+          });
           if (!domainFound) {
             domainsToCreate.push(customDomain);
           }
@@ -69,22 +59,38 @@ module.exports = {
       }
 
       existingDomains.forEach((existingDomain) => {
-        if (customDomains !== null && !customDomains.includes(existingDomain.hostname)) {
+        if ((customDomains === undefined || customDomains === null)
+          && existingDomain.id !== undefined) {
+          domainsIdToDelete.push(existingDomain.id);
+        } else if (!customDomains.includes(existingDomain.hostname)) {
           domainsIdToDelete.push(existingDomain.id);
         }
       });
 
-      console.log("domains to create : ",domainsToCreate);
-
       domainsToCreate.forEach((newDomain) => {
-        this.createDomain({ function_id: funcId, hostname: newDomain })
-          .then((res) => this.serverless.cli.log(`Creating domain ${res.data.hostname}`));
+        const createDomainParams = { function_id: funcId, hostname: newDomain };
+
+        this.createDomain(createDomainParams)
+          .then((res) => {
+            this.serverless.cli.log(`Creating domain ${res.hostname}`);
+          })
+          .then(() => {}, (reason) => {
+            this.serverless.cli.log(`Error on domain : ${newDomain}, reason : ${reason.message}`);
+
+            if (reason.message.includes("could not validate")) {
+              this.serverless.cli.log("Ensure CNAME configuration is ok, it can take some time for a record to propagate");
+            }
+          });
       });
 
-      console.log("domains to delete : ", domainsIdToDelete);
       domainsIdToDelete.forEach((domainId) => {
+        if (domainId === undefined) {
+          return;
+        }
         this.deleteDomain(domainId)
-          .then((res) => this.serverless.cli.log(`Deleting domain ${res.data.hostname}`));
+          .then((res) => {
+            this.serverless.cli.log(`Deleting domain ${res.hostname}`);
+          });
       });
     });
   },
@@ -110,7 +116,7 @@ module.exports = {
       const runtime = existingRuntimesByName[currentRuntime];
       if (runtime.status !== RUNTIME_STATUS_AVAILABLE) {
         let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
-        if (runtime.statusMessage !== null && runtime.statusMessage !== undefined && runtime.statusMessage !== '') {
+        if (runtime.statusMessage !== null || runtime.statusMessage !== undefined || runtime.statusMessage !== '') {
           warnMessage += `: ${runtime.statusMessage}`;
         }
         logger.log(warnMessage);
