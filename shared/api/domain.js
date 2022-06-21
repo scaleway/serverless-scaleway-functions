@@ -46,6 +46,11 @@ module.exports = {
       .catch(manageError);
   },
 
+  /**
+   * Waiting for all domains to be ready on a function
+   * @param {Number} functionId
+   * @returns
+   */
   waitDomainsAreDeployed(functionId) {
     return this.listDomains(functionId)
       .then((domains) => {

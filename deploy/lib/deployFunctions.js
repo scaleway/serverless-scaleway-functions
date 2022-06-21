@@ -37,7 +37,7 @@ module.exports = {
           }
 
           this.serverless.cli.log(
-            'Waiting for domains readiness...',
+            'Waiting for domains deployment...',
           );
 
           this.waitDomainsAreDeployed(func.id)
