@@ -2,15 +2,16 @@ service: scaleway-python3
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: python310 # Available python runtimes are listed in documentation
-  # Global Environment variables - used in every functions
+  runtime: python310
+
+  # Global Environment variables - used in every function
   env:
     test: test
-  # the path to the credentials file needs to be absolute
-  scwToken: <scw-token>
-  scwProject: <scw-project-id>
-  # region in which the deployment will happen
-  scwRegion: fr-par
+
+  # Read credentials from scw CLI config
+  scwToken: "${file(${env:HOME}/.config/scw/config.yaml):secret_key}"
+  scwProject: "${file(${env:HOME}/.config/scw/config.yaml):default_project_id}"
+  scwRegion: "${file(${env:HOME}/.config/scw/config.yaml):default_region}"
 
 plugins:
   - serverless-scaleway-functions
@@ -24,6 +25,7 @@ package:
 functions:
   first:
     handler: handler.handle
+
     # Local environment variables - used only in given function
     env:
       local: local
