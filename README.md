@@ -1,6 +1,6 @@
 # Serverless Framework: Deploy on Scaleway Functions
 
-The Scaleway functions plugin for [Serverless Framework](https://serverless.com/) allows users to deploy their functions and containers to Scaleway Functions with a simple serverless deploy.
+The Scaleway functions plugin for [Serverless Framework](https://serverless.com/) allows users to deploy their functions and containers to Scaleway Functions with a simple `serverless deploy`.
 
 Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.	
 
@@ -18,6 +18,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Custom domains](#custom-domains)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
+  - [Info](#info)
   - [Documentation and useful Links](#documentation-and-useful-links)
   - [Contributing](#contributing)
   - [License](#license)
@@ -383,6 +384,10 @@ Pass the function or container name you want to fetch the logs for with `--funct
 ```bash
 serverless logs --function <function_or_container_name>
 ```
+
+## Info
+
+`serverless info` command gives you informations your current deployement state in JSON format.
 
 ## Documentation and useful Links
 
