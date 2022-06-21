@@ -5,6 +5,7 @@ const ScalewayDeploy = require('./deploy/scalewayDeploy');
 const ScalewayRemove = require('./remove/scalewayRemove');
 const ScalewayJwt = require('./jwt/scalewayJwt');
 const ScalewayLogs = require('./logs/scalewayLogs');
+const ScalewayInfo = require('./info/scalewayInfo');
 
 class ScalewayIndex {
   constructor(serverless, options) {
@@ -16,6 +17,7 @@ class ScalewayIndex {
     this.serverless.pluginManager.addPlugin(ScalewayRemove);
     this.serverless.pluginManager.addPlugin(ScalewayJwt);
     this.serverless.pluginManager.addPlugin(ScalewayLogs);
+    this.serverless.pluginManager.addPlugin(ScalewayInfo);
   }
 }
 
