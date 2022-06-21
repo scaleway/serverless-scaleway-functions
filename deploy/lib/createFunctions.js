@@ -116,7 +116,7 @@ module.exports = {
       const runtime = existingRuntimesByName[currentRuntime];
       if (runtime.status !== RUNTIME_STATUS_AVAILABLE) {
         let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
-        if (runtime.statusMessage !== null || runtime.statusMessage !== undefined || runtime.statusMessage !== '') {
+        if (runtime.statusMessage !== null && runtime.statusMessage !== undefined && runtime.statusMessage !== '') {
           warnMessage += `: ${runtime.statusMessage}`;
         }
         logger.log(warnMessage);
