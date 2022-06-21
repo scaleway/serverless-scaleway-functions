@@ -35,6 +35,17 @@ module.exports = {
               `Runtime information : ${func.runtime_message}`,
             );
           }
+
+          this.serverless.cli.log(
+            'Waiting for domains deployment...',
+          );
+
+          this.waitDomainsAreDeployed(func.id)
+            .then((domains) => {
+              domains.forEach((domain) => {
+                this.serverless.cli.log(`Domain ready : ${domain.hostname}`);
+              });
+            });
         });
       },
     );

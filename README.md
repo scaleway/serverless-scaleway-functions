@@ -15,6 +15,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Python](#python)
     - [Golang](#golang)
     - [Events](#events)
+    - [Custom domains](#custom-domains)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
   - [Info](#info)
@@ -116,6 +117,7 @@ The different parameters are:
   * `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
+  * `custom_domains` (Optional): List of custom domains, refer to [Custom Domain Documentation](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/)
 
 ### Security and secret management
 
@@ -305,6 +307,34 @@ custom:
 You may refer to the follow examples:
 - [NodeJS with schedule trigger](./examples/nodejs-schedule)
 - [Container with Schedule Trigger](./examples/container-schedule)
+
+### Custom domains
+
+Custom domains allows users to use their own domains.
+
+For domain configuration please [Refer to Scaleway Documentation](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/)
+
+Integration with serverless framework example :
+
+```yaml
+functions:
+  first:
+    handler: handler.handle
+    # Local environment variables - used only in given function
+    env:
+      local: local
+    custom_domains:
+      - func1.scaleway.com
+      - func2.scaleway.com
+```
+
+**Note** As your domain must have a record to your function hostname, you should deploy your function once to read its hostname.
+Custom Domains configurations will be available after the first deploy.
+
+**Note:** Serverless Framework will consider the configuration file as the source of truth.
+
+If you create a domain with other tools (Scaleway's Console, CLI or API) you must refer created domain into your serverless
+configuration file. Otherwise it will be deleted as Serverless Framework will give the priority to its configuration.
 
 ### Managing containers
 

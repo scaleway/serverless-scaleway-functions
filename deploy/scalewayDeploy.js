@@ -10,6 +10,7 @@ const deployFunctions = require('./lib/deployFunctions');
 const deployContainers = require('./lib/deployContainers');
 const deployTriggers = require('./lib/deployTriggers');
 const scalewayApi = require('../shared/api/endpoint');
+const domainApi = require('../shared/api/domain');
 
 class ScalewayDeploy {
   constructor(serverless, options) {
@@ -32,6 +33,7 @@ class ScalewayDeploy {
       deployFunctions,
       deployContainers,
       deployTriggers,
+      domainApi,
       api,
     );
 

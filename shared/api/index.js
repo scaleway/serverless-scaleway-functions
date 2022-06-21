@@ -1,6 +1,7 @@
 const https = require('https');
 const axios = require('axios');
 
+const domainApi = require('./domain');
 const namespacesApi = require('./namespaces');
 const functionsApi = require('./functions');
 const containersApi = require('./containers');
@@ -29,6 +30,7 @@ class FunctionApi {
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
+      domainApi,
       namespacesApi,
       functionsApi,
       triggersApi,
@@ -44,6 +46,7 @@ class ContainerApi {
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
+      domainApi,
       namespacesApi,
       containersApi,
       triggersApi,

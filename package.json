@@ -1,6 +1,6 @@
 {
   "name": "serverless-scaleway-functions",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Provider plugin for the Serverless Framework v1.x which adds support for Scaleway Functions.",
   "main": "index.js",
   "author": "scaleway.com",
@@ -48,17 +48,17 @@
     "argon2": "^0.28.5",
     "axios": "^0.27.2",
     "bluebird": "^3.7.2",
-    "dockerode": "^3.3.1",
+    "dockerode": "^3.3.2",
     "tar-fs": "^2.1.1"
   },
   "devDependencies": {
-    "@jest/globals": "^28.1.0",
+    "@jest/globals": "^28.1.1",
     "chai": "^4.3.6",
-    "eslint": "^8.15.0",
+    "eslint": "^8.17.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.26.0",
     "fs-extra": "^10.1.0",
-    "jest": "^28.1.0",
+    "jest": "^28.1.1",
     "js-yaml": "^4.1.0"
   }
 }
