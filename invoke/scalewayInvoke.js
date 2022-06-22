@@ -1,0 +1,84 @@
+const BbPromise = require('bluebird');
+const axios = require('axios');
+const util = require('util');
+
+const scalewayApi = require('../shared/api/endpoint');
+const setUpDeployment = require('../shared/setUpDeployment');
+const validate = require('../shared/validate');
+
+class ScalewayInvoke {
+  constructor(serverless, options) {
+    this.serverless = serverless;
+    this.options = options || {};
+    this.provider = this.serverless.getProvider('scaleway');
+    this.provider.initialize(this.serverless, this.options);
+
+    const api = scalewayApi.getApi(this);
+
+    Object.assign(
+      this,
+      validate,
+      setUpDeployment,
+      api,
+    );
+
+    this.isContainer = false;
+    this.isFunction = false;
+
+    function validateFunction() {
+      // Here we check that the function is both specified, and defined as either a function or container
+      if(!this.options.function) {
+        const msg = 'Function not specified';
+        this.serverless.cli.log(msg);
+        throw new Error(msg);
+      }
+
+      this.isContainer = this.isDefinedContainer(this.options.function);
+      this.isFunction = this.isDefinedFunction(this.options.function);
+
+      if(!this.isContainer && !this.isFunction) {
+        const msg = `Function ${this.options.function} not defined in servleress.yml`;
+        this.serverless.cli.log(msg);
+        throw new Error(msg);
+      }
+    }
+
+    function lookUpFunction(ns) {
+      // List containers/functions in the namespace
+      let found = null;
+      if(this.isContainer) {
+         return this.listContainers(ns.id);
+      } else {
+         return this.listFunctions(ns.id);
+      }
+    }
+
+    function doInvoke(found) {
+      // Filter on name
+      let func = found.find((f) => f.name === this.options.function);
+      const url = 'https://' + func.domain_name;
+
+      // Invoke
+      axios.get(url).then(res => {
+        // Make sure we write to stdout here to ensure we can capture output
+        process.stdout.write(JSON.stringify(res.data));
+      }).
+      catch(error => {
+        process.stderr.write(error);
+      });
+    }
+
+    this.hooks = {
+      'before:invoke:invoke': () => BbPromise.bind(this)
+        .then(this.setUpDeployment)
+        .then(this.validate),
+      'invoke:invoke': () => BbPromise.bind(this)
+        .then(validateFunction)
+        .then(() => this.getNamespaceFromList(this.namespaceName))
+        .then(lookUpFunction)
+        .then(doInvoke)
+    };
+  }
+}
+
+module.exports = ScalewayInvoke;

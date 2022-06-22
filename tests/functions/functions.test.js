@@ -5,11 +5,12 @@ const fs = require('fs');
 const axios = require('axios');
 const { expect } = require('chai');
 const { expect: jestExpect } = require('@jest/globals');
-const { execSync } = require('../utils/child-process');
+
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { execSync, execCaptureOutput } = require('../../shared/child-process');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
 
 const serverlessExec = path.join('serverless');
@@ -27,6 +28,7 @@ describe('Service Lifecyle Integration Test', () => {
   let api;
   let registryApi;
   let namespace;
+  let functionName;
 
   beforeAll(() => {
     oldCwd = process.cwd();
@@ -55,35 +57,37 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`${serverlessExec} deploy`);
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.functions = await api.listFunctions(namespace.id);
+    functionName = namespace.functions[0].name;
   });
 
   it('should invoke function from scaleway', async () => {
+    // TODO query function status instead of having an arbitrary sleep
     await sleep(30000);
-    const deployedFunction = namespace.functions[0];
-    const response = await axios.get(`https://${deployedFunction.domain_name}`);
-    expect(response.data.message).to.be.equal('Hello from Serverless Framework and Scaleway Functions :D');
+
+    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    expect(output).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
   });
 
   it('should deploy updated service to scaleway', () => {
-    const newHandler = `
-        'use strict';
+    const newJsHandler = `
+'use strict';
 
-        module.exports.handle = (event, context, cb) => {
-          return {
-            body: { message: 'Serverless Update Succeeded' }
-          };
-        }
-      `;
+module.exports.handle = (event, context, cb) => {
+  return {
+    message: 'Serverless Update Succeeded',
+  };
+};
+`;
 
-    fs.writeFileSync(path.join(tmpDir, 'handler.js'), newHandler);
+    fs.writeFileSync(path.join(tmpDir, 'handler.js'), newJsHandler);
     execSync(`${serverlessExec} deploy`);
   });
 
   it('should invoke updated function from scaleway', async () => {
     await sleep(30000);
-    const deployedFunction = namespace.functions[0];
-    const response = await axios.get(`https://${deployedFunction.domain_name}`);
-    expect(response.data.body.message).to.be.equal('Serverless Update Succeeded');
+
+    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    expect(output).to.be.equal('{"message":"Serverless Update Succeeded"}');
   });
 
   it('should deploy function with another available runtime', async () => {
@@ -100,16 +104,16 @@ def handle(event, context):
   return {
       "message": "Hello From Python310 runtime on Serverless Framework and Scaleway Functions"
   }
-    `;
+`;
     fs.writeFileSync(path.join(tmpDir, 'handler.py'), pythonHandler);
     execSync(`${serverlessExec} deploy`);
   });
 
   it('should invoke function with runtime updated from scaleway', async () => {
     await sleep(30000);
-    const deployedFunction = namespace.functions[0];
-    const response = await axios.get(`https://${deployedFunction.domain_name}`);
-    expect(response.data.message).to.be.equal('Hello From Python310 runtime on Serverless Framework and Scaleway Functions');
+
+    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    expect(output).to.be.equal('{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}');
   });
 
   it('should remove service from scaleway', async () => {

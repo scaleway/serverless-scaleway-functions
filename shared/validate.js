@@ -262,4 +262,36 @@ module.exports = {
 
     return errors;
   },
+
+  isDefinedContainer(funcName) {
+    // Check if given name is listed as a container
+    let res = false;
+    if(this.provider.serverless.service.custom
+      && this.provider.serverless.service.custom.containers) {
+
+      let foundKey = Object.keys(this.provider.serverless.service.custom.containers)
+        .find((k) => k == funcName);
+
+      if(foundKey) {
+        res = true;
+      }
+    }
+
+    return res;
+  },
+
+  isDefinedFunction(funcName) {
+    // Check if given name is listed as a function
+    let res = false;
+    if(this.provider.serverless.service.functions) {
+      let foundKey = Object.keys(this.provider.serverless.service.functions)
+        .find((k) => k == funcName);
+
+      if(foundKey) {
+        res = true;
+      }
+    }
+
+    return res;
+  },
 };

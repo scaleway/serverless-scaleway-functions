@@ -4,11 +4,12 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const { expect } = require('chai');
-const { execSync } = require('../utils/child-process');
+
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
 const { ContainerApi, RegistryApi } = require('../../shared/api');
 const { CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { execSync, execCaptureOutput } = require('../../shared/child-process');
 
 const serverlessExec = path.join('serverless');
 
@@ -25,6 +26,7 @@ describe('Service Lifecyle Integration Test', () => {
   let api;
   let registryApi;
   let namespace;
+  let containerName;
 
   beforeAll(() => {
     oldCwd = process.cwd();
@@ -53,13 +55,15 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`${serverlessExec} deploy`);
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.containers = await api.listContainers(namespace.id);
+    containerName = namespace.containers[0].name;
   });
 
   it('should invoke container from scaleway', async () => {
+    // TODO query function status instead of having an arbitrary sleep
     await sleep(30000);
-    const deployedContainer = namespace.containers[0];
-    const response = await axios.get(`https://${deployedContainer.domain_name}`);
-    expect(response.data.message).to.be.equal('Hello, World from Scaleway Container !');
+
+    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
+    expect(output).to.be.equal('{"message":"Hello, World from Scaleway Container !"}');
   });
 
   it('should deploy updated service/container to scaleway', () => {
@@ -69,9 +73,9 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should invoke updated container from scaleway', async () => {
     await sleep(30000);
-    const deployedContainer = namespace.containers[0];
-    const response = await axios.get(`https://${deployedContainer.domain_name}`);
-    expect(response.data.message).to.be.equal('Container successfully updated');
+
+    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
+    expect(output).to.be.equal('{"message":"Container successfully updated"}');
   });
 
   it('should remove service from scaleway', async () => {
