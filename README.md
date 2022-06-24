@@ -16,6 +16,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Golang](#golang)
     - [Events](#events)
     - [Custom domains](#custom-domains)
+    - [Ways to deploy functions](#ways-to-deploy-functions)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
   - [Info](#info)
@@ -335,6 +336,17 @@ Custom Domains configurations will be available after the first deploy.
 
 If you create a domain with other tools (Scaleway's Console, CLI or API) you must refer created domain into your serverless
 configuration file. Otherwise it will be deleted as Serverless Framework will give the priority to its configuration.
+
+### Ways to deploy functions
+
+There are multiple ways to create Scaleway Serverless functions/containers : CLI, API, Console, Serverless Framework, Terraform...
+
+Using `serverless deploy` command will apply your configuration located in your `serverless.yml` and removing functions that are not
+in the file to ensure a single source of truth.
+
+This can be controlled by the `singleSource` option. By default it's value is `false`.
+
+If `singleSource` is set to true, functions and containers not definied in your serverless config file will be removed on next `serverless deploy` command.
 
 ### Managing containers
 
