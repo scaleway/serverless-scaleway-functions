@@ -151,6 +151,12 @@ module.exports = {
       domain_name: func.domain_name,
     };
 
+    // if set to true, ensure that we keep serverless config file as single source of truth
+    // (deleting other ressources not present in file)
+    if (func.single_source === null || func.single_source === undefined) {
+      params.single_source = false;
+    }
+
     const availableRuntimes = await this.listRuntimes();
     params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
 
@@ -161,6 +167,7 @@ module.exports = {
     }
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
+
     return this.createFunction(params)
       .then((response) => Object.assign(response, { handler: func.handler }));
   },
@@ -182,6 +189,12 @@ module.exports = {
       privacy: func.privacy,
       domain_name: func.domain_name,
     };
+
+    // if set to true, ensure that we keep serverless config file as single source of truth
+    // (deleting other ressources not present in file)
+    if (func.single_source === null || func.single_source === undefined) {
+      params.single_source = false;
+    }
 
     const availableRuntimes = await this.listRuntimes();
     params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
