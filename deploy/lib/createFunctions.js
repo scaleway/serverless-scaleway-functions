@@ -15,9 +15,42 @@ module.exports = {
     const { functions } = this.provider.serverless.service;
 
     const functionNames = Object.keys(functions);
+
+    const deletedFunctionsNames = [];
+
+    if (this.serverless.configurationInput.singleSource !== undefined
+      && this.serverless.configurationInput.singleSource !== null
+      && this.serverless.configurationInput.singleSource === true) {
+      // if a function is available in the API but not in the serverlsssyml file, remove it
+      for (let i = 0; i < foundFunctions.length; i++) {
+        const apiFunc = foundFunctions[i];
+
+        for (let ii = 0; ii < functionNames.length; ii++) {
+          const funcName = functionNames[ii];
+
+          if (apiFunc === funcName) {
+            functionNames.slice(ii, 1);
+            break;
+          }
+        }
+
+        if (!functionNames.includes(apiFunc.name)) {
+        // function is in the API but not in serverless.yml file, remove it
+          this.deleteFunction(apiFunc.id)
+            .then((res) => {
+              this.serverless.cli.log(`Function ${res.name} removed from config file, deleting it...`);
+              this.waitForFunctionStatus(apiFunc.id, "deleted").then(this.serverless.cli.log(`Function ${res.name} deleted`));
+
+              deletedFunctionsNames.push(apiFunc.name);
+            });
+        }
+      }
+    }
     const promises = functionNames.map((functionName) => {
       const func = Object.assign(functions[functionName], { name: functionName });
+
       const foundFunc = foundFunctions.find((f) => f.name === func.name);
+
       return foundFunc
         ? this.updateSingleFunction(func, foundFunc)
         : this.createSingleFunction(func);
@@ -154,14 +187,14 @@ module.exports = {
     // if set to true, ensure that we keep serverless config file as single source of truth
     // (deleting other ressources not present in file)
     if (func.single_source === null || func.single_source === undefined) {
-      params.single_source = false;
+      // params.single_source = false;
     }
 
     const availableRuntimes = await this.listRuntimes();
     params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
 
     // checking if there is custom_domains set on function creation.
-    if (func.custom_domains.length > 0) {
+    if (func.custom_domains && func.custom_domains.length > 0) {
       this.serverless.cli.log("WARNING: custom_domains are available on function update only. "+
         "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/")
     }
@@ -193,7 +226,7 @@ module.exports = {
     // if set to true, ensure that we keep serverless config file as single source of truth
     // (deleting other ressources not present in file)
     if (func.single_source === null || func.single_source === undefined) {
-      params.single_source = false;
+      // params.single_source = false;
     }
 
     const availableRuntimes = await this.listRuntimes();

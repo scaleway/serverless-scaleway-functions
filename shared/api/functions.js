@@ -30,8 +30,30 @@ module.exports = {
   },
 
   getPresignedUrl(functionId, archiveSize) {
-    return this.apiManager.get(`/functions/${functionId}/upload-url?content_length=${archiveSize}`)
+    return this.apiManager.get(`functions/${functionId}/upload-url?content_length=${archiveSize}`)
       .then(response => response.data)
+      .catch(manageError);
+  },
+
+  /**
+   * Deletes the function by functionId
+   * @param {UUID} functionId
+   * @returns function with status deleting.
+   */
+  deleteFunction(functionId) {
+    return this.apiManager.delete(`functions/${functionId}`)
+      .then((response) => response.data)
+      .catch(manageError);
+  },
+
+  /**
+   * Get function information by functionId
+   * @param {UUID} functionId
+   * @returns function.
+   */
+  getFunction(functionId) {
+    return this.apiManager.get(`/functions/${functionId}`)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
@@ -55,6 +77,36 @@ module.exports = {
           });
         }
         return functions;
+      });
+  },
+
+  /**
+   *
+   * @param {UUID} functionId id of the function to check
+   * @param {String} wantedStatus wanted function status before leaving the wait status.
+   * @returns
+   */
+  waitForFunctionStatus(functionId, wantedStatus) {
+    return this.getFunction(functionId)
+      .then((func) => {
+        if (func.status === 'error') {
+          throw new Error(func.error_message);
+        }
+
+        if (func.status !== wantedStatus) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve(this.waitForFunctionStatus(functionId, wantedStatus)), 5000);
+          });
+        }
+
+        return func;
+      })
+      .catch((err) => {
+        // toleration on 4XX errors because on some status, for exemple deleting the API
+        // will return a 404 err code if item has been deleted.
+        if (err.response.status >= 500) {
+          throw new Error(err);
+        }
       });
   },
 };

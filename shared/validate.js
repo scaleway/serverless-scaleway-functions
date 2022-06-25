@@ -207,6 +207,7 @@ module.exports = {
       });
     }
 
+    // TODO : if user want to remove all, disable this check ?
     if (!functionNames.length && !containerNames.length) {
       functionErrors.push('You must define at least one function or container to deploy under the functions or custom key.');
     }

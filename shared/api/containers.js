@@ -29,6 +29,28 @@ module.exports = {
       .catch(manageError);
   },
 
+  /**
+   * Deletes the container by containerId
+   * @param {UUID} containerId
+   * @returns container with status deleting
+   */
+  deleteContainer(containerId) {
+    return this.apiManager.delete(`/containers/${containerId}`)
+      .then((response) => response.data)
+      .catch(manageError);
+  },
+
+  /**
+   * Get container information by containerId
+   * @param {UUID} containerId
+   * @returns container.
+   */
+  getContainer(containerId) {
+    return this.apiManager.get(`containers/${containerId}`)
+      .then((response) => response.data)
+      .catch(manageError);
+  },
+
   waitContainersAreDeployed(namespaceId) {
     return this.apiManager.get(`namespaces/${namespaceId}/containers`)
       .then((response) => {
@@ -52,5 +74,35 @@ module.exports = {
         return containers;
       })
       .catch(manageError);
+  },
+
+  /**
+   *
+   * @param {UUID} containerId id of the container to check
+   * @param {String} wantedStatus wanted function status before leaving the wait status.
+   * @returns
+   */
+  waitForContainerStatus(containerId, wantedStatus) {
+    return this.getContainer(containerId)
+      .then((func) => {
+        if (func.status === 'error') {
+          throw new Error(func.error_message);
+        }
+
+        if (func.status !== wantedStatus) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve(this.waitForContainerStatus(containerId, wantedStatus)), 5000);
+          });
+        }
+
+        return func;
+      })
+      .catch((err) => {
+        // toleration on 4XX errors because on some status, for exemple deleting the API
+        // will return a 404 err code if item has been deleted.
+        if (err.response.status >= 500) {
+          throw new Error(err);
+        }
+      });
   },
 };
