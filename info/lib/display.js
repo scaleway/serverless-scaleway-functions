@@ -1,5 +1,7 @@
 "use strict";
 
+const yaml = require('yaml');
+
 module.exports = {
   displayInfo() {
     const configInput = this.serverless.configurationInput;
@@ -17,13 +19,17 @@ module.exports = {
       ) {
         this.listContainers(namespace.id).then((containers) => {
           containers.forEach((container) => {
-            this.serverless.cli.log(JSON.stringify(container, null, "\t"));
+            const doc = new yaml.Document();
+            doc.contents = container;
+            this.serverless.cli.log(doc.toString());
           });
         });
       } else {
         this.listFunctions(namespace.id).then((functions) => {
           functions.forEach((func) => {
-            this.serverless.cli.log(JSON.stringify(func, null, "\t"));
+            const doc = new yaml.Document();
+            doc.contents = func;
+            this.serverless.cli.log(doc.toString());
           });
         });
       }
