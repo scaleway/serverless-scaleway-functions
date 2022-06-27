@@ -8,11 +8,6 @@ provider:
   env:
     test: test
 
-  # Read credentials from scw CLI config
-  scwToken: "${file(${env:HOME}/.config/scw/config.yaml):secret_key}"
-  scwProject: "${file(${env:HOME}/.config/scw/config.yaml):default_project_id}"
-  scwRegion: "${file(${env:HOME}/.config/scw/config.yaml):default_region}"
-
 plugins:
   - serverless-scaleway-functions
 

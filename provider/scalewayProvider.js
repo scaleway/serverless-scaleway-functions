@@ -1,10 +1,17 @@
 'use strict';
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const yaml = require('js-yaml');
+
 const BbPromise = require('bluebird');
 const { FUNCTIONS_API_URL } = require('../shared/constants');
 const { CONTAINERS_API_URL } = require('../shared/constants');
 const { REGISTRY_API_URL } = require('../shared/constants');
 const { DEFAULT_REGION } = require('../shared/constants');
+
+const scwConfigFile = path.join(os.homedir(), ".config", "scw", "config.yaml");
 
 const providerName = 'scaleway';
 
@@ -52,10 +59,19 @@ class ScalewayProvider {
       this.serverless.cli.log('please update to SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID');
       this.scwToken = process.env.SCW_TOKEN;
       this.scwProject = process.env.SCW_PROJECT;
-    } else {
+    } else if (this.serverless.service.provider.scwToken ||
+        this.serverless.service.provider.scwProject) {
       this.serverless.cli.log('Using credentials from yml');
-      this.scwToken = this.serverless.service.provider.scwToken || '';
-      this.scwProject = this.serverless.service.provider.scwProject || '';
+      this.scwToken = this.serverless.service.provider.scwToken;
+      this.scwProject = this.serverless.service.provider.scwProject;
+    } else if (this.scwConfig) {
+      this.scwToken = this.scwConfig.secret_key;
+      this.scwProject = this.scwConfig.default_project_id;
+      this.scwRegion = this.scwConfig.default_region;
+    } else {
+      this.serverless.cli.log('Unable to locate Scaleway provider credentials');
+      this.scwToken = '';
+      this.scwProject = '';
     }
   }
 
@@ -75,6 +91,14 @@ class ScalewayProvider {
   initialize(serverless, options) {
     this.serverless = serverless;
     this.options = options;
+
+    this.scwConfig = null;
+    if (fs.existsSync(scwConfigFile)) {
+      this.serverless.cli.log(`Using credentials from ${scwConfigFile}`);
+
+      let fileData = fs.readFileSync(scwConfigFile, 'utf8');
+      this.scwConfig = yaml.safeLoad(fileData);
+    }
 
     return new BbPromise((resolve) => {
       this.setCredentials(options);
