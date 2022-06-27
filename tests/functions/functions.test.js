@@ -1,8 +1,10 @@
 'use strict';
 
 const path = require('path');
+const yaml = require('yaml');
 const fs = require('fs');
 const axios = require('axios');
+const util = require('util')
 const { expect } = require('chai');
 const { expect: jestExpect } = require('@jest/globals');
 const { execSync } = require('../utils/child-process');
@@ -55,6 +57,13 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`${serverlessExec} deploy`);
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.functions = await api.listFunctions(namespace.id);
+  });
+
+  it('should get function info and parse it', async () => {
+    const infoResult = execSync(`${serverlessExec} info`);
+    console.log(util.inspect(infoResult, false, null, true));
+    const yamlo = yaml.parse(infoResult.toString('utf8'));
+    // WIP on YAML scan to match serverless config file (that should be the image of the API)
   });
 
   it('should invoke function from scaleway', async () => {
