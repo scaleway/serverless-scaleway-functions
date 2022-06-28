@@ -341,7 +341,7 @@ configuration file. Otherwise it will be deleted as Serverless Framework will gi
 
 There are multiple ways to create Scaleway Serverless functions/containers : CLI, API, Console, Serverless Framework, Terraform...
 
-Using `serverless deploy` command will apply your configuration located in your `serverless.yml` and removing functions that are not
+Using the `serverless deploy` command will apply the configuration located in your `serverless.yml` and remove functions that are not
 in the file to ensure a single source of truth.
 
 This can be controlled by the `singleSource` option. By default it's value is `false`.
