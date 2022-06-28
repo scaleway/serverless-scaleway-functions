@@ -11,7 +11,6 @@ const { getServiceName, sleep } = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
-const { exec } = require('child_process');
 
 const serverlessExec = path.join('serverless');
 
