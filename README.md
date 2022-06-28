@@ -346,7 +346,7 @@ in the file to ensure a single source of truth.
 
 This can be controlled using the `singleSource` option. By default its value is `false`.
 
-If `singleSource` is set to true, functions and containers not definied in your serverless config file will be removed on next `serverless deploy` command.
+If `singleSource` is set to `true`, functions and containers not defined in your serverless config file will be removed on the next `serverless deploy` command.
 
 ### Managing containers
 
