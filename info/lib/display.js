@@ -1,6 +1,6 @@
 "use strict";
 
-const yaml = require('yaml');
+const yaml = require('js-yaml');
 
 module.exports = {
   displayInfo() {
@@ -19,17 +19,13 @@ module.exports = {
       ) {
         this.listContainers(namespace.id).then((containers) => {
           containers.forEach((container) => {
-            const doc = new yaml.Document();
-            doc.contents = container;
-            this.serverless.cli.log(doc.toString());
+            this.serverless.cli.log(yaml.dump(container));
           });
         });
       } else {
         this.listFunctions(namespace.id).then((functions) => {
           functions.forEach((func) => {
-            const doc = new yaml.Document();
-            doc.contents = func;
-            this.serverless.cli.log(doc.toString());
+            this.serverless.cli.log(yaml.dump(func));
           });
         });
       }
