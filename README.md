@@ -344,7 +344,7 @@ There are multiple ways to create Scaleway Serverless functions/containers : CLI
 Using the `serverless deploy` command will apply the configuration located in your `serverless.yml` and remove functions that are not
 in the file to ensure a single source of truth.
 
-This can be controlled by the `singleSource` option. By default it's value is `false`.
+This can be controlled using the `singleSource` option. By default its value is `false`.
 
 If `singleSource` is set to true, functions and containers not definied in your serverless config file will be removed on next `serverless deploy` command.
 
