@@ -20,7 +20,7 @@ module.exports = {
     if (this.serverless.configurationInput.singleSource !== undefined
       && this.serverless.configurationInput.singleSource !== null
       && this.serverless.configurationInput.singleSource === true) {
-      // if a container is available in the API but not in the serverlsssyml file, remove it
+      // If a container is available in the API but not in the serverlss.yml file, remove it
       for (let i = 0; i < foundContainers.length; i++) {
         const apiContainer = foundContainers[i];
 
