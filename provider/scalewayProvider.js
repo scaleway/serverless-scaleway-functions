@@ -11,11 +11,11 @@ const { CONTAINERS_API_URL } = require('../shared/constants');
 const { REGISTRY_API_URL } = require('../shared/constants');
 const { DEFAULT_REGION } = require('../shared/constants');
 
-const scwConfigFile = path.join(os.homedir(), ".config", "scw", "config.yaml");
-
 const providerName = 'scaleway';
 
 class ScalewayProvider {
+  static scwConfigFile = path.join(os.homedir(), ".config", "scw", "config.yaml");
+
   static getProviderName() {
     return providerName;
   }
@@ -94,8 +94,6 @@ class ScalewayProvider {
 
     this.scwConfig = null;
     if (fs.existsSync(scwConfigFile)) {
-      this.serverless.cli.log(`Using credentials from ${scwConfigFile}`);
-
       let fileData = fs.readFileSync(scwConfigFile, 'utf8');
       this.scwConfig = yaml.safeLoad(fileData);
     }
