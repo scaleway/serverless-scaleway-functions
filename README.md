@@ -401,7 +401,25 @@ serverless logs --function <function_or_container_name>
 
 ## Contributing
 
-This plugin is mainly developed and maintained by `Scaleway Serverless Team` but you are free to open issues or discuss with us on our [Community Slack Channels](https://scaleway-community.slack.com/) #serverless-containers and #serverless-functions.
+This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/) #serverless-containers and #serverless-functions.
+
+General information on developing Serverless Framework plugins can be found [here](https://www.serverless.com/framework/docs/guides/plugins/creating-plugins).
+
+To run Serverless Framework with your local checkout of this plugin, you can modify the `serverless.yml` for one or more functions as follows:
+
+```yaml
+...
+
+# Change this
+plugins:
+  - serverless-scaleway-functions
+
+# To this
+plugins:
+  - <path to checkout of this project>
+```
+
+Then you can run commands as normal.
 
 ## License
 
