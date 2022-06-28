@@ -11,11 +11,11 @@ This is the [Scaleway Functions](https://www.scaleway.com/en/serverless-function
 4. Generate and invoke your function:
 
 ```shell
-# Available runtimes: https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples
-export RUNTIME=python3
+# Available templates: https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples
+export TEMPLATE=python3
 
 # Create the function
-serverless create --path my-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${RUNTIME}
+serverless create --path my-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
 
 # Install deps
 cd my-func
@@ -25,7 +25,7 @@ npm i
 serverless deploy
 
 # Invoke
-curl <URL from deploy>
+serverless invoke --function first
 ```
 
 ## Contents
