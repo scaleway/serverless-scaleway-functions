@@ -1,8 +1,9 @@
 'use strict';
 
 module.exports = {
-  getElementsToDelete(singleSourceParam, existingServicesOnApi, servicesNames, deleteFunc) {
+  getElementsToDelete(singleSourceParam, existingServicesOnApi, servicesNames) {
     const serviceNamesRet = servicesNames;
+    const elementsIdsToRemove = [];
 
     if (
       singleSourceParam !== undefined
@@ -23,11 +24,14 @@ module.exports = {
         }
 
         if (!serviceNamesRet.includes(apiService.name)) {
-          deleteFunc(apiService.id);
+          elementsIdsToRemove.push(apiService.id);
         }
       }
     }
 
-    return serviceNamesRet;
+    return {
+      serviceNamesRet,
+      elementsIdsToRemove,
+    };
   },
 };

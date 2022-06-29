@@ -11,27 +11,31 @@ module.exports = {
       .then(this.createOrUpdateContainers);
   },
 
-  deleteContainersByIds(funcIdToDelete) {
-    this.deleteFunction(funcIdToDelete)
-      .then((res) => {
-        this.serverless.cli.log(`Function ${res.name} removed from config file, deleting it...`);
-        this.waitForFunctionStatus(funcIdToDelete, "deleted")
-          .then(this.serverless.cli.log(`Function ${res.name} deleted`));
+  deleteContainersByIds(containersIdsToDelete) {
+    containersIdsToDelete.forEach((containerIdToDelete) => {
+      this.deleteContainer(containerIdToDelete).then((res) => {
+        this.serverless.cli.log(
+          `Container ${res.name} removed from config file, deleting it...`
+        );
+        this.waitForContainerStatus(containerIdToDelete, "deleted").then(
+          this.serverless.cli.log(`Container ${res.name} deleted`)
+        );
       });
+    });
   },
-
 
   createOrUpdateContainers(foundContainers) {
     const { containers } = this.provider.serverless.service.custom;
 
-    const containerNames = singleSource.getElementsToDelete(
+    const deleteData = singleSource.getElementsToDelete(
       this.serverless.configurationInput.singleSource,
       foundContainers,
       Object.keys(containers),
-      this.deleteContainersByIds,
     );
 
-    const promises = containerNames.map((containerName) => {
+    this.deleteContainersByIds(deleteData.elementsIdsToRemove);
+
+    const promises = deleteData.serviceNamesRet.map((containerName) => {
       const container = Object.assign(containers[containerName], { name: containerName });
 
       const foundContainer = foundContainers.find(c => c.name === container.name);
@@ -63,10 +67,6 @@ module.exports = {
       port: container.port,
     };
 
-    if (container.single_source === null || container.single_source === undefined) {
-      container.single_source = false;
-    }
-
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
     return this.createContainer(params)
@@ -89,10 +89,6 @@ module.exports = {
       privacy: container.privacy,
       port: container.port,
     };
-
-    if (container.single_source === null || container.single_source === undefined) {
-      container.single_source = false;
-    }
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
     return this.updateContainer(foundContainer.id, params)

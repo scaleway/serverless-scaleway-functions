@@ -12,27 +12,34 @@ module.exports = {
       .then(this.createOrUpdateFunctions);
   },
 
-  deleteFunctionsByIds(funcIdToDelete) {
-    this.deleteFunction(funcIdToDelete)
-      .then((res) => {
-        this.serverless.cli.log(`Function ${res.name} removed from config file, deleting it...`);
-        this.waitForFunctionStatus(funcIdToDelete, "deleted")
-          .then(this.serverless.cli.log(`Function ${res.name} deleted`));
+  deleteFunctionsByIds(funcIdsToDelete) {
+    funcIdsToDelete.forEach((funcIdToDelete) => {
+      this.deleteFunction(funcIdToDelete).then((res) => {
+        this.serverless.cli.log(
+          `Function ${res.name} removed from config file, deleting it...`
+        );
+        this.waitForFunctionStatus(funcIdToDelete, "deleted").then(
+          this.serverless.cli.log(`Function ${res.name} deleted`)
+        );
       });
+    });
   },
 
   createOrUpdateFunctions(foundFunctions) {
     const { functions } = this.provider.serverless.service;
 
-    const functionNames = singleSource.getElementsToDelete(
+    const deleteData = singleSource.getElementsToDelete(
       this.serverless.configurationInput.singleSource,
       foundFunctions,
       Object.keys(functions),
-      this.deleteFunctionsByIds,
     );
 
-    const promises = functionNames.map((functionName) => {
-      const func = Object.assign(functions[functionName], { name: functionName });
+    this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
+
+    const promises = deleteData.serviceNamesRet.map((functionName) => {
+      const func = Object.assign(functions[functionName], {
+        name: functionName,
+      });
 
       const foundFunc = foundFunctions.find((f) => f.name === func.name);
 
@@ -41,10 +48,9 @@ module.exports = {
         : this.createSingleFunction(func);
     });
 
-    return Promise.all(promises)
-      .then((updatedFunctions) => {
-        this.functions = updatedFunctions;
-      });
+    return Promise.all(promises).then((updatedFunctions) => {
+      this.functions = updatedFunctions;
+    });
   },
 
   applyDomains(funcId, customDomains) {
@@ -58,7 +64,11 @@ module.exports = {
         existingDomains.push({ hostname: domain.hostname, id: domain.id });
       });
 
-      if (customDomains !== undefined && customDomains !== null && customDomains.length > 0) {
+      if (
+        customDomains !== undefined &&
+        customDomains !== null &&
+        customDomains.length > 0
+      ) {
         customDomains.forEach((customDomain) => {
           domainsIdToDelete.push(customDomain.id);
 
@@ -77,8 +87,10 @@ module.exports = {
       }
 
       existingDomains.forEach((existingDomain) => {
-        if ((customDomains === undefined || customDomains === null)
-          && existingDomain.id !== undefined) {
+        if (
+          (customDomains === undefined || customDomains === null) &&
+          existingDomain.id !== undefined
+        ) {
           domainsIdToDelete.push(existingDomain.id);
         } else if (!customDomains.includes(existingDomain.hostname)) {
           domainsIdToDelete.push(existingDomain.id);
@@ -92,36 +104,46 @@ module.exports = {
           .then((res) => {
             this.serverless.cli.log(`Creating domain ${res.hostname}`);
           })
-          .then(() => {}, (reason) => {
-            this.serverless.cli.log(`Error on domain : ${newDomain}, reason : ${reason.message}`);
+          .then(
+            () => {},
+            (reason) => {
+              this.serverless.cli.log(
+                `Error on domain : ${newDomain}, reason : ${reason.message}`
+              );
 
-            if (reason.message.includes("could not validate")) {
-              this.serverless.cli.log("Ensure CNAME configuration is ok, it can take some time for a record to propagate");
+              if (reason.message.includes("could not validate")) {
+                this.serverless.cli.log(
+                  "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
+                );
+              }
             }
-          });
+          );
       });
 
       domainsIdToDelete.forEach((domainId) => {
         if (domainId === undefined) {
           return;
         }
-        this.deleteDomain(domainId)
-          .then((res) => {
-            this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-          });
+        this.deleteDomain(domainId).then((res) => {
+          this.serverless.cli.log(`Deleting domain ${res.hostname}`);
+        });
       });
     });
   },
 
   validateRuntime(func, existingRuntimes, logger) {
-    const existingRuntimesGroupedByLanguage = existingRuntimes
-      .reduce((r, a) => {
+    const existingRuntimesGroupedByLanguage = existingRuntimes.reduce(
+      (r, a) => {
         r[a.language] = r[a.language] || [];
         r[a.language].push(a);
         return r;
-      }, Object.create(null));
+      },
+      Object.create(null)
+    );
 
-    const existingRuntimesByName = Object.values(existingRuntimesGroupedByLanguage)
+    const existingRuntimesByName = Object.values(
+      existingRuntimesGroupedByLanguage
+    )
       .flat()
       .reduce((map, r) => {
         map[r.name] = { status: r.status, statusMessage: r.status_message };
@@ -134,7 +156,11 @@ module.exports = {
       const runtime = existingRuntimesByName[currentRuntime];
       if (runtime.status !== RUNTIME_STATUS_AVAILABLE) {
         let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
-        if (runtime.statusMessage !== null && runtime.statusMessage !== undefined && runtime.statusMessage !== '') {
+        if (
+          runtime.statusMessage !== null &&
+          runtime.statusMessage !== undefined &&
+          runtime.statusMessage !== ""
+        ) {
           warnMessage += `: ${runtime.statusMessage}`;
         }
         logger.log(warnMessage);
@@ -144,9 +170,11 @@ module.exports = {
 
     let errorMessage = `Runtime "${currentRuntime}" does not exist`;
     if (existingRuntimes.length > 0) {
-      errorMessage += `, must be one of: ${Object.keys(existingRuntimesByName).join(', ')}`;
+      errorMessage += `, must be one of: ${Object.keys(
+        existingRuntimesByName
+      ).join(", ")}`;
     } else {
-      errorMessage += ': cannot list runtimes';
+      errorMessage += ": cannot list runtimes";
     }
 
     throw new Error(errorMessage);
@@ -157,7 +185,7 @@ module.exports = {
       name: func.name,
       environment_variables: func.env,
       secret_environment_variables: secrets.convertObjectToModelSecretsArray(
-        func.secret,
+        func.secret
       ),
       namespace_id: this.namespace.id,
       memory_limit: func.memoryLimit,
@@ -169,25 +197,26 @@ module.exports = {
       domain_name: func.domain_name,
     };
 
-    // if set to true, ensure that we keep serverless config file as single source of truth
-    // (deleting other ressources not present in file)
-    if (func.single_source === null || func.single_source === undefined) {
-      // params.single_source = false;
-    }
-
     const availableRuntimes = await this.listRuntimes();
-    params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
+    params.runtime = this.validateRuntime(
+      func,
+      availableRuntimes,
+      this.serverless.cli
+    );
 
     // checking if there is custom_domains set on function creation.
     if (func.custom_domains && func.custom_domains.length > 0) {
-      this.serverless.cli.log("WARNING: custom_domains are available on function update only. "+
-        "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/")
+      this.serverless.cli.log(
+        "WARNING: custom_domains are available on function update only. " +
+          "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/"
+      );
     }
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
 
-    return this.createFunction(params)
-      .then((response) => Object.assign(response, { handler: func.handler }));
+    return this.createFunction(params).then((response) =>
+      Object.assign(response, { handler: func.handler })
+    );
   },
 
   async updateSingleFunction(func, foundFunc) {
@@ -197,7 +226,7 @@ module.exports = {
       secret_environment_variables: await secrets.mergeSecretEnvVars(
         foundFunc.secret_environment_variables,
         secrets.convertObjectToModelSecretsArray(func.secret),
-        this.serverless.cli,
+        this.serverless.cli
       ),
       memory_limit: func.memoryLimit,
       min_scale: func.minScale,
@@ -208,21 +237,20 @@ module.exports = {
       domain_name: func.domain_name,
     };
 
-    // if set to true, ensure that we keep serverless config file as single source of truth
-    // (deleting other ressources not present in file)
-    if (func.single_source === null || func.single_source === undefined) {
-      // params.single_source = false;
-    }
-
     const availableRuntimes = await this.listRuntimes();
-    params.runtime = this.validateRuntime(func, availableRuntimes, this.serverless.cli);
+    params.runtime = this.validateRuntime(
+      func,
+      availableRuntimes,
+      this.serverless.cli
+    );
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
 
     // assign domains
     this.applyDomains(foundFunc.id, func.custom_domains);
 
-    return this.updateFunction(foundFunc.id, params)
-      .then((response) => Object.assign(response, { handler: func.handler }));
+    return this.updateFunction(foundFunc.id, params).then((response) =>
+      Object.assign(response, { handler: func.handler })
+    );
   },
 };
