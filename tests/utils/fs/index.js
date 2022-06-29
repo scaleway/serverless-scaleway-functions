@@ -16,6 +16,12 @@ function getTmpDirPath() {
   return path.join(tmpDirCommonPath, crypto.randomBytes(8).toString('hex'));
 }
 
+function createTmpDir() {
+  const tmpDir = getTmpDirPath();
+  fs.mkdirSync(tmpDir, { recursive: true });
+  return tmpDir;
+}
+
 function replaceTextInFile(filePath, subString, newSubString) {
   const fileContent = fs.readFileSync(filePath).toString();
   fs.writeFileSync(filePath, fileContent.replace(subString, newSubString));
@@ -35,6 +41,7 @@ function writeYamlFile(filePath, content) {
 module.exports = {
   tmpDirCommonPath,
   getTmpDirPath,
+  createTmpDir,
 
   replaceTextInFile,
   readYamlFile,

@@ -64,10 +64,15 @@ class ScalewayProvider {
       this.serverless.cli.log('Using credentials from yml');
       this.scwToken = this.serverless.service.provider.scwToken;
       this.scwProject = this.serverless.service.provider.scwProject;
-    } else if (this.scwConfig) {
-      this.scwToken = this.scwConfig.secret_key;
-      this.scwProject = this.scwConfig.default_project_id;
-      this.scwRegion = this.scwConfig.default_region;
+    } else if (fs.existsSync(ScalewayProvider.scwConfigFile)) {
+      this.serverless.cli.log(`Using credentials from ${ScalewayProvider.scwConfigFile}`);
+
+      let fileData = fs.readFileSync(ScalewayProvider.scwConfigFile, 'utf8');
+      let scwConfig = yaml.load(fileData);
+
+      this.scwToken = scwConfig.secret_key;
+      this.scwProject = scwConfig.default_project_id;
+      this.scwRegion = scwConfig.default_region;
     } else {
       this.serverless.cli.log('Unable to locate Scaleway provider credentials');
       this.scwToken = '';
@@ -91,12 +96,6 @@ class ScalewayProvider {
   initialize(serverless, options) {
     this.serverless = serverless;
     this.options = options;
-
-    this.scwConfig = null;
-    if (fs.existsSync(scwConfigFile)) {
-      let fileData = fs.readFileSync(scwConfigFile, 'utf8');
-      this.scwConfig = yaml.safeLoad(fileData);
-    }
 
     return new BbPromise((resolve) => {
       this.setCredentials(options);
