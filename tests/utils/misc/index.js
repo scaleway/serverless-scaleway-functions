@@ -62,7 +62,7 @@ function createTestService(
   execSync(`${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`);
   process.chdir(tmpDir);
   // Install dependencies
-  execSync(`npm link --force ${repoDir}`);
+  execSync(`npm link ${repoDir}`);
 
   const serverlessFilePath = path.join(tmpDir, 'serverless.yml');
   let serverlessConfig = readYamlFile(serverlessFilePath);

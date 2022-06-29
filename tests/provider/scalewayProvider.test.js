@@ -4,7 +4,6 @@ const { expect: jestExpect } = require('@jest/globals');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const yaml = require('js-yaml');
 
 const ScalewayProvider = require('../../provider/scalewayProvider');
 const { createTmpDir } = require('../utils/fs');
@@ -60,11 +59,9 @@ describe('Scaleway credentials test', () => {
     expect(this.prov.scwProject).to.equal(this.expectedProject);
   };
 
-  /*
-   * The tests here get run in order, hence we start with the lowest priority
-   * form of configuration first. This will then get superceded by the next one,
-   * and so on.
-   */
+  // -------------------------------------
+  // These tests must be written in order of increasing precedence, each one getting superceded by the next.
+  // -------------------------------------
 
   it('should return nothing when no credentials found', () => {
     this.expectedToken = '';
