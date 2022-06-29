@@ -2,6 +2,7 @@
 
 const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
+const singleSource = require('../../shared/singleSource');
 const { RUNTIME_STATUS_AVAILABLE } = require('../../shared/runtimes');
 
 module.exports = {
@@ -11,41 +12,25 @@ module.exports = {
       .then(this.createOrUpdateFunctions);
   },
 
+  deleteFunctionsByIds(funcIdToDelete) {
+    this.deleteFunction(funcIdToDelete)
+      .then((res) => {
+        this.serverless.cli.log(`Function ${res.name} removed from config file, deleting it...`);
+        this.waitForFunctionStatus(funcIdToDelete, "deleted")
+          .then(this.serverless.cli.log(`Function ${res.name} deleted`));
+      });
+  },
+
   createOrUpdateFunctions(foundFunctions) {
     const { functions } = this.provider.serverless.service;
 
-    const functionNames = Object.keys(functions);
+    const functionNames = singleSource.getElementsToDelete(
+      this.serverless.configurationInput.singleSource,
+      foundFunctions,
+      Object.keys(functions),
+      this.deleteFunctionsByIds,
+    );
 
-    const deletedFunctionsNames = [];
-
-    if (this.serverless.configurationInput.singleSource !== undefined
-      && this.serverless.configurationInput.singleSource !== null
-      && this.serverless.configurationInput.singleSource === true) {
-      // if a function is available in the API but not in the serverlsssyml file, remove it
-      for (let i = 0; i < foundFunctions.length; i++) {
-        const apiFunc = foundFunctions[i];
-
-        for (let ii = 0; ii < functionNames.length; ii++) {
-          const funcName = functionNames[ii];
-
-          if (apiFunc === funcName) {
-            functionNames.slice(ii, 1);
-            break;
-          }
-        }
-
-        if (!functionNames.includes(apiFunc.name)) {
-        // function is in the API but not in serverless.yml file, remove it
-          this.deleteFunction(apiFunc.id)
-            .then((res) => {
-              this.serverless.cli.log(`Function ${res.name} removed from config file, deleting it...`);
-              this.waitForFunctionStatus(apiFunc.id, "deleted").then(this.serverless.cli.log(`Function ${res.name} deleted`));
-
-              deletedFunctionsNames.push(apiFunc.name);
-            });
-        }
-      }
-    }
     const promises = functionNames.map((functionName) => {
       const func = Object.assign(functions[functionName], { name: functionName });
 
