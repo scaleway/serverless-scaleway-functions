@@ -25,10 +25,10 @@ class ScalewayInvoke {
     this.isContainer = false;
     this.isFunction = false;
 
-    function validateFunction() {
-      // Here we check that the function is both specified, and defined as either a function or container
+    function validateFunctionOrContainer() {
+      // Check the user has specified a name, and that it's defined as either a function or container
       if(!this.options.function) {
-        const msg = 'Function not specified';
+        const msg = 'Function or container not specified';
         this.serverless.cli.log(msg);
         throw new Error(msg);
       }
@@ -37,13 +37,13 @@ class ScalewayInvoke {
       this.isFunction = this.isDefinedFunction(this.options.function);
 
       if(!this.isContainer && !this.isFunction) {
-        const msg = `Function ${this.options.function} not defined in servleress.yml`;
+        const msg = `Function or container ${this.options.function} not defined in servleress.yml`;
         this.serverless.cli.log(msg);
         throw new Error(msg);
       }
     }
 
-    function lookUpFunction(ns) {
+    function lookUpFunctionOrContainer(ns) {
       // List containers/functions in the namespace
       let found = null;
       if(this.isContainer) {
@@ -73,9 +73,9 @@ class ScalewayInvoke {
         .then(this.setUpDeployment)
         .then(this.validate),
       'invoke:invoke': () => BbPromise.bind(this)
-        .then(validateFunction)
+        .then(validateFunctionOrContainer)
         .then(() => this.getNamespaceFromList(this.namespaceName))
-        .then(lookUpFunction)
+        .then(lookUpFunctionOrContainer)
         .then(doInvoke)
     };
   }

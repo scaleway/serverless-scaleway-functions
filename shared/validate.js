@@ -263,14 +263,14 @@ module.exports = {
     return errors;
   },
 
-  isDefinedContainer(funcName) {
+  isDefinedContainer(containerName) {
     // Check if given name is listed as a container
     let res = false;
     if(this.provider.serverless.service.custom
       && this.provider.serverless.service.custom.containers) {
 
       let foundKey = Object.keys(this.provider.serverless.service.custom.containers)
-        .find((k) => k == funcName);
+        .find((k) => k == containerName);
 
       if(foundKey) {
         res = true;
@@ -280,12 +280,12 @@ module.exports = {
     return res;
   },
 
-  isDefinedFunction(funcName) {
+  isDefinedFunction(functionName) {
     // Check if given name is listed as a function
     let res = false;
     if(this.provider.serverless.service.functions) {
       let foundKey = Object.keys(this.provider.serverless.service.functions)
-        .find((k) => k == funcName);
+        .find((k) => k == functionName);
 
       if(foundKey) {
         res = true;
