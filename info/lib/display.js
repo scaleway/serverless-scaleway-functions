@@ -1,5 +1,7 @@
 "use strict";
 
+const yaml = require('js-yaml');
+
 module.exports = {
   displayInfo() {
     const configInput = this.serverless.configurationInput;
@@ -16,15 +18,19 @@ module.exports = {
         Object.keys(configInput.custom.containers).length !== 0
       ) {
         this.listContainers(namespace.id).then((containers) => {
+          var output = {};
           containers.forEach((container) => {
-            this.serverless.cli.log(JSON.stringify(container, null, "\t"));
+            output[container["name"]] = container;
           });
+          console.log(yaml.dump({"Stack Outputs": {"containers": output}}));
         });
       } else {
         this.listFunctions(namespace.id).then((functions) => {
+          var output = {};
           functions.forEach((func) => {
-            this.serverless.cli.log(JSON.stringify(func, null, "\t"));
+            output[func["name"]] = func;
           });
+          console.log(yaml.dump({"Stack Outputs": {"functions": output}}));
         });
       }
     });
