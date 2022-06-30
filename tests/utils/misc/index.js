@@ -2,7 +2,7 @@
 
 const path = require('path');
 
-const { execSync } = require('../child-process');
+const { execSync } = require('../../../shared/child-process');
 const { readYamlFile, writeYamlFile } = require('../fs');
 
 const logger = console;
@@ -61,8 +61,10 @@ function createTestService(
   // create a new Serverless service
   execSync(`${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`);
   process.chdir(tmpDir);
-  // Install dependencies
-  execSync(`npm link ${repoDir}`);
+
+  // Install our local version of this repo
+  // If this is not the first time this has been run, or the repo is already linked for development, this requires --force
+  execSync(`npm link --force ${repoDir}`);
 
   const serverlessFilePath = path.join(tmpDir, 'serverless.yml');
   let serverlessConfig = readYamlFile(serverlessFilePath);

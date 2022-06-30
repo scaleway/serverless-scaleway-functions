@@ -34,11 +34,15 @@ export SCW_URL=<url-to-functions-api>
 
 ### Run Tests
 
-We provided multiple test suites, as described above, with the following npm scripts:
+We provided multiple test suites, as described above, with the following `npm` scripts:
+
 - `npm run test`: Run all test suites
 - `npm run test:functions`: Run functions's test suite
 - `npm run test:containers`: Run containers's test suite
 - `npm run test:runtimes`: Run runtimes's test suite
+- `npm run test -- -t "Some test regex*"`: Runs all tests matching the regex
+
+These tests use [Jest](https://jestjs.io/docs/) under the hood.
 
 **Also, make sure that you did not install this repository inside a `node_modules` folder, otherwhise your npm commands won't work (`no tests found`)**.
 

@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const { expect } = require('chai');
-const { execSync } = require('../utils/child-process');
+const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, createTestService } = require('../utils/misc');
 const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
