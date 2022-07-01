@@ -1,8 +1,36 @@
-# Serverless Framework: Deploy on Scaleway Functions
+# Scaleway Plugin for Serverless Framework
 
-The Scaleway functions plugin for [Serverless Framework](https://serverless.com/) allows users to deploy their functions and containers to Scaleway Functions with a simple `serverless deploy`.
+This is the [Scaleway Functions](https://www.scaleway.com/en/serverless-functions/) plugin for [Serverless Framework](https://serverless.com/).
 
-Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.	
+## Quick-start
+
+0. Install the [Serverless Framework](https://www.serverless.com/framework/docs/getting-started).
+1. Create a Scaleway account, and log in to the [Scaleway Console](https://console.scaleway.com/login).
+2. Generate an [API key](https://www.scaleway.com/en/docs/console/my-project/how-to/generate-api-key/).
+3. Set up the [Scaleway CLI](https://www.scaleway.com/en/cli/).
+4. Generate and invoke your function:
+
+```shell
+# Available templates: https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples
+export TEMPLATE=python3
+
+# Create the function
+serverless create --path my-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
+
+# Install deps
+cd my-func
+npm i
+
+# Deploy - note the URL that is returned in the deploy step
+serverless deploy
+
+# Invoke
+serverless invoke --function first
+```
+
+## Contents
+
+Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.
 
 - [Serverless Framework: Deploy on Scaleway Functions](#serverless-framework-deploy-on-scaleway-functions)
   - [Requirements](#requirements)
@@ -24,7 +52,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
   - [License](#license)
 
 ## Requirements
-	
+
 - Install node.js
 - Install [Serverless](https://serverless.com) CLI (`npm install serverless -g`)
 
@@ -76,7 +104,7 @@ provider:
 
 plugins:
   - serverless-scaleway-functions
-  
+
 package:
   patterns:
     - '!node_modules/**'
@@ -237,7 +265,7 @@ functions:
 ```
 
 ### Golang
-	
+
 Path to your handler's **package**, for example if I have the following structure:
 ```yml
 - src
@@ -349,7 +377,7 @@ custom:
     mycontainer:
       directory: my-container-directory
       # port: 8080
-      # Environment only available in this container 
+      # Environment only available in this container
       env:
         MY_VARIABLE: "my-value"
 ```
@@ -371,7 +399,7 @@ Here is an example of the files you should have, the `directory` containing your
 └── serverless.yml
 ```
 
-Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080. You may change the `port` in your `serverless.yml`. 
+Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080. You may change the `port` in your `serverless.yml`.
 
 You may use the [container example](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) to getting started.
 
