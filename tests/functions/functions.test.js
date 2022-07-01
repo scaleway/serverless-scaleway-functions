@@ -2,7 +2,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const axios = require('axios');
 const { expect } = require('chai');
 const { expect: jestExpect, it } = require('@jest/globals');
 
@@ -88,46 +87,25 @@ module.exports.handle = (event, context, cb) => {
   });
 
   it('should create and deploy second function', async () => {
-    await sleep(30000);
-
-    const appendData = `
-  second: ${stringIdentifier}
+    // add second function with stringIdentifier to remove it easier on next steps.
+    const appendData = `  second: ${stringIdentifier}
     handler: handler.handle ${stringIdentifier}`;
 
     // add a 'second' function to serverless.yml
-    fs.appendFile(`${tmpDir}/${serverlessFile}`, appendData, (err) => {
-      expect(err).to.be.equal(null);
-    });
+    fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
     execSync(`${serverlessExec} deploy`);
   });
+
   it('should invoke first and second function', async () => {
-    await sleep(30000);
-
-    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
-    expect(output).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
-
-    // now we add singleSource @ true
-    const serverlessFileData = fs.readFileSync(`${tmpDir}/${serverlessFile}`).toString().split("\n");
-    serverlessFileData.splice(0, 0, 'singleSource: true');
-
-    const text = serverlessFileData.join("\n");
-
-    fs.writeFile(`${tmpDir}/${serverlessFile}`, text, (err) => {
-      expect(err).to.be.equal(null);
-    });
-
-    namespace = await api.getNamespaceFromList(serviceName);
-    namespace.functions = await api.listFunctions(namespace.id);
-
     const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
-    expect(outputInvoke).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
+    expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
 
     const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
-    expect(outputInvokeSecond).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
+    expect(outputInvokeSecond).to.be.equal('{"message":"Serverless Update Succeeded"}');
   });
 
-  it('should remove function second as singleSource is at', async () => {
+  it('should remove function second as singleSource is at true', async () => {
     await sleep(30000);
 
     replaceTextInFile(serverlessFile, 'singleSource: false', 'singleSource: true');
@@ -136,6 +114,12 @@ module.exports.handle = (event, context, cb) => {
 
     // redeploy, func 2 should be removed
     execSync(`${serverlessExec} deploy`);
+
+    const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
+    expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
+
+    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
+    expect(outputInvokeSecond.startsWith('Error')).to.be.equal(true);
   });
 
   it('should invoke updated function from scaleway', async () => {
