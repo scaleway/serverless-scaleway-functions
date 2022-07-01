@@ -1,6 +1,7 @@
 'use strict';
 
 const BbPromise = require('bluebird');
+const singleSource = require('../../shared/singleSource');
 const secrets = require('../../shared/secrets');
 
 module.exports = {
@@ -10,12 +11,35 @@ module.exports = {
       .then(this.createOrUpdateContainers);
   },
 
+  deleteContainersByIds(containersIdsToDelete) {
+    containersIdsToDelete.forEach((containerIdToDelete) => {
+      this.deleteContainer(containerIdToDelete).then((res) => {
+        this.serverless.cli.log(
+          `Container ${res.name} removed from config file, deleting it...`
+        );
+        this.waitForContainerStatus(containerIdToDelete, "deleted").then(
+          this.serverless.cli.log(`Container ${res.name} deleted`)
+        );
+      });
+    });
+  },
+
   createOrUpdateContainers(foundContainers) {
     const { containers } = this.provider.serverless.service.custom;
-    const containerNames = Object.keys(containers);
-    const promises = containerNames.map((containerName) => {
+
+    const deleteData = singleSource.getElementsToDelete(
+      this.serverless.configurationInput.singleSource,
+      foundContainers,
+      Object.keys(containers),
+    );
+
+    this.deleteContainersByIds(deleteData.elementsIdsToRemove);
+
+    const promises = deleteData.serviceNamesRet.map((containerName) => {
       const container = Object.assign(containers[containerName], { name: containerName });
+
       const foundContainer = foundContainers.find(c => c.name === container.name);
+
       return foundContainer
         ? this.updateSingleContainer(container, foundContainer)
         : this.createSingleContainer(container);

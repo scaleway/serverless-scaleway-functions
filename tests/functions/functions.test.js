@@ -2,9 +2,8 @@
 
 const path = require('path');
 const fs = require('fs');
-const axios = require('axios');
 const { expect } = require('chai');
-const { expect: jestExpect } = require('@jest/globals');
+const { expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
@@ -14,6 +13,10 @@ const { execSync, execCaptureOutput } = require('../../shared/child-process');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
 
 const serverlessExec = path.join('serverless');
+
+// Used to help replace strings in serverless.yml.
+const stringIdentifier = '# second-function-identifier';
+const serverlessFile = 'serverless.yml';
 
 describe('Service Lifecyle Integration Test', () => {
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs');
@@ -45,11 +48,11 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
-    replaceTextInFile('serverless.yml', 'scaleway-nodeXX', serviceName);
-    replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
-    replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-    replaceTextInFile('serverless.yml', 'scwRegion: fr-par', `scwRegion: ${scwRegion}`);
-    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
+    replaceTextInFile(serverlessFile, 'scaleway-nodeXX', serviceName);
+    replaceTextInFile(serverlessFile, '<scw-token>', scwToken);
+    replaceTextInFile(serverlessFile, '<scw-project-id>', scwProject);
+    replaceTextInFile(serverlessFile, 'scwRegion: fr-par', `scwRegion: ${scwRegion}`);
+    expect(fs.existsSync(path.join(tmpDir, serverlessFile))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
   });
 
@@ -64,7 +67,7 @@ describe('Service Lifecyle Integration Test', () => {
     // TODO query function status instead of having an arbitrary sleep
     await sleep(30000);
 
-    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
     expect(output).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
   });
 
@@ -83,16 +86,52 @@ module.exports.handle = (event, context, cb) => {
     execSync(`${serverlessExec} deploy`);
   });
 
+  it('should create and deploy second function', async () => {
+    // add second function with stringIdentifier to remove it easier on next steps.
+    const appendData = `  second: ${stringIdentifier}
+    handler: handler.handle ${stringIdentifier}`;
+
+    // add a 'second' function to serverless.yml
+    fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
+
+    execSync(`${serverlessExec} deploy`);
+  });
+
+  it('should invoke first and second function', async () => {
+    const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
+    expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
+
+    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
+    expect(outputInvokeSecond).to.be.equal('{"message":"Serverless Update Succeeded"}');
+  });
+
+  it('should remove function second as singleSource is at true', async () => {
+    await sleep(30000);
+
+    replaceTextInFile(serverlessFile, 'singleSource: false', 'singleSource: true');
+    replaceTextInFile(serverlessFile, `  second: ${stringIdentifier}`, '');
+    replaceTextInFile(serverlessFile, `    handler: handler.handle ${stringIdentifier}`, '');
+
+    // redeploy, func 2 should be removed
+    execSync(`${serverlessExec} deploy`);
+
+    const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
+    expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
+
+    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
+    expect(outputInvokeSecond.startsWith('Error')).to.be.equal(true);
+  });
+
   it('should invoke updated function from scaleway', async () => {
     await sleep(30000);
 
-    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
     expect(output).to.be.equal('{"message":"Serverless Update Succeeded"}');
   });
 
   it('should deploy function with another available runtime', async () => {
     // example: python310
-    replaceTextInFile('serverless.yml', 'node16', 'python310');
+    replaceTextInFile(serverlessFile, 'node16', 'python310');
     const pythonHandler = `
 def handle(event, context):
   """handle a request to the function
@@ -112,7 +151,7 @@ def handle(event, context):
   it('should invoke function with runtime updated from scaleway', async () => {
     await sleep(30000);
 
-    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
     expect(output).to.be.equal('{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}');
   });
 
@@ -131,17 +170,17 @@ def handle(event, context):
   });
 
   it('should throw error handler not found', () => {
-    replaceTextInFile('serverless.yml', 'handler.handle', 'doesnotexist.handle');
+    replaceTextInFile(serverlessFile, 'handler.handle', 'doesnotexist.handle');
     try {
       expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
-    replaceTextInFile('serverless.yml', 'doesnotexist.handle', 'handler.handle');
+    replaceTextInFile(serverlessFile, 'doesnotexist.handle', 'handler.handle');
   });
 
   it('should throw error runtime does not exist', () => {
-    replaceTextInFile('serverless.yml', 'node16', 'doesnotexist');
+    replaceTextInFile(serverlessFile, 'node16', 'doesnotexist');
     try {
       expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
     } catch (err) {

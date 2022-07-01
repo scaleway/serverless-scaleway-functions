@@ -1,5 +1,6 @@
 service: scaleway-nodeXX
 configValidationMode: off
+singleSource: false
 provider:
   name: scaleway
   runtime: node16 # Available node runtimes are listed in documentation
