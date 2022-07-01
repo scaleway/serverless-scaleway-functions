@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+### Added
+- `serverless info` command to work with serverless compose
+- `serverless invoke` command
+- Custom Domains support
+- `singleSource` parameter
+### Changed
+- Documentation
+- Examples
+- Contributing guideline
+
 ## 0.3.2
 ### Fixed
 
