@@ -49,7 +49,8 @@ module.exports = {
             "the platform of the built image must be `linux/amd64`. " +
             "Please pull your image's base image with platform `linux/amd64`: " +
             "first (`docker pull --platform=linux/amd64 <your_base_image>`), " +
-            "and then run `serverless deploy`.")
+            "and just after, run `serverless deploy`. You shouldn't pull the other " +
+            "image architecture between those two steps.")
           return
         }
 
