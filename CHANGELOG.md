@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+### Added
+- clearer error messages when building a container with a different architecture than expected `amd64`
+
 ## 0.4.0
 ### Added
 - `serverless info` command to work with serverless compose
