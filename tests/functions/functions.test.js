@@ -23,7 +23,7 @@ describe('Service Lifecyle Integration Test', () => {
   const tmpDir = getTmpDirPath();
   let oldCwd;
   let serviceName;
-  const scwRegion = 'fr-par';
+  const scwRegion = 'nl-ams';
   const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
   const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
   const apiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
