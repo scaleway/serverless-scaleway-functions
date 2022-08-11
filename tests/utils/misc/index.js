@@ -11,34 +11,46 @@ const testServiceIdentifier = 'scwtestsls';
 
 const serverlessExec = 'serverless';
 
+const project = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
+const secretKey = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
+const region = process.env.SCW_REGION;
+
 function getServiceName(identifier = '') {
   const hrtime = process.hrtime();
   return `${testServiceIdentifier}-${identifier}${hrtime[1]}`;
 }
 
-function deployService() {
-  execSync(`${serverlessExec} deploy`);
+function mergeOptionsWithEnv(options) {
+  if (!options) {
+    options = {};
+  }
+  if (!options.env) {
+    options.env = {};
+  }
+
+  options.env.PATH = process.env.PATH;
+
+  if (!options.env.SCW_DEFAULT_PROJECT_ID) {
+    options.env.SCW_DEFAULT_PROJECT_ID = project;
+  }
+  if (!options.env.SCW_SECRET_KEY) {
+    options.env.SCW_SECRET_KEY = secretKey;
+  }
+  if (!options.env.SCW_REGION) {
+    options.env.SCW_REGION = region;
+  }
+
+  return options;
 }
 
-function removeService() {
-  execSync(`${serverlessExec} remove`);
+function serverlessDeploy(options) {
+  options = mergeOptionsWithEnv(options);
+  return execSync(`${serverlessExec} deploy`, options);
 }
 
-function replaceEnv(values) {
-  const originals = {};
-  Object.keys(values).forEach((key) => {
-    if (process.env[key]) {
-      originals[key] = process.env[key];
-    } else {
-      originals[key] = 'undefined';
-    }
-    if (values[key] === 'undefined') {
-      delete process.env[key];
-    } else {
-      process.env[key] = values[key];
-    }
-  });
-  return originals;
+function serverlessRemove(options) {
+  options = mergeOptionsWithEnv(options);
+  return execSync(`${serverlessExec} remove`, options);
 }
 
 function createTestService(
@@ -87,9 +99,8 @@ module.exports = {
   testServiceIdentifier,
   serverlessExec,
   getServiceName,
-  deployService,
-  removeService,
-  replaceEnv,
+  serverlessDeploy,
+  serverlessRemove,
   createTestService,
   sleep,
 };

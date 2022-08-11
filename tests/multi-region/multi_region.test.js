@@ -6,7 +6,7 @@ const axios = require('axios');
 const { expect } = require('chai');
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep } = require('../utils/misc');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
 const { REGISTRY_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
 
@@ -36,14 +36,13 @@ describe.each(regions)(
       replaceTextInFile('serverless.yml', 'scaleway-python3', serviceName);
       replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
       replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-      replaceTextInFile('serverless.yml', 'scwRegion: fr-par', `scwRegion: ${region}`);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'handler.py'))).to.be.equal(true);
 
       // deploy function
       apiUrl = `${FUNCTIONS_API_URL}/${region}`;
       api = new FunctionApi(apiUrl, scwToken);
-      execSync(`${serverlessExec} deploy`);
+      serverlessDeploy({ env: { SCW_REGION: region } });
       namespace = await api.getNamespaceFromList(serviceName);
       namespace.functions = await api.listFunctions(namespace.id);
 
@@ -55,7 +54,7 @@ describe.each(regions)(
       expect(response.data.message).to.be.equal('Hello From Python3 runtime on Serverless Framework and Scaleway Functions');
 
       // delete function
-      execSync(`${serverlessExec} remove`);
+      serverlessRemove({ env: { SCW_REGION: region } });
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {

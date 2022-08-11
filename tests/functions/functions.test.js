@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep } = require('../utils/misc');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 const { execSync, execCaptureOutput } = require('../../shared/child-process');
@@ -23,7 +23,7 @@ describe('Service Lifecyle Integration Test', () => {
   const tmpDir = getTmpDirPath();
   let oldCwd;
   let serviceName;
-  const scwRegion = 'nl-ams';
+  const scwRegion = process.env.SCW_REGION;
   const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
   const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
   const apiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
@@ -51,13 +51,12 @@ describe('Service Lifecyle Integration Test', () => {
     replaceTextInFile(serverlessFile, 'scaleway-nodeXX', serviceName);
     replaceTextInFile(serverlessFile, '<scw-token>', scwToken);
     replaceTextInFile(serverlessFile, '<scw-project-id>', scwProject);
-    replaceTextInFile(serverlessFile, 'scwRegion: fr-par', `scwRegion: ${scwRegion}`);
     expect(fs.existsSync(path.join(tmpDir, serverlessFile))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
   });
 
   it('should deploy service to scaleway', async () => {
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.functions = await api.listFunctions(namespace.id);
     functionName = namespace.functions[0].name;
@@ -83,7 +82,7 @@ module.exports.handle = (event, context, cb) => {
 `;
 
     fs.writeFileSync(path.join(tmpDir, 'handler.js'), newJsHandler);
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
   });
 
   it('should create and deploy second function', async () => {
@@ -94,7 +93,7 @@ module.exports.handle = (event, context, cb) => {
     // add a 'second' function to serverless.yml
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
   });
 
   it('should invoke first and second function', async () => {
@@ -113,7 +112,7 @@ module.exports.handle = (event, context, cb) => {
     replaceTextInFile(serverlessFile, `    handler: handler.handle ${stringIdentifier}`, '');
 
     // redeploy, func 2 should be removed
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
 
     const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
     expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
@@ -145,7 +144,7 @@ def handle(event, context):
   }
 `;
     fs.writeFileSync(path.join(tmpDir, 'handler.py'), pythonHandler);
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
   });
 
   it('should invoke function with runtime updated from scaleway', async () => {
@@ -156,7 +155,7 @@ def handle(event, context):
   });
 
   it('should remove service from scaleway', async () => {
-    execSync(`${serverlessExec} remove`);
+    serverlessRemove();
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
@@ -172,7 +171,7 @@ def handle(event, context):
   it('should throw error handler not found', () => {
     replaceTextInFile(serverlessFile, 'handler.handle', 'doesnotexist.handle');
     try {
-      expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
+      expect(serverlessDeploy()).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
@@ -182,7 +181,7 @@ def handle(event, context):
   it('should throw error runtime does not exist', () => {
     replaceTextInFile(serverlessFile, 'node16', 'doesnotexist');
     try {
-      expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
+      expect(serverlessDeploy()).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }

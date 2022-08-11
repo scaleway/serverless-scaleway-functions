@@ -3,16 +3,13 @@
 const path = require('path');
 const fs = require('fs');
 const { expect } = require('chai');
-const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, createTestService } = require('../utils/misc');
+const { getServiceName, createTestService, serverlessDeploy, serverlessRemove} = require('../utils/misc');
 const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 
-const serverlessExec = 'serverless';
-
 const oldCwd = process.cwd();
-const scwRegion = 'pl-waw';
+const scwRegion = process.env.SCW_REGION;
 const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
 const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
@@ -57,7 +54,7 @@ describe.each(runtimesToTest)(
 
     it(`${runtime.name}: should deploy function service to scaleway`, async () => {
       process.chdir(tmpDir);
-      execSync(`${serverlessExec} deploy`);
+      serverlessDeploy();
       if (runtime.isFunction) {
         api = new FunctionApi(functionApiUrl, scwToken);
         namespace = await api.getNamespaceFromList(runtimeServiceName);
@@ -85,7 +82,7 @@ describe.each(runtimesToTest)(
     });
 
     it(`${runtime.name}: should remove services from scaleway`, async () => {
-      execSync(`${serverlessExec} remove`);
+      serverlessRemove();
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
@@ -96,7 +93,7 @@ describe.each(runtimesToTest)(
     it(`${runtime.name}: should throw error invalid schedule`, () => {
       replaceTextInFile('serverless.yml', '1 * * * *', '10 minutes');
       try {
-        expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
+        expect(serverlessDeploy()).rejects.toThrow(Error);
       } catch (err) {
         // If not try catch, test would fail
       }
@@ -105,7 +102,7 @@ describe.each(runtimesToTest)(
     it(`${runtime.name}: should throw error invalid triggerType`, () => {
       replaceTextInFile('serverless.yml', 'schedule:', 'queue:');
       try {
-        expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
+        expect(serverlessDeploy()).rejects.toThrow(Error);
       } catch (err) {
         // If not try catch, test would fail
       }
