@@ -4,7 +4,7 @@ const setUpDeployment = require('../shared/setUpDeployment');
 const createNamespace = require('./lib/createNamespace');
 const createFunctions = require('./lib/createFunctions');
 const createContainers = require('./lib/createContainers');
-const pushContainers = require('./lib/pushContainers');
+const buildAndPushContainers = require('./lib/buildAndPushContainers');
 const uploadCode = require('./lib/uploadCode');
 const deployFunctions = require('./lib/deployFunctions');
 const deployContainers = require('./lib/deployContainers');
@@ -28,7 +28,7 @@ class ScalewayDeploy {
       createNamespace,
       createFunctions,
       createContainers,
-      pushContainers,
+      buildAndPushContainers,
       uploadCode,
       deployFunctions,
       deployContainers,
@@ -42,7 +42,7 @@ class ScalewayDeploy {
           && this.provider.serverless.service.custom.containers
           && Object.keys(this.provider.serverless.service.custom.containers).length !== 0) {
         return this.createContainers()
-          .then(this.pushContainers)
+          .then(this.buildAndPushContainers)
           .then(this.deployContainers);
       }
       return undefined;

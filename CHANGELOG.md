@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1
+
+### Added
+
+- clearer error messages when building a container with a different architecture than expected `amd64` [#95](https://github.com/scaleway/serverless-scaleway-functions/pull/95)
+
+### Fixed
+
+- fix tests [#96](https://github.com/scaleway/serverless-scaleway-functions/pull/96)
+
 ## 0.4.0
 ### Added
 - `serverless info` command to work with serverless compose
