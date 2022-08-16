@@ -6,7 +6,7 @@ const axios = require('axios');
 const { expect } = require('chai');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep } = require('../utils/misc');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
 const { ContainerApi, RegistryApi } = require('../../shared/api');
 const { CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 const { execSync, execCaptureOutput } = require('../../shared/child-process');
@@ -18,7 +18,7 @@ describe('Service Lifecyle Integration Test', () => {
   const tmpDir = getTmpDirPath();
   let oldCwd;
   let serviceName;
-  const scwRegion = 'fr-par';
+  const scwRegion = process.env.SCW_REGION;
   const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
   const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
@@ -46,13 +46,12 @@ describe('Service Lifecyle Integration Test', () => {
     replaceTextInFile('serverless.yml', 'scaleway-container', serviceName);
     replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
     replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-    replaceTextInFile('serverless.yml', 'scwRegion: fr-par', `scwRegion: ${scwRegion}`);
     expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'my-container'))).to.be.equal(true);
   });
 
   it('should deploy service/container to scaleway', async () => {
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.containers = await api.listContainers(namespace.id);
     containerName = namespace.containers[0].name;
@@ -68,7 +67,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should deploy updated service/container to scaleway', () => {
     replaceTextInFile('my-container/server.py', 'Hello, World from Scaleway Container !', 'Container successfully updated');
-    execSync(`${serverlessExec} deploy`);
+    serverlessDeploy();
   });
 
   it('should invoke updated container from scaleway', async () => {
@@ -79,7 +78,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should remove service from scaleway', async () => {
-    execSync(`${serverlessExec} remove`);
+    serverlessRemove();
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
@@ -95,7 +94,7 @@ describe('Service Lifecyle Integration Test', () => {
   it('should throw error container directory not found', () => {
     replaceTextInFile('serverless.yml', 'my-container', 'doesnotexist');
     try {
-      expect(execSync(`${serverlessExec} deploy`)).rejects.toThrow(Error);
+      expect(serverlessDeploy()).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }

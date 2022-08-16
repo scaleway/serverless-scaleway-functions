@@ -6,13 +6,11 @@ const axios = require('axios');
 const { expect } = require('chai');
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, createTestService, sleep } = require('../utils/misc');
+const { getServiceName, createTestService, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
 const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 
-const serverlessExec = 'serverless';
-
-const scwRegion = 'nl-ams';
+const scwRegion = process.env.SCW_REGION;
 const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
 const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
@@ -59,9 +57,9 @@ describe.each(exampleRepositories)(
       process.chdir(tmpDir);
       let options = {};
       if (runtime === 'secrets') {
-        options = { env: { PATH: process.env.PATH, ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
+        options = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
-      execSync(`${serverlessExec} deploy`, options);
+      serverlessDeploy(options);
       // If runtime is container => get container
       if (isContainer) {
         api = new ContainerApi(containerApiUrl, scwToken);
@@ -98,7 +96,7 @@ describe.each(exampleRepositories)(
 
     it(`should remove service for runtime ${runtime} from scaleway`, async () => {
       process.chdir(tmpDir);
-      execSync(`${serverlessExec} remove`);
+      serverlessRemove();
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {

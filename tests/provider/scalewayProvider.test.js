@@ -25,6 +25,11 @@ class MockServerless {
 };
 
 describe('Scaleway credentials test', () => {
+  if (process.env.SCW_SECRET_KEY || process.env.SCW_DEFAULT_PROJECT_ID ||
+    process.env.SCW_TOKEN || process.env.SCW_PROJECT) {
+    throw new Error("No credentials should be passed in environment variables for this test");
+  }
+
   this.expectedToken = null;
   this.expectedProject = null;
 
@@ -134,4 +139,3 @@ describe('Scaleway credentials test', () => {
     this.checkCreds(options);
   });
 });
-

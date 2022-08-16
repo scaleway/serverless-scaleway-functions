@@ -48,7 +48,8 @@ class ScalewayProvider {
     // On serverless info command we do not want log pollution from authentication.
     // This is necessary to use it in an automated environment.
     let hideLog = false;
-    if (this.serverless.configurationInput.service &&
+    if (this.serverless.configurationInput &&
+        this.serverless.configurationInput.service &&
         this.serverless.configurationInput.service === 'serverlessInfo') {
       hideLog = true;
     }
