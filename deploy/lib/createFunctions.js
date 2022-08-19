@@ -3,7 +3,7 @@
 const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
 const singleSource = require('../../shared/singleSource');
-const { RUNTIME_STATUS_AVAILABLE } = require('../../shared/runtimes');
+const { RUNTIME_STATUS_AVAILABLE, RUNTIME_STATUS_EOL, RUNTIME_STATUS_EOS } = require('../../shared/runtimes');
 
 module.exports = {
   createFunctions() {
@@ -154,18 +154,31 @@ module.exports = {
 
     if (Object.keys(existingRuntimesByName).includes(currentRuntime)) {
       const runtime = existingRuntimesByName[currentRuntime];
-      if (runtime.status !== RUNTIME_STATUS_AVAILABLE) {
-        let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
-        if (
-          runtime.statusMessage !== null &&
-          runtime.statusMessage !== undefined &&
-          runtime.statusMessage !== ""
-        ) {
-          warnMessage += `: ${runtime.statusMessage}`;
-        }
-        logger.log(warnMessage);
+
+      switch (runtime.status) {
+        case RUNTIME_STATUS_AVAILABLE:
+          return currentRuntime;
+
+        case RUNTIME_STATUS_EOL:
+          logger.log(`Runtime ${runtime.name} is in End Of Life. Functions that use this runtime will still be working, but it is no more possible to update them. Note : ${runtime.statusMessage}`);
+          break;
+
+        case RUNTIME_STATUS_EOS:
+          logger.log(`Runtime ${runtime.name} is in End Of Support. It is no longer possible to create a new function with this runtime; however, functions that already use it can still be updated. Note : ${runtime.statusMessage}`);
+          break;
+
+        default:
+          let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
+          if (
+            runtime.statusMessage !== null &&
+            runtime.statusMessage !== undefined &&
+            runtime.statusMessage !== ""
+          ) {
+            warnMessage += `: ${runtime.statusMessage}`;
+          }
+          logger.log(warnMessage);
+          break;
       }
-      return currentRuntime;
     }
 
     let errorMessage = `Runtime "${currentRuntime}" does not exist`;
