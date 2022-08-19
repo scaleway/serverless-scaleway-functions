@@ -160,11 +160,24 @@ module.exports = {
           return currentRuntime;
 
         case RUNTIME_STATUS_EOL:
-          logger.log(`Runtime ${runtime.name} is in End Of Life. Functions that use this runtime will still be working, but it is no more possible to update them. Note : ${runtime.statusMessage}`);
+          logger.log(`Runtime ${runtime.name} is in End Of Life. Functions that use this runtime will still be working, but it is no more possible to update them.
+Note : ${runtime.statusMessage}
+
+Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/reference-content/functions-lifecycle/#available-runtimes
+
+          `);
+          return currentRuntime;
           break;
 
         case RUNTIME_STATUS_EOS:
-          logger.log(`Runtime ${runtime.name} is in End Of Support. It is no longer possible to create a new function with this runtime; however, functions that already use it can still be updated. Note : ${runtime.statusMessage}`);
+          logger.log(`Runtime ${runtime.name} is in End Of Support. It is no longer possible to create a new function with this runtime; however, functions that already use it can still be updated.
+Note : ${runtime.statusMessage}
+
+Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/reference-content/functions-lifecycle/#available-runtimes
+
+           `);
+
+          return currentRuntime;
           break;
 
         default:
