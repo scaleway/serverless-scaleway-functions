@@ -167,7 +167,6 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
 
           `);
           return currentRuntime;
-          break;
 
         case RUNTIME_STATUS_EOS:
           logger.log(`Runtime ${runtime.name} is in End Of Support. It is no longer possible to create a new function with this runtime; however, functions that already use it can still be updated.
@@ -178,7 +177,6 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
            `);
 
           return currentRuntime;
-          break;
 
         default:
           let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
@@ -190,7 +188,8 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
             warnMessage += `: ${runtime.statusMessage}`;
           }
           logger.log(warnMessage);
-          break;
+
+          return currentRuntime;
       }
     }
 
