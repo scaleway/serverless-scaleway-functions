@@ -60,6 +60,7 @@
     "eslint-plugin-import": "^2.26.0",
     "fs-extra": "^10.1.0",
     "jest": "^28.1.1",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "rewire": "^6.0.0"
   }
 }
