@@ -1,5 +1,4 @@
 const { expect } = require('chai');
-const { expect: jestExpect } = require('@jest/globals');
 
 const validate = require('../../shared/validate');
 
@@ -22,7 +21,7 @@ class MockProvider {
   addContainer(contName) {
     this.serverless.service.custom.containers[contName] = {};
   };
-};
+}
 
 describe('Configuration validation test', () => {
   // Add validation to this object
@@ -63,4 +62,3 @@ describe('Configuration validation test', () => {
     expect(this.isDefinedFunction("qux")).to.equal(false);
   });
 });
-

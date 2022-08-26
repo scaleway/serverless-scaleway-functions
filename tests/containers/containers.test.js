@@ -2,7 +2,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const axios = require('axios');
 const { expect } = require('chai');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
