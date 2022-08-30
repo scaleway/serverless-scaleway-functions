@@ -4,7 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const { expect } = require('chai');
-const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath } = require('../utils/fs');
 const { getServiceName, createTestService, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
 const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');

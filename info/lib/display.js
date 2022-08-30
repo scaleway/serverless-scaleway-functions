@@ -18,7 +18,7 @@ module.exports = {
         Object.keys(configInput.custom.containers).length !== 0
       ) {
         this.listContainers(namespace.id).then((containers) => {
-          var output = {};
+          let output = {};
           containers.forEach((container) => {
             output[container["name"]] = container;
           });
@@ -26,7 +26,7 @@ module.exports = {
         });
       } else {
         this.listFunctions(namespace.id).then((functions) => {
-          var output = {};
+          let output = {};
           functions.forEach((func) => {
             output[func["name"]] = func;
           });

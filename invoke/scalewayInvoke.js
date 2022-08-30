@@ -1,6 +1,5 @@
 const BbPromise = require('bluebird');
 const axios = require('axios');
-const util = require('util');
 
 const scalewayApi = require('../shared/api/endpoint');
 const setUpDeployment = require('../shared/setUpDeployment');
@@ -45,7 +44,6 @@ class ScalewayInvoke {
 
     function lookUpFunctionOrContainer(ns) {
       // List containers/functions in the namespace
-      let found = null;
       if(this.isContainer) {
          return this.listContainers(ns.id);
       } else {
