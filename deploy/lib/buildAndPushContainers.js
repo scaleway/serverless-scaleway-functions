@@ -26,12 +26,19 @@ function extractStreamContents(stream, verbose) {
 }
 
 function findErrorInBuildOutput(buildOutput) {
-  for (let i = 0; i < buildOutput.length; i++) {
-    if (buildOutput[i].startsWith('{"errorDetail":{')) {
-      const errorDetail = JSON.parse(buildOutput[i])['errorDetail'];
-      if (errorDetail['message'] !== undefined) {
+  for (const buildStepLog of buildOutput) {
+    if (buildStepLog.startsWith('{"errorDetail":{')) {
+      let errorDetail;
+      try {
+        errorDetail = JSON.parse(buildStepLog)['errorDetail'];
+      } catch (err) {
+        return "";
+      }
+
+      if (errorDetail !== undefined && errorDetail['message'] !== undefined) {
         return errorDetail['message'];
       }
+
       return JSON.stringify(errorDetail);
     }
   }
@@ -58,14 +65,14 @@ module.exports = {
 
         const buildError = findErrorInBuildOutput(buildStreamEvents);
         if (buildError !== undefined) {
-          reject("Build did not succeed, error: "+buildError);
+          reject(`Build did not succeed, error: ${buildError}`);
           return
         }
 
         const image = docker.getImage(imageName)
 
         const inspectedImage = await image.inspect()
-          .catch(() => reject("Image "+imageName+" does not exist: run --verbose to see errors"));
+          .catch(() => reject(`Image ${imageName} does not exist: run --verbose to see errors`));
 
         if (inspectedImage === undefined) {
           return
