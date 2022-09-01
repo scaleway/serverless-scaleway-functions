@@ -33,7 +33,7 @@ module.exports = {
     try {
       await docker.checkAuth(registryAuth);
     } catch (err) {
-      throw err;
+      throw new Error(`Authentication to registry failed`);
     }
 
     const containerNames = Object.keys(this.containers);
