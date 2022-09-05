@@ -1,5 +1,4 @@
 const { expect } = require('chai');
-const { expect: jestExpect } = require('@jest/globals');
 
 const { execSync, execCaptureOutput } = require('../../shared/child-process');
 
