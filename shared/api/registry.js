@@ -21,6 +21,12 @@ class RegistryApi {
     return this.apiManager.delete(`namespaces/${namespaceId}`)
       .catch(manageError);
   }
+
+  createRegistryNamespace(params) {
+    return this.apiManager.post("namespaces", params)
+      .then(response => response.data)
+      .catch(manageError);
+  }
 }
 
 module.exports = RegistryApi;

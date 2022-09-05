@@ -45,11 +45,25 @@ function findErrorInBuildOutput(buildOutput) {
 }
 
 module.exports = {
-  buildAndPushContainers() {
+  async buildAndPushContainers() {
+    // used for pushing
     const auth = {
       username: 'any',
       password: this.provider.scwToken,
     };
+
+    // used for building: see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
+    const registryAuth = {};
+    registryAuth['rg.' + this.provider.scwRegion + '.scw.cloud'] = {
+      username: 'any',
+      password: this.provider.scwToken,
+    };
+
+    try {
+      await docker.checkAuth(registryAuth);
+    } catch (err) {
+      throw new Error(`Authentication to registry failed`);
+    }
 
     const containerNames = Object.keys(this.containers);
     const promises = containerNames.map((containerName) => {
@@ -60,7 +74,7 @@ module.exports = {
       this.serverless.cli.log(`Building and pushing container ${container.name} to: ${imageName} ...`);
 
       return new Promise(async (resolve, reject) => {
-        const buildStream = await docker.buildImage(tarStream, { t: imageName })
+        const buildStream = await docker.buildImage(tarStream, { t: imageName, registryconfig: registryAuth })
         const buildStreamEvents = await extractStreamContents(buildStream, this.provider.options.verbose);
 
         const buildError = findErrorInBuildOutput(buildStreamEvents);
