@@ -59,7 +59,7 @@ module.exports = {
     const domainsIdToDelete = [];
     const existingDomains = [];
 
-    this.listDomains(funcId).then((domains) => {
+    this.listDomainsFunction(funcId).then((domains) => {
       domains.forEach((domain) => {
         existingDomains.push({ hostname: domain.hostname, id: domain.id });
       });
@@ -201,7 +201,7 @@ module.exports = {
     params.runtime = this.validateRuntime(
       func,
       availableRuntimes,
-      this.serverless.cli
+      this.serverless.cli,
     );
 
     // checking if there is custom_domains set on function creation.
