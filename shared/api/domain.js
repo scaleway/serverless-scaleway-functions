@@ -66,7 +66,7 @@ module.exports = {
    * @returns
    */
   waitDomainsAreDeployedFunction(functionId) {
-    return this.listDomains(functionId)
+    return this.listDomainsFunction(functionId)
       .then((domains) => {
         let domainsAreReady = true;
 
@@ -97,7 +97,7 @@ module.exports = {
   * @returns
   */
   waitDomainsAreDeployedContainer(containerId) {
-    return this.listDomains(containerId)
+    return this.listDomainsContainer(containerId)
       .then((domains) => {
         let domainsAreReady = true;
 

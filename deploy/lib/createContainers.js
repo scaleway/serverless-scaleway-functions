@@ -151,8 +151,6 @@ module.exports = {
         "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/")
     }
 
-    this.serverless.cli.log(`Creating function ${func.name}...`);
-
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
     return this.createContainer(params)
