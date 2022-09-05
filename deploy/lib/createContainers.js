@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const singleSource = require('../../shared/singleSource');
 const secrets = require('../../shared/secrets');
+const containersApi = require('../../shared/api/containers');
 
 module.exports = {
   createContainers() {
@@ -24,7 +25,7 @@ module.exports = {
     });
   },
 
-  applyDomains(containerId, customDomains) {
+  applyDomainsContainer(containerId, customDomains) {
     // we make a diff to know which domains to add or delete
     const domainsToCreate = [];
     const domainsIdToDelete = [];
@@ -177,7 +178,7 @@ module.exports = {
     this.serverless.cli.log(`Updating container ${container.name}...`);
 
     // assign domains
-    this.applyDomains(foundContainer.id, container.custom_domains);
+    this.applyDomainsContainer(foundContainer.id, container.custom_domains);
 
     return this.updateContainer(foundContainer.id, params)
       .then(response => Object.assign(response, { directory: container.directory }));

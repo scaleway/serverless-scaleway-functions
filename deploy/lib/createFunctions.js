@@ -53,7 +53,7 @@ module.exports = {
     });
   },
 
-  applyDomains(funcId, customDomains) {
+  applyDomainsFunc(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
     const domainsToCreate = [];
     const domainsIdToDelete = [];
@@ -245,7 +245,7 @@ module.exports = {
     this.serverless.cli.log(`Updating function ${func.name}...`);
 
     // assign domains
-    this.applyDomains(foundFunc.id, func.custom_domains);
+    this.applyDomainsFunc(foundFunc.id, func.custom_domains);
 
     return this.updateFunction(foundFunc.id, params).then((response) =>
       Object.assign(response, { handler: func.handler })
