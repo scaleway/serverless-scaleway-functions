@@ -5,22 +5,65 @@ const tar = require('tar-fs');
 
 const docker = new Docker();
 
-const promisifyStream = (stream, verbose) => new Promise((resolve, reject) => {
-  stream.on('data', (data) => {
-    if (verbose) {
-      console.log(data.toString().replace('\n', ''));
-    }
+function extractStreamContents(stream, verbose) {
+  return new Promise((resolve, reject) => {
+    const streamContent = [];
+
+    stream.on('data', (data) => {
+      const streamData = data.toString().replace('\n', '')
+      streamContent.push(streamData);
+
+      if (verbose) {
+        console.log(streamData);
+      }
+    });
+
+    stream.on('end', () => {
+      resolve(streamContent);
+    });
+    stream.on('error', reject);
   });
-  stream.on('end', resolve);
-  stream.on('error', reject);
-});
+}
+
+function findErrorInBuildOutput(buildOutput) {
+  for (const buildStepLog of buildOutput) {
+    if (buildStepLog.startsWith('{"errorDetail":{')) {
+      let errorDetail;
+      try {
+        errorDetail = JSON.parse(buildStepLog)['errorDetail'];
+      } catch (err) {
+        return "";
+      }
+
+      if (errorDetail !== undefined && errorDetail['message'] !== undefined) {
+        return errorDetail['message'];
+      }
+
+      return JSON.stringify(errorDetail);
+    }
+  }
+}
 
 module.exports = {
-  buildAndPushContainers() {
+  async buildAndPushContainers() {
+    // used for pushing
     const auth = {
       username: 'any',
       password: this.provider.scwToken,
     };
+
+    // used for building: see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
+    const registryAuth = {};
+    registryAuth['rg.' + this.provider.scwRegion + '.scw.cloud'] = {
+      username: 'any',
+      password: this.provider.scwToken,
+    };
+
+    try {
+      await docker.checkAuth(registryAuth);
+    } catch (err) {
+      throw new Error(`Authentication to registry failed`);
+    }
 
     const containerNames = Object.keys(this.containers);
     const promises = containerNames.map((containerName) => {
@@ -31,13 +74,19 @@ module.exports = {
       this.serverless.cli.log(`Building and pushing container ${container.name} to: ${imageName} ...`);
 
       return new Promise(async (resolve, reject) => {
-        const buildStream = await docker.buildImage(tarStream, { t: imageName })
-        await promisifyStream(buildStream, this.provider.options.verbose);
+        const buildStream = await docker.buildImage(tarStream, { t: imageName, registryconfig: registryAuth })
+        const buildStreamEvents = await extractStreamContents(buildStream, this.provider.options.verbose);
+
+        const buildError = findErrorInBuildOutput(buildStreamEvents);
+        if (buildError !== undefined) {
+          reject(`Build did not succeed, error: ${buildError}`);
+          return
+        }
 
         const image = docker.getImage(imageName)
 
         const inspectedImage = await image.inspect()
-          .catch(() => reject("Error during build of the image "+imageName+": run --verbose to see the error"));
+          .catch(() => reject(`Image ${imageName} does not exist: run --verbose to see errors`));
 
         if (inspectedImage === undefined) {
           return
@@ -55,7 +104,7 @@ module.exports = {
         }
 
         const pushStream = await image.push(auth);
-        await promisifyStream(pushStream, this.provider.options.verbose);
+        await extractStreamContents(pushStream, this.provider.options.verbose);
 
         resolve();
       });
