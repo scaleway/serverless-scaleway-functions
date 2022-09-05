@@ -67,7 +67,7 @@ describe.each(runtimesToTest)(
     });
 
     it(`${runtime.name}: should create cronjob for function`, async () => {
-      let deployedApplication = {};
+      let deployedApplication;
       if (runtime.isFunction) {
         deployedApplication = namespace.functions[0];
       } else {

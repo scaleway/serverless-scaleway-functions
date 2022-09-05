@@ -1,8 +1,6 @@
 const { expect } = require('chai');
-const { expect: jestExpect } = require('@jest/globals');
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 
 const ScalewayProvider = require('../../provider/scalewayProvider');
@@ -22,7 +20,7 @@ class MockServerless {
   setProvider(provName, prov) {
     this.service.provider = prov;
   };
-};
+}
 
 describe('Scaleway credentials test', () => {
   if (process.env.SCW_SECRET_KEY || process.env.SCW_DEFAULT_PROJECT_ID ||
