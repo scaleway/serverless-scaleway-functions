@@ -32,9 +32,7 @@ serverless invoke --function first
 
 Serverless Framework handles everything from creating namespaces to function/code deployment by calling APIs endpoint under the hood.
 
-- [Scaleway Plugin for Serverless Framework](#scaleway-plugin-for-serverless-framework)
-  - [Quick-start](#quick-start)
-  - [Contents](#contents)
+- [Serverless Framework: Deploy on Scaleway Functions](#serverless-framework-deploy-on-scaleway-functions)
   - [Requirements](#requirements)
   - [Create a Project](#create-a-project)
   - [Configure your functions](#configure-your-functions)
@@ -343,8 +341,7 @@ You may refer to the follow examples:
 
 Custom domains allows users to use their own domains.
 
-For domain configuration please refer to [custom domains on Function](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) or
-[custom domains on Container](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/)
+For domain configuration please [Refer to Scaleway Documentation](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/)
 
 Integration with serverless framework example :
 
