@@ -40,7 +40,7 @@ module.exports = {
             'Waiting for domains deployment...',
           );
 
-          this.waitDomainsAreDeployed(func.id)
+          this.waitDomainsAreDeployedFunction(func.id)
             .then((domains) => {
               domains.forEach((domain) => {
                 this.serverless.cli.log(`Domain ready : ${domain.hostname}`);
