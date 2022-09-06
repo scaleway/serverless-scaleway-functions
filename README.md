@@ -144,6 +144,7 @@ The different parameters are:
   * `secret` (Optional): secret environment variables specific for the current function, see [this example project](./examples/secrets)
   * `minScale` (Optional): how many function instances we keep running (default: 0)
   * `maxScale` (Optional): maximum number of instances this function can scale to (default: 20)
+  * `maxConcurrency` (Containers only, Optional): Concurrency defines the number of simultaneous requests your container can handle at the same time (default: 50)
   * `memoryLimit`: ram allocated to the function instances. See the introduction for the list of supported values
   * `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
