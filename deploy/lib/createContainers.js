@@ -3,7 +3,6 @@
 const BbPromise = require('bluebird');
 const singleSource = require('../../shared/singleSource');
 const secrets = require('../../shared/secrets');
-const containersApi = require('../../shared/api/containers');
 
 module.exports = {
   createContainers() {
