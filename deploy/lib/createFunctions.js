@@ -70,8 +70,6 @@ module.exports = {
         customDomains.length > 0
       ) {
         customDomains.forEach((customDomain) => {
-          domainsIdToDelete.push(customDomain.id);
-
           const domainFounds = existingDomains.filter(
             (existingDomain) => existingDomain.hostname === customDomain,
           );
@@ -117,9 +115,6 @@ module.exports = {
       });
 
       domainsIdToDelete.forEach((domainId) => {
-        if (domainId === undefined) {
-          return;
-        }
         this.deleteDomain(domainId).then((res) => {
           this.serverless.cli.log(`Deleting domain ${res.hostname}`);
         });
