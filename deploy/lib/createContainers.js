@@ -18,7 +18,7 @@ module.exports = {
           `Container ${res.name} removed from config file, deleting it...`
         );
         this.waitForContainerStatus(containerIdToDelete, "deleted").then(
-          this.serverless.cli.log(`Container ${res.name} deleted`)
+          this.serverless.cli.log(`Container ${res.name} deleted`),
         );
       });
     });
@@ -43,15 +43,11 @@ module.exports = {
         customDomains.forEach((customDomain) => {
           domainsIdToDelete.push(customDomain.id);
 
-          let domainFound = false;
+          const domainFounds = existingDomains.filter(
+            (existingDomain) => existingDomain.hostname === customDomain,
+          );
 
-          existingDomains.forEach((existingDom) => {
-            if (existingDom.hostname === customDomain) {
-              domainFound = true;
-              return false;
-            }
-          });
-          if (!domainFound) {
+          if (domainFounds.length === 0) {
             domainsToCreate.push(customDomain);
           }
         });
