@@ -65,24 +65,7 @@ module.exports = {
       domainsToCreate.forEach((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
 
-        this.createDomain(createDomainParams)
-          .then((res) => {
-            this.serverless.cli.log(`Creating domain ${res.hostname}`);
-          })
-          .then(
-            () => {},
-            (reason) => {
-              this.serverless.cli.log(
-                `Error on domain : ${newDomain}, reason : ${reason.message}`
-              );
-
-              if (reason.message.includes("could not validate")) {
-                this.serverless.cli.log(
-                  "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
-                );
-              }
-            }
-          );
+        this.createDomainAndLog(createDomainParams, this.serverless.cli);
       });
 
       domainsIdToDelete.forEach((domainId) => {

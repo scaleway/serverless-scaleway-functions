@@ -31,4 +31,25 @@ module.exports = {
       .then((response) => response.data)
       .catch(manageError);
   },
+
+  createDomainAndLog(createDomainParams, slscli) {
+    this.createDomain(createDomainParams)
+      .then((res) => {
+        slscli.log(`Creating domain ${res.hostname}`);
+      })
+      .then(
+        () => {},
+        (reason) => {
+          slscli.log(
+            `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`
+          );
+
+          if (reason.message.includes("could not validate")) {
+            slscli.log(
+              "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
+            );
+          }
+        }
+      );
+  },
 };
