@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const singleSource = require('../../shared/singleSource');
 const secrets = require('../../shared/secrets');
+const domainUtils = require('../../shared/domains');
 
 module.exports = {
   createContainers() {
@@ -24,43 +25,12 @@ module.exports = {
     });
   },
 
+
   applyDomainsContainer(containerId, customDomains) {
-    // we make a diff to know which domains to add or delete
-    const domainsToCreate = [];
-    const domainsIdToDelete = [];
-    const existingDomains = [];
-
     this.listDomainsContainer(containerId).then((domains) => {
-      domains.forEach((domain) => {
-        existingDomains.push({ hostname: domain.hostname, id: domain.id });
-      });
-
-      if (
-        customDomains !== undefined &&
-        customDomains !== null &&
-        customDomains.length > 0
-      ) {
-        customDomains.forEach((customDomain) => {
-          const domainFounds = existingDomains.filter(
-            (existingDomain) => existingDomain.hostname === customDomain,
-          );
-
-          if (domainFounds.length === 0) {
-            domainsToCreate.push(customDomain);
-          }
-        });
-      }
-
-      existingDomains.forEach((existingDomain) => {
-        if (
-          (customDomains === undefined || customDomains === null) &&
-          existingDomain.id !== undefined
-        ) {
-          domainsIdToDelete.push(existingDomain.id);
-        } else if (!customDomains.includes(existingDomain.hostname)) {
-          domainsIdToDelete.push(existingDomain.id);
-        }
-      });
+      const existingDomains = domainUtils.formatDomainsStructure(domains);
+      const domainsToCreate = domainUtils.getDomainsToCreate(customDomains, existingDomains);
+      const domainsIdToDelete = domainUtils.getDomainsToDelete(customDomains, existingDomains);
 
       domainsToCreate.forEach((newDomain) => {
         const createDomainParams = { container_id: containerId, hostname: newDomain };
@@ -81,7 +51,7 @@ module.exports = {
                   "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
                 );
               }
-            }
+            },
           );
       });
 

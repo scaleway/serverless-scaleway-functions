@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
 const singleSource = require('../../shared/singleSource');
+const domainUtils = require('../../shared/domains');
 const { RUNTIME_STATUS_AVAILABLE, RUNTIME_STATUS_EOL, RUNTIME_STATUS_EOS } = require('../../shared/runtimes');
 
 module.exports = {
@@ -55,41 +56,11 @@ module.exports = {
 
   applyDomainsFunc(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
-    const domainsToCreate = [];
-    const domainsIdToDelete = [];
-    const existingDomains = [];
 
     this.listDomainsFunction(funcId).then((domains) => {
-      domains.forEach((domain) => {
-        existingDomains.push({ hostname: domain.hostname, id: domain.id });
-      });
-
-      if (
-        customDomains !== undefined &&
-        customDomains !== null &&
-        customDomains.length > 0
-      ) {
-        customDomains.forEach((customDomain) => {
-          const domainFounds = existingDomains.filter(
-            (existingDomain) => existingDomain.hostname === customDomain,
-          );
-
-          if (domainFounds.length === 0) {
-            domainsToCreate.push(customDomain);
-          }
-        });
-      }
-
-      existingDomains.forEach((existingDomain) => {
-        if (
-          (customDomains === undefined || customDomains === null) &&
-          existingDomain.id !== undefined
-        ) {
-          domainsIdToDelete.push(existingDomain.id);
-        } else if (!customDomains.includes(existingDomain.hostname)) {
-          domainsIdToDelete.push(existingDomain.id);
-        }
-      });
+      const existingDomains = domainUtils.formatDomainsStructure(domains);
+      const domainsToCreate = domainUtils.getDomainsToCreate(customDomains, existingDomains);
+      const domainsIdToDelete = domainUtils.getDomainsToDelete(customDomains, existingDomains);
 
       domainsToCreate.forEach((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
