@@ -32,20 +32,20 @@ module.exports = {
       .catch(manageError);
   },
 
-  createDomainAndLog(createDomainParams, slscli) {
+  createDomainAndLog(createDomainParams) {
     this.createDomain(createDomainParams)
       .then((res) => {
-        slscli.log(`Creating domain ${res.hostname}`);
+        this.serverless.cli.log(`Creating domain ${res.hostname}`);
       })
       .then(
         () => {},
         (reason) => {
-          slscli.log(
+          this.serverless.cli.log(
             `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`
           );
 
           if (reason.message.includes("could not validate")) {
-            slscli.log(
+            this.serverless.cli.log(
               "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
             );
           }

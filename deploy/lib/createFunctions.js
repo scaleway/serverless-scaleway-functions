@@ -65,7 +65,7 @@ module.exports = {
       domainsToCreate.forEach((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
 
-        this.createDomainAndLog(createDomainParams, this.serverless.cli);
+        this.createDomainAndLog(createDomainParams);
       });
 
       domainsIdToDelete.forEach((domainId) => {
