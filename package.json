@@ -14,6 +14,7 @@
     "test:containers": "jest --maxWorkers 5 tests/containers",
     "test:multi-region": "jest --maxWorkers 5 tests/multi-region",
     "test:provider": "jest --maxWorkers 5 tests/provider",
+    "test:domain": "jest --maxWorkers 5 tests/domain",
     "test:runtimes": "jest --maxWorkers 5 tests/runtimes",
     "test:triggers": "jest --maxWorkers 5 tests/triggers",
     "coverage": "jest --coverage",
