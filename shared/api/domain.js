@@ -4,20 +4,6 @@ const { manageError } = require("./utils");
 
 module.exports = {
   /**
-   * listDomains is used to read all domains of a wanted function.
-   * @param {Number} functionId the id of the function to read domains. 
-   * @returns a Promise with request result.
-   */
-  listDomains(functionId) {
-    const domainsUrl = `domains?function_id=${functionId}`;
-
-    return this.apiManager
-      .get(domainsUrl)
-      .then((response) => response.data.domains)
-      .catch(manageError);
-  },
-
-  /**
    * createDomain is used to call for domain creation, warning : this
    * function does not wait for the domain
    * to be ready.
@@ -34,8 +20,8 @@ module.exports = {
 
   /**
    * deleteDomains is used to destroy an existing domain by it's ID.
-   * @param {Number} domainID ID of the selected domain. 
-   * @returns 
+   * @param {Number} domainID ID of the selected domain.
+   * @returns
    */
   deleteDomain(domainID) {
     const updateUrl = `domains/${domainID}`;
@@ -46,31 +32,24 @@ module.exports = {
       .catch(manageError);
   },
 
-  /**
-   * Waiting for all domains to be ready on a function
-   * @param {Number} functionId
-   * @returns
-   */
-  waitDomainsAreDeployed(functionId) {
-    return this.listDomains(functionId)
-      .then((domains) => {
-        let domainssAreReady = true;
-        for (let i = 0; i < domains.length; i += 1) {
-          const domain = domains[i];
-          if (domain.status === 'error') {
-            throw new Error(domain.error_message);
-          }
-          if (domain.status !== 'ready') {
-            domainssAreReady = false;
-            break;
+  createDomainAndLog(createDomainParams) {
+    this.createDomain(createDomainParams)
+      .then((res) => {
+        this.serverless.cli.log(`Creating domain ${res.hostname}`);
+      })
+      .then(
+        () => {},
+        (reason) => {
+          this.serverless.cli.log(
+            `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`
+          );
+
+          if (reason.message.includes("could not validate")) {
+            this.serverless.cli.log(
+              "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
+            );
           }
         }
-        if (!domainssAreReady) {
-          return new Promise((resolve) => {
-            setTimeout(() => resolve(this.waitDomainsAreDeployed(functionId)), 5000);
-          });
-        }
-        return domains;
-      });
+      );
   },
 };

@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const secrets = require('../../shared/secrets');
 const singleSource = require('../../shared/singleSource');
+const domainUtils = require('../../shared/domains');
 const { RUNTIME_STATUS_AVAILABLE, RUNTIME_STATUS_EOL, RUNTIME_STATUS_EOS } = require('../../shared/runtimes');
 
 module.exports = {
@@ -53,77 +54,21 @@ module.exports = {
     });
   },
 
-  applyDomains(funcId, customDomains) {
+  applyDomainsFunc(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
-    const domainsToCreate = [];
-    const domainsIdToDelete = [];
-    const existingDomains = [];
 
-    this.listDomains(funcId).then((domains) => {
-      domains.forEach((domain) => {
-        existingDomains.push({ hostname: domain.hostname, id: domain.id });
-      });
-
-      if (
-        customDomains !== undefined &&
-        customDomains !== null &&
-        customDomains.length > 0
-      ) {
-        customDomains.forEach((customDomain) => {
-          domainsIdToDelete.push(customDomain.id);
-
-          let domainFound = false;
-
-          existingDomains.forEach((existingDom) => {
-            if (existingDom.hostname === customDomain) {
-              domainFound = true;
-              return false;
-            }
-          });
-          if (!domainFound) {
-            domainsToCreate.push(customDomain);
-          }
-        });
-      }
-
-      existingDomains.forEach((existingDomain) => {
-        if (
-          (customDomains === undefined || customDomains === null) &&
-          existingDomain.id !== undefined
-        ) {
-          domainsIdToDelete.push(existingDomain.id);
-        } else if (!customDomains.includes(existingDomain.hostname)) {
-          domainsIdToDelete.push(existingDomain.id);
-        }
-      });
+    this.listDomainsFunction(funcId).then((domains) => {
+      const existingDomains = domainUtils.formatDomainsStructure(domains);
+      const domainsToCreate = domainUtils.getDomainsToCreate(customDomains, existingDomains);
+      const domainsIdToDelete = domainUtils.getDomainsToDelete(customDomains, existingDomains);
 
       domainsToCreate.forEach((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
 
-        this.createDomain(createDomainParams)
-          .then((res) => {
-            this.serverless.cli.log(`Creating domain ${res.hostname}`);
-          })
-          .then(
-            () => {},
-            (reason) => {
-              this.serverless.cli.log(
-                `Error on domain : ${newDomain}, reason : ${reason.message}`
-              );
-
-              if (reason.message.includes("could not validate")) {
-                this.serverless.cli.log(
-                  "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
-                );
-              }
-            }
-          );
+        this.createDomainAndLog(createDomainParams);
       });
 
       domainsIdToDelete.forEach((domainId) => {
-        if (domainId === undefined) {
-          return;
-        }
         this.deleteDomain(domainId).then((res) => {
           this.serverless.cli.log(`Deleting domain ${res.hostname}`);
         });
@@ -226,7 +171,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     params.runtime = this.validateRuntime(
       func,
       availableRuntimes,
-      this.serverless.cli
+      this.serverless.cli,
     );
 
     // checking if there is custom_domains set on function creation.
@@ -270,7 +215,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     this.serverless.cli.log(`Updating function ${func.name}...`);
 
     // assign domains
-    this.applyDomains(foundFunc.id, func.custom_domains);
+    this.applyDomainsFunc(foundFunc.id, func.custom_domains);
 
     return this.updateFunction(foundFunc.id, params).then((response) =>
       Object.assign(response, { handler: func.handler })

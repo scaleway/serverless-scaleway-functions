@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const singleSource = require('../../shared/singleSource');
 const secrets = require('../../shared/secrets');
+const domainUtils = require('../../shared/domains');
 
 module.exports = {
   createContainers() {
@@ -18,8 +19,29 @@ module.exports = {
           `Container ${res.name} removed from config file, deleting it...`
         );
         this.waitForContainerStatus(containerIdToDelete, "deleted").then(
-          this.serverless.cli.log(`Container ${res.name} deleted`)
+          this.serverless.cli.log(`Container ${res.name} deleted`),
         );
+      });
+    });
+  },
+
+
+  applyDomainsContainer(containerId, customDomains) {
+    this.listDomainsContainer(containerId).then((domains) => {
+      const existingDomains = domainUtils.formatDomainsStructure(domains);
+      const domainsToCreate = domainUtils.getDomainsToCreate(customDomains, existingDomains);
+      const domainsIdToDelete = domainUtils.getDomainsToDelete(customDomains, existingDomains);
+
+      domainsToCreate.forEach((newDomain) => {
+        const createDomainParams = { container_id: containerId, hostname: newDomain };
+
+        this.createDomainAndLog(createDomainParams);
+      });
+
+      domainsIdToDelete.forEach((domainId) => {
+        this.deleteDomain(domainId).then((res) => {
+          this.serverless.cli.log(`Deleting domain ${res.hostname}`);
+        });
       });
     });
   },
@@ -68,6 +90,12 @@ module.exports = {
       port: container.port,
     };
 
+    // checking if there is custom_domains set on container creation.
+    if (container.custom_domains && container.custom_domains.length > 0) {
+      this.serverless.cli.log("WARNING: custom_domains are available on container update only. "+
+        "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/")
+    }
+
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
     return this.createContainer(params)
@@ -93,6 +121,10 @@ module.exports = {
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
+
+    // assign domains
+    this.applyDomainsContainer(foundContainer.id, container.custom_domains);
+
     return this.updateContainer(foundContainer.id, params)
       .then(response => Object.assign(response, { directory: container.directory }));
   },

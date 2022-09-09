@@ -344,7 +344,8 @@ You may refer to the follow examples:
 
 Custom domains allows users to use their own domains.
 
-For domain configuration please [Refer to Scaleway Documentation](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/)
+For domain configuration please refer to [custom domains on Function](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) or
+[custom domains on Container](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/)
 
 Integration with serverless framework example :
 

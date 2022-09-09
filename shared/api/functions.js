@@ -109,4 +109,49 @@ module.exports = {
         }
       });
   },
+
+  /**
+   * listDomains is used to read all domains of a wanted function.
+   * @param {Number} functionId the id of the function to read domains.
+   * @returns a Promise with request result.
+   */
+  listDomainsFunction(functionId) {
+    const domainsUrl = `domains?function_id=${functionId}`;
+
+    return this.apiManager
+      .get(domainsUrl)
+      .then((response) => response.data.domains)
+      .catch(manageError);
+  },
+
+  /**
+   * Waiting for all domains to be ready on a function
+   * @param {UUID} functionId
+   * @returns
+   */
+  waitDomainsAreDeployedFunction(functionId) {
+    return this.listDomainsFunction(functionId)
+      .then((domains) => {
+        let domainsAreReady = true;
+
+        for (let i = 0; i < domains.length; i += 1) {
+          const domain = domains[i];
+
+          if (domain.status === 'error') {
+            throw new Error(domain.error_message);
+          }
+
+          if (domain.status !== 'ready') {
+            domainsAreReady = false;
+            break;
+          }
+        }
+        if (!domainsAreReady) {
+          return new Promise((resolve) => {
+            setTimeout(() => resolve(this.waitDomainsAreDeployedFunction(functionId)), 5000);
+          });
+        }
+        return domains;
+      });
+  },
 };
