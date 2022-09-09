@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.2
+### Added
+- Support for custom domains on containers
+- `maxConcurrency` parameter for containers
+- Support of pulling private images
+- More details on docker build errors
+- Support for End of Support and End of Life runtimes
+
+### Fixed
+- Dependencies + code cleaning
+
 ## 0.4.1
 
 ### Added
