@@ -296,7 +296,7 @@ functions:
 
 ### Events
 
-With `events`, you may link your functions with specific triggers, which might include `CRON Schedule (Time based)`, `MQTT Queues` (Publish on a topic will trigger the function), `S3 Object update` (Upload an object will trigger the function).
+With `events`, you may link your functions with `CRON Schedule (Time based)` triggers.
 
 **Note that we do not include HTTP triggers in our event types, as a HTTP endpoint is created for every function**. Triggers are just a new way to trigger your Function, but you will always be able to execute your code via HTTP.
 
