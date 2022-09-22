@@ -158,6 +158,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
         func.secret
       ),
       namespace_id: this.namespace.id,
+      description: func.description,
       memory_limit: func.memoryLimit,
       min_scale: func.minScale,
       max_scale: func.maxScale,
@@ -196,6 +197,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
         secrets.convertObjectToModelSecretsArray(func.secret),
         this.serverless.cli
       ),
+      description: func.description,
       memory_limit: func.memoryLimit,
       min_scale: func.minScale,
       max_scale: func.maxScale,
