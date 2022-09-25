@@ -22,7 +22,7 @@ custom:
       # minScale: 1
       # memoryLimit: 256
       # maxScale: 2
-      # maxConcurrency: 50,
+      # maxConcurrency: 50
       # timeout: 20000
       # port: 8080
       # Local environment variables - used only in given function
