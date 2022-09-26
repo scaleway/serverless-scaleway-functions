@@ -3,6 +3,8 @@
 const path = require('path');
 const fs = require('fs');
 const { expect } = require('chai');
+const Docker = require('dockerode');
+const tar = require('tar-fs');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
@@ -54,6 +56,63 @@ describe('Service Lifecyle Integration Test', () => {
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.containers = await api.listContainers(namespace.id);
     containerName = namespace.containers[0].name;
+  });
+
+  it('should replace container image with test image', async () => {
+    // This tests will push a dummy image to the same namespace of the deployed
+    // container. And then it will modify the image through the API.
+    // After that we run a serverless deploy to ensure the container image
+    // is NOT the dummy image.
+
+    // build a new image with same path but different name for testing.
+    const regImg = namespace.containers[0].registry_image;
+    const contName = namespace.containers[0].name;
+    const imageName = regImg.replace(contName, 'test-container');
+
+    const docker = new Docker();
+
+    // used for pushing
+    const auth = {
+      username: 'any',
+      password: scwToken,
+    };
+
+    const regEndpoint = `rg.${scwRegion}.scw.cloud`;
+    const registryAuth = {};
+    registryAuth[regEndpoint] = {
+      username: 'any',
+      password: scwToken,
+    };
+
+    await docker.checkAuth(registryAuth);
+
+    const tarStream = tar.pack(path.join(tmpDir, 'my-container'));
+
+    await docker.buildImage(tarStream, { t: imageName, registryconfig: registryAuth });
+
+    const image = docker.getImage(imageName);
+
+    await image.push(auth);
+
+    const params = {
+      redeploy: false,
+      registry_image: imageName,
+    };
+
+    // registry lag
+    await sleep(30000);
+
+    await api.updateContainer(namespace.containers[0].id, params);
+
+    const nsContainers = await api.listContainers(namespace.id);
+
+    expect(nsContainers[0].registry_image).to.be.equal(imageName);
+
+    serverlessDeploy();
+
+    const nsContainersAfterSlsDeploy = await api.listContainers(namespace.id);
+
+    expect(nsContainersAfterSlsDeploy[0].registry_image).to.not.contains('test-container');
   });
 
   it('should invoke container from scaleway', async () => {

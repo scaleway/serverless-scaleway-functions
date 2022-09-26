@@ -91,7 +91,7 @@ describe('Build and deploy on container with a base image private', () => {
     // TODO query function status instead of having an arbitrary sleep
     await sleep(30000);
 
-    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
+    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
     expect(output).to.be.equal('{"message":"Hello, World from Scaleway Container !"}');
   });
 
