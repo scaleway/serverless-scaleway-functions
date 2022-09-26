@@ -127,6 +127,6 @@ module.exports = {
     this.applyDomainsContainer(foundContainer.id, container.custom_domains);
 
     return this.updateContainer(foundContainer.id, params)
-      .then((response) => Object.assign(response, { directory: container.directory }));
+      .then(response => Object.assign(response, { directory: container.directory }));
   },
 };
