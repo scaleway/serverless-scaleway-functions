@@ -17,6 +17,7 @@ const serverlessExec = path.join('serverless');
 // Used to help replace strings in serverless.yml.
 const stringIdentifier = '# second-function-identifier';
 const serverlessFile = 'serverless.yml';
+const descriptionTest = 'slsfw test description';
 
 describe('Service Lifecyle Integration Test', () => {
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs');
@@ -51,6 +52,7 @@ describe('Service Lifecyle Integration Test', () => {
     replaceTextInFile(serverlessFile, 'scaleway-nodeXX', serviceName);
     replaceTextInFile(serverlessFile, '<scw-token>', scwToken);
     replaceTextInFile(serverlessFile, '<scw-project-id>', scwProject);
+    replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
     expect(fs.existsSync(path.join(tmpDir, serverlessFile))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
   });
@@ -59,6 +61,7 @@ describe('Service Lifecyle Integration Test', () => {
     serverlessDeploy();
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.functions = await api.listFunctions(namespace.id);
+    expect(namespace.containers[0].description).to.be.equal(descriptionTest);
     functionName = namespace.functions[0].name;
   });
 

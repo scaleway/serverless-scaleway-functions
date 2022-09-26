@@ -19,6 +19,7 @@ custom:
   containers:
     first:
       directory: my-container
+      # description: ""
       # minScale: 1
       # memoryLimit: 256
       # maxScale: 2

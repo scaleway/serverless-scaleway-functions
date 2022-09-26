@@ -25,6 +25,7 @@ custom:
             input:
               myInput: myValue
               mySecondInput: 1
+      # description: ""
       # minScale: 1
       # memoryLimit: 256
       # maxScale: 2

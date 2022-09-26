@@ -18,12 +18,14 @@ package:
 functions:
   nodefunc:
     handler: handler.handle
+    # description: ""
     # Local environment variables - used only in given function
     env:
       local: local
   pythonfunc:
     runtime: python3  # Here we add a specific runtime for the function
     handler: handler.handle
+    # description: ""
     # Local environment variables - used only in given function
     env:
       local: local

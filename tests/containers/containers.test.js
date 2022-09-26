@@ -22,6 +22,7 @@ describe('Service Lifecyle Integration Test', () => {
   const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
   const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
+  const descriptionTest = 'slsfw test description';
   let api;
   let registryApi;
   let namespace;
@@ -45,6 +46,7 @@ describe('Service Lifecyle Integration Test', () => {
     replaceTextInFile('serverless.yml', 'scaleway-container', serviceName);
     replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
     replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
+    replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
     expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'my-container'))).to.be.equal(true);
   });
@@ -53,6 +55,7 @@ describe('Service Lifecyle Integration Test', () => {
     serverlessDeploy();
     namespace = await api.getNamespaceFromList(serviceName);
     namespace.containers = await api.listContainers(namespace.id);
+    expect(namespace.containers[0].description).to.be.equal(descriptionTest);
     containerName = namespace.containers[0].name;
   });
 
