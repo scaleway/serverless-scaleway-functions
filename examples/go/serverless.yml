@@ -20,6 +20,7 @@ functions:
   first:
     # handler is just the name of the exported handler function
     handler: Handle
+    # description: ""
     # Local environment variables - used only in given function
     env:
       local: local
