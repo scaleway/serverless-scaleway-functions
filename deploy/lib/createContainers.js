@@ -116,6 +116,7 @@ module.exports = {
       memory_limit: container.memoryLimit,
       min_scale: container.minScale,
       max_scale: container.maxScale,
+      registry_image: `${this.namespace.registry_endpoint}/${container.name}:latest`,
       max_concurrency: container.maxConcurrency,
       timeout: container.timeout,
       privacy: container.privacy,
