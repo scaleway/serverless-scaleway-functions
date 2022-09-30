@@ -4,14 +4,14 @@ const { manageError } = require('./utils');
 
 module.exports = {
   listNamespaces() {
-    return this.apiManager.get('namespaces?page_size=100')
+    return this.apiManager.get(`namespaces?page_size=100&project_id=${this.provider.getScwProject()}`)
       .then(response => response.data.namespaces || [])
       .catch(manageError);
   },
 
   getNamespaceFromList(namespaceName) {
     // query Scaleway API to check if space exists
-    return this.apiManager.get(`namespaces?name=${namespaceName}`)
+    return this.apiManager.get(`namespaces?name=${namespaceName}&project_id=${this.provider.getScwProject()}`)
       .then((response) => {
         const { namespaces } = response.data;
         return namespaces.find(ns => ns.name === namespaceName);
