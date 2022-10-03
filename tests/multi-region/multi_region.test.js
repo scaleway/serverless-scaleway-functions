@@ -43,7 +43,7 @@ describe.each(regions)(
       apiUrl = `${FUNCTIONS_API_URL}/${region}`;
       api = new FunctionApi(apiUrl, scwToken);
       serverlessDeploy({ env: { SCW_REGION: region } });
-      namespace = await api.getNamespaceFromList(serviceName);
+      namespace = await api.getNamespaceFromList(serviceName, scwProject);
       namespace.functions = await api.listFunctions(namespace.id);
 
       // Invoke function

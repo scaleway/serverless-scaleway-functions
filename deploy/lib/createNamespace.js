@@ -6,7 +6,7 @@ const secrets = require('../../shared/secrets');
 module.exports = {
   createServerlessNamespace() {
     return BbPromise.bind(this)
-      .then(() => this.getNamespaceFromList(this.namespaceName))
+      .then(() => this.getNamespaceFromList(this.namespaceName, this.provider.getScwProject()))
       .then(this.createIfNotExists);
   },
 

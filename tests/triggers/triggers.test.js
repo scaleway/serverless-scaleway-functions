@@ -57,11 +57,11 @@ describe.each(runtimesToTest)(
       serverlessDeploy();
       if (runtime.isFunction) {
         api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName);
+        namespace = await api.getNamespaceFromList(runtimeServiceName, scwProject);
         namespace.functions = await api.listFunctions(namespace.id);
       } else {
         api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName);
+        namespace = await api.getNamespaceFromList(runtimeServiceName, scwProject);
         namespace.containers = await api.listContainers(namespace.id);
       }
     });

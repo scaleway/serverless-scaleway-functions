@@ -62,11 +62,11 @@ describe.each(exampleRepositories)(
       // If runtime is container => get container
       if (isContainer) {
         api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName);
+        namespace = await api.getNamespaceFromList(runtimeServiceName, scwProject);
         namespace.containers = await api.listContainers(namespace.id);
       } else {
         api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName);
+        namespace = await api.getNamespaceFromList(runtimeServiceName, scwProject);
         namespace.functions = await api.listFunctions(namespace.id);
       }
     });

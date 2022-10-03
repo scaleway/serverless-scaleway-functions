@@ -5,7 +5,7 @@ const BbPromise = require('bluebird');
 module.exports = {
   getLogs() {
     return BbPromise.bind(this)
-      .then(() => this.getNamespaceFromList(this.namespaceName))
+      .then(() => this.getNamespaceFromList(this.namespaceName, this.provider.getScwProject()))
       .then(this.listApplications)
       .all()
       .then(this.getApplicationId)
