@@ -59,9 +59,9 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should deploy service to scaleway', async () => {
     serverlessDeploy();
-    namespace = await api.getNamespaceFromList(serviceName);
+    namespace = await api.getNamespaceFromList(serviceName, scwProject);
     namespace.functions = await api.listFunctions(namespace.id);
-    expect(namespace.containers[0].description).to.be.equal(descriptionTest);
+    expect(namespace.functions[0].description).to.be.equal(descriptionTest);
     functionName = namespace.functions[0].name;
   });
 

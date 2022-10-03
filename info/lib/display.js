@@ -6,7 +6,7 @@ module.exports = {
   displayInfo() {
     const configInput = this.serverless.configurationInput;
 
-    this.getNamespaceFromList(configInput.service).then((namespace) => {
+    this.getNamespaceFromList(configInput.service, this.provider.getScwProject()).then((namespace) => {
       if (namespace === undefined || namespace === null ||
          namespace.id === undefined || namespace.id === null) {
         return;

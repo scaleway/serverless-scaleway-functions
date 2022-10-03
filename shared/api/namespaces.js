@@ -3,15 +3,17 @@
 const { manageError } = require('./utils');
 
 module.exports = {
-  listNamespaces() {
-    return this.apiManager.get(`namespaces?page_size=100&project_id=${this.provider.getScwProject()}`)
+  listNamespaces(projectId) {
+    const projectIdReq = projectId === undefined ? '' : `&project_id=${projectId}`;
+    return this.apiManager.get(`namespaces?page_size=100${projectIdReq}`)
       .then(response => response.data.namespaces || [])
       .catch(manageError);
   },
 
-  getNamespaceFromList(namespaceName) {
+  getNamespaceFromList(namespaceName, projectId) {
+    const projectIdReq = projectId === undefined ? '' : `&project_id=${projectId}`;
     // query Scaleway API to check if space exists
-    return this.apiManager.get(`namespaces?name=${namespaceName}&project_id=${this.provider.getScwProject()}`)
+    return this.apiManager.get(`namespaces?name=${namespaceName}${projectIdReq}`)
       .then((response) => {
         const { namespaces } = response.data;
         return namespaces[0];

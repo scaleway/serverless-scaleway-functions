@@ -72,7 +72,7 @@ class ScalewayInvoke {
         .then(this.validate),
       'invoke:invoke': () => BbPromise.bind(this)
         .then(validateFunctionOrContainer)
-        .then(() => this.getNamespaceFromList(this.namespaceName))
+        .then(() => this.getNamespaceFromList(this.namespaceName, this.provider.getScwProject()))
         .then(lookUpFunctionOrContainer)
         .then(doInvoke)
     };
