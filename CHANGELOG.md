@@ -1,5 +1,13 @@
 # Changelog
 
+## O.4.3
+### Added
+- `description` field is now supported in serverless config files
+
+### Fixed
+- Registry image is now forced by serverless framework to ensure consitency
+- Project_id added to requests to avoid multiple results if same namespace name is used
+- Clean documentaion and examples
 ## 0.4.2
 ### Added
 - Support for custom domains on containers
