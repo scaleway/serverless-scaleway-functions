@@ -14,7 +14,7 @@ module.exports = {
     return this.apiManager.get(`namespaces?name=${namespaceName}&project_id=${this.provider.getScwProject()}`)
       .then((response) => {
         const { namespaces } = response.data;
-        return namespaces.find(ns => ns.name === namespaceName);
+        return namespaces[0];
       })
       .catch(manageError);
   },
