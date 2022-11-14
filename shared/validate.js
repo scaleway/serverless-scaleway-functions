@@ -19,6 +19,7 @@ const RUNTIMES_EXTENSIONS = {
   node: ['ts', 'js'],
   python: ['py'],
   go: [],
+  rust: ['rs'],
 };
 
 const REGION_LIST = ['fr-par', 'nl-ams', 'pl-waw'];
