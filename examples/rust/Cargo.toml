@@ -1,0 +1,15 @@
+[package]
+name = "handler"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+path = "src/handler.rs"
+
+[dependencies]
+hyper = { version = "0.14", features = ["runtime", "client", "server", "http1", "http2"] }
+
+[build-dependencies]
+rustc_version = "0.4.0"
