@@ -8,7 +8,7 @@ Suggested code layout:
 .
 ├── Cargo.toml
 ├── Cargo.lock
-├── src/handler.rs
+└── src/handler.rs
 ```
 
 ## Handler name
