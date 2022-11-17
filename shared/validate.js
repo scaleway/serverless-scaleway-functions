@@ -8,7 +8,7 @@ const path = require('path');
 // that are considered as "compiled runtimes".
 // If you fill this array with "go" it will match all runtimes that starts with "go".
 // For example "golang", "go113" matches this filter.
-const COMPILED_RUNTIMES_PREFIXES = ['go'];
+const COMPILED_RUNTIMES_PREFIXES = ['go', 'rust'];
 
 // RUNTIMES_EXTENSIONS serves two purposes :
 // - the struct key is used to list different runtimes families (go, python etc...)
@@ -19,7 +19,7 @@ const RUNTIMES_EXTENSIONS = {
   node: ['ts', 'js'],
   python: ['py'],
   go: [],
-  rust: ['rs'],
+  rust: [],
 };
 
 const REGION_LIST = ['fr-par', 'nl-ams', 'pl-waw'];
