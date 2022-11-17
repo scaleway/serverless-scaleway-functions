@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.4
+### Added
+- Support for Rust files (`.rs`)
+### Fixed
+- `js-yaml` dependency
+
 ## O.4.3
 ### Added
 - `description` field is now supported in serverless config files
