@@ -44,6 +44,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Node](#node)
     - [Python](#python)
     - [Golang](#golang)
+    - [Rust](#rust)
     - [Events](#events)
     - [Custom domains](#custom-domains)
     - [Ways to deploy functions](#ways-to-deploy-functions)
@@ -292,6 +293,25 @@ functions:
     handler: src/testing
   second:
     handler: src/second
+```
+
+### Rust
+
+Recommanded folder structure for `rust` runtime :
+```yml
+- src
+  - handler.rs
+- serverless.yml
+```
+
+Your serverless.yml `functions` should look something like this:
+
+```yml
+provider:
+  runtime: rust165
+functions:
+  main:
+    handler: "handler"
 ```
 
 ### Events
