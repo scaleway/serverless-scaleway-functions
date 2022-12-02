@@ -5,6 +5,7 @@ use hyper::{
 pub fn MyHandler(_req: Request<Body>) -> Response<Body> {
     Response::builder()
         .status(StatusCode::OK)
+        .header("Content-Type", "text/plain")
         .body(Body::from("Ferris says hello!"))
         .unwrap()
 }
