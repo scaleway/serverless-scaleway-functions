@@ -26,6 +26,7 @@ custom:
       # maxConcurrency: 50
       # timeout: 20000
       # port: 8080
+      # httpOption: redirected
       # Local environment variables - used only in given function
       env:
         local: local

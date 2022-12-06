@@ -31,6 +31,7 @@ custom:
       # maxScale: 2
       # maxConcurrency: 50
       # timeout: 20000
+      # httpOption: redirected
       # Local environment variables - used only in given function
       env:
         local: local

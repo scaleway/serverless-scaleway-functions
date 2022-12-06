@@ -151,6 +151,7 @@ The different parameters are:
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
   * `custom_domains` (Optional): List of custom domains, refer to [Custom Domain Documentation](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/)
+  * `httpOption` (Optional): force https redirection, possible values are `enabled` and `redirected` (default: `enabled`)
 
 ### Security and secret management
 
