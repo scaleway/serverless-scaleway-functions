@@ -2,7 +2,6 @@ package myfunc
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -14,12 +13,18 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		"number":  4,
 	}
 
-	responseB, err := json.Marshal(response)
+	responseBytes, err := json.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	// Set the header explicitly depending the returned data
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprint(w, string(responseB))
+
+	// Customise status code.
+	w.WriteHeader(http.StatusOK)
+
+	// Add content to the response
+	_, _ = w.Write(responseBytes)
 }

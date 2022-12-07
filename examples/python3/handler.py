@@ -6,5 +6,8 @@ def handle(event, context):
     """
 
     return {
-        "message": "Hello From Python3 runtime on Serverless Framework and Scaleway Functions"
+        "body": "Hello From Python3 runtime on Serverless Framework and Scaleway Functions",
+        "headers": {
+            "Content-Type": ["text/plain"],
+        }
     }

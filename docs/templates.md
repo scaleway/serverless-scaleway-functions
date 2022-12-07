@@ -21,3 +21,9 @@ Here is the default template for `Go`, you can customize `runtime` if you don't 
 Here is the default template for `Python`, you can customize `runtime` if you don't want default value :
 
 - [Python 3 starter kit](../examples/python3)
+
+## Rust
+
+Here is the default template for `Rust`, you can customize `runtime` if you don't want default value :
+
+- [Rust starter kit](../examples/rust)
