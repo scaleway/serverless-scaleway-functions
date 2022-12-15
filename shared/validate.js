@@ -3,6 +3,7 @@
 const BbPromise = require('bluebird');
 const fs = require('fs');
 const path = require('path');
+const rgx = require('@scaleway/regex');
 
 // COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes
 // that are considered as "compiled runtimes".
@@ -24,13 +25,9 @@ const RUNTIMES_EXTENSIONS = {
 
 const REGION_LIST = ['fr-par', 'nl-ams', 'pl-waw'];
 
-const cronScheduleRegex = new RegExp(
-  /^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$/,
-);
-
 const TRIGGERS_VALIDATION = {
   schedule: (trigger) => {
-    if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
+    if (!trigger.rate || !rgx.cron.test(trigger.rate)) {
       throw new Error(`Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`);
     }
   },
