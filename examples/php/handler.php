@@ -8,7 +8,7 @@ function handle($event, $context)
 {
     $headers = json_decode('
     {
-        "Content-Type": ["application/json"]
+        "Content-Type": ["text/plain"]
     }
     ');
 
