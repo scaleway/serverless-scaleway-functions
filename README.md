@@ -310,9 +310,9 @@ functions:
 
 Recommended folder structure for `php` runtimes:
 ```yml
-- handler.php
-- composer.json (not necessary if you do not need dependencies)
-- serverless.yml
+├── handler.php
+├── composer.json (not necessary if you do not need dependencies)
+└── serverless.yml
 ```
 
 Your serverless.yml `functions` should look something like this:

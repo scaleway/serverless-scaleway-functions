@@ -1,13 +1,28 @@
-module.exports.handle = (event, context, callback) => {
-  const result = {
-    message: 'Hello from Serverless Framework and Scaleway Functions :D',
-  };
-  const response = {
-    statusCode: 200,
-    headers: {"Content-Type": ["application/json"]},
-    body: JSON.stringify(result),
-  };
+<?php
 
-  // either return cb(undefined, response) or return response
-  return response;
-};
+require __DIR__ . '/vendor/autoload.php';
+
+use Ramsey\Uuid\Uuid;
+
+function handle($event, $context)
+{
+    $headers = json_decode('
+    {
+        "Content-Type": ["application/json"]
+    }
+    ');
+
+    $uuid = Uuid::uuid4();
+
+    printf(
+        "UUID: %s\nVersion: %d\n",
+        $uuid->toString(),
+        $uuid->getFields()->getVersion()
+    );
+
+    return [
+        "body" => phpversion(),
+        "statusCode" => 200,
+        "headers" => $headers,
+    ];
+}
