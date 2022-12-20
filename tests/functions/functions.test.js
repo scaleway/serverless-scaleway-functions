@@ -6,7 +6,8 @@ const { expect } = require('chai');
 const { expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
+const { getServiceName, sleep } = require('../utils/misc');
+const { serverlessDeploy, serverlessRemove } = require('../utils/misc');
 const { FunctionApi, RegistryApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 const { execSync, execCaptureOutput } = require('../../shared/child-process');
@@ -18,6 +19,7 @@ const serverlessExec = path.join('serverless');
 const stringIdentifier = '# second-function-identifier';
 const serverlessFile = 'serverless.yml';
 const descriptionTest = 'slsfw test description';
+const httpOptionTest = 'redirected';
 
 describe('Service Lifecyle Integration Test', () => {
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs');
@@ -62,6 +64,7 @@ describe('Service Lifecyle Integration Test', () => {
     namespace = await api.getNamespaceFromList(serviceName, scwProject);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions[0].description).to.be.equal(descriptionTest);
+    expect(namespace.functions[0].http_option).to.be.equal(httpOptionTest);
     functionName = namespace.functions[0].name;
   });
 
