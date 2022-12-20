@@ -19,7 +19,8 @@ const serverlessExec = path.join('serverless');
 const stringIdentifier = '# second-function-identifier';
 const serverlessFile = 'serverless.yml';
 const descriptionTest = 'slsfw test description';
-const httpOptionTest = 'redirected';
+const redirectedHttpOptionTest = 'redirected';
+const enabledHttpOptionTest = 'enabled';
 
 describe('Service Lifecyle Integration Test', () => {
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs');
@@ -64,7 +65,7 @@ describe('Service Lifecyle Integration Test', () => {
     namespace = await api.getNamespaceFromList(serviceName, scwProject);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions[0].description).to.be.equal(descriptionTest);
-    expect(namespace.functions[0].http_option).to.be.equal(httpOptionTest);
+    expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
     functionName = namespace.functions[0].name;
   });
 
@@ -100,13 +101,18 @@ module.exports.handle = (event, context, cb) => {
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
     serverlessDeploy();
+    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    namespace.functions = await api.listFunctions(namespace.id);
+    expect(namespace.functions.length).to.be.equal(2);
+    expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
+    expect(namespace.functions[1].http_option).to.be.equal(enabledHttpOptionTest);
   });
 
   it('should invoke first and second function', async () => {
     const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
     expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
 
-    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
+    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[1].name]);
     expect(outputInvokeSecond).to.be.equal('{"message":"Serverless Update Succeeded"}');
   });
 
@@ -119,12 +125,25 @@ module.exports.handle = (event, context, cb) => {
 
     // redeploy, func 2 should be removed
     serverlessDeploy();
+    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    namespace.functions = await api.listFunctions(namespace.id);
+    expect(namespace.functions.length).to.be.equal(1);
 
     const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
     expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
 
     const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
     expect(outputInvokeSecond.startsWith('Error')).to.be.equal(true);
+  });
+
+  it('should deploy function with https redirection disabled', async () => {
+    replaceTextInFile(serverlessFile, redirectedHttpOptionTest, enabledHttpOptionTest);
+
+    // redeploy
+    serverlessDeploy();
+    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    namespace.functions = await api.listFunctions(namespace.id);
+    expect(namespace.functions[0].http_option).to.be.equal(enabledHttpOptionTest);
   });
 
   it('should invoke updated function from scaleway', async () => {
@@ -186,6 +205,16 @@ def handle(event, context):
 
   it('should throw error runtime does not exist', () => {
     replaceTextInFile(serverlessFile, 'node16', 'doesnotexist');
+    try {
+      expect(serverlessDeploy()).rejects.toThrow(Error);
+    } catch (err) {
+      // if not try catch, test would fail
+    }
+    replaceTextInFile(serverlessFile, 'doesnotexist', 'node16');
+  });
+
+  it('should throw error unknown value on field http_option', () => {
+    replaceTextInFile(serverlessFile, enabledHttpOptionTest, 'random');
     try {
       expect(serverlessDeploy()).rejects.toThrow(Error);
     } catch (err) {
