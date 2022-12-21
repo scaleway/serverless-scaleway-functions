@@ -1,4 +1,4 @@
-service: scaleway-nodeXX
+service: scaleway-php
 configValidationMode: off
 singleSource: false
 provider:
