@@ -89,6 +89,7 @@ module.exports = {
       timeout: container.timeout,
       privacy: container.privacy,
       port: container.port,
+      http_option: container.httpOption,
     };
 
     // checking if there is custom_domains set on container creation.
@@ -121,6 +122,7 @@ module.exports = {
       timeout: container.timeout,
       privacy: container.privacy,
       port: container.port,
+      http_option: container.httpOption,
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);

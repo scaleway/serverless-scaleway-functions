@@ -166,6 +166,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       handler: func.handler,
       privacy: func.privacy,
       domain_name: func.domain_name,
+      http_option: func.httpOption,
     };
 
     const availableRuntimes = await this.listRuntimes();
@@ -205,6 +206,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       handler: func.handler,
       privacy: func.privacy,
       domain_name: func.domain_name,
+      http_option: func.httpOption,
     };
 
     const availableRuntimes = await this.listRuntimes();

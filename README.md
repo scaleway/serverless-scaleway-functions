@@ -159,6 +159,7 @@ The configuration includes the following parameters:
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
   * `custom_domains` (Optional): List of custom domains, refer to the [how to add a custom domain](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) documentation page
+  * `httpOption` (Optional): force https redirection, possible values are `enabled` and `redirected` (default: `enabled`)
 
 ### Security and secret management
 
@@ -439,7 +440,7 @@ If `singleSource` is set to `true`, functions and containers not defined in your
 - You have [created a Container Registry namespace](https://www.scaleway.com/en/docs/compute/container-registry/how-to/create-namespace/)
 - You have installed Docker and can build and push your image to your registry.
 
-To manafge your containers, you must first define them in the `custom.containers` field in your `serverless.yml` configuration file.
+To manage your containers, you must first define them in the `custom.containers` field in your `serverless.yml` configuration file.
 
 Each container must specify the relative path of its application directory (containing the Dockerfile, and all files related to the application to deploy):
 

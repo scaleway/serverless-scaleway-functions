@@ -19,6 +19,7 @@ package:
 functions:
   first:
     handler: handler.handle
+    httpOption: redirected
     # description: ""
     # Local environment variables - used only in given function
     env:
