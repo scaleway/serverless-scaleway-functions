@@ -1,0 +1,25 @@
+service: scaleway-php
+configValidationMode: off
+singleSource: false
+provider:
+  name: scaleway
+  runtime: php82
+  # Global Environment variables - used in every functions
+  env:
+    test: test
+
+plugins:
+  - serverless-scaleway-functions
+
+package:
+  patterns:
+    - '!.gitignore'
+    - '!.git/**'
+
+functions:
+  first:
+    handler: handler.handle
+    # description: ""
+    # Local environment variables - used only in given function
+    env:
+      local: local

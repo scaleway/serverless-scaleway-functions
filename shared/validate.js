@@ -18,6 +18,7 @@ const RUNTIMES_EXTENSIONS = {
   // tester .ts in node runtime
   node: ['ts', 'js'],
   python: ['py'],
+  php: ['php'],
   go: [],
   rust: [],
 };
