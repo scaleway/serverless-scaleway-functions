@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.5
+### Added
+- `httpOption` parameter
+- Support for PHP runtime
+
 ## 0.4.4
 ### Added
 - Support for Rust files (`.rs`)
