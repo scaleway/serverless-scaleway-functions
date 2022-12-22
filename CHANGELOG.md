@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.5
+### Added
+- `httpOption` parameter
+- Support for PHP runtime
+### Fixed
+- Cron regex was different from console
+
 ## 0.4.4
 ### Added
 - Support for Rust files (`.rs`)
