@@ -4,6 +4,8 @@
 ### Added
 - `httpOption` parameter
 - Support for PHP runtime
+### Fixed
+- Cron regex was different from console
 
 ## 0.4.4
 ### Added
