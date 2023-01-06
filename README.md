@@ -331,7 +331,7 @@ functions:
 Recommended folder structure for `rust` runtimes:
 ```yml
 - src
-  - handler.rs
+  - handler.rs (with async handler function)
 - serverless.yml
 ```
 

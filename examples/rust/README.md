@@ -14,3 +14,7 @@ Suggested code layout:
 ## Handler name
 
 The `handler name` is the name of your handler function (example: `Handle`).
+
+## Handler definition
+
+Rust handler must be async to work.

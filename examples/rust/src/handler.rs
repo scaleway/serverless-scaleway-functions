@@ -2,7 +2,7 @@ use hyper::{
     Body, Request, Response, StatusCode,
 };
 
-pub fn MyHandler(_req: Request<Body>) -> Response<Body> {
+pub async fn MyHandler(_req: Request<Body>) -> Response<Body> {
     Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "text/plain")
