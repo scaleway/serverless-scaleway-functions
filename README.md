@@ -24,7 +24,7 @@ This is the [Scaleway Functions](https://www.scaleway.com/en/serverless-function
   ```shell
   serverless create --path my-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
   ```
-3. Install deps.
+3. Install dependencies.
   ```shell
   cd my-func
   npm i
@@ -76,7 +76,7 @@ The easiest way to create a new project is to use one of our templates. The list
   # mkdir ~/my-srvless-projects
   # cd ~/my-srvless-projects
   ```
-2. Create a new project using `python3.
+2. Create a new project using `python3`.
 
   ```bash
   serverless create --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/python3 --path myService
@@ -164,7 +164,7 @@ The configuration includes the following parameters:
 ### Security and secret management
 
 >**Important**: 
-We recommend you to not commit in VCS, and to not share your Project ID or access key to ensure the security of your configuration file, which may contain sensitive data.  
+We recommend you to not commit in a Version Control System (VCS), and to not share your Project ID or access key to ensure the security of your configuration file, which may contain sensitive data.  
 
 To keep your information safe and to share or commit your `serverless.yml` file you should remove your credentials from the file. Once you have done so, you can either:
   - use global environment variables, or
@@ -225,7 +225,7 @@ function handle (event, context, cb) {
 };
 ```
 
-The use of ES modules is encouraged, since they are more efficient and make setup and debugging much easier.
+The use of ES modules is encouraged since they are more efficient and make setup and debugging much easier.
 
 Note that using `"type": "module"` or `"type": "commonjs"` in your `package.json` file will enable or disable some features in Node runtime, such as:
 - `commonjs` is used as the default value
