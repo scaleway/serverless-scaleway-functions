@@ -496,7 +496,7 @@ The `serverless info` command gives you information about your functions' or con
 - [Official Scaleway Serverless Containers Documentation](https://www.scaleway.com/en/docs/compute/containers/api-cli/cont-uploading-with-serverless-framework/)
 - [Serverless Framework documentation](https://serverless.com)
 - [Scaleway Cloud Provider](https://scaleway.com)
-- [Examples and templates](https://github.com/scaleway/serverless-scaleway-functions/blob/master/examples) for different runtimes on Scaleway Functions
+- [Scaleway Serverless sample projects](https://github.com/scaleway/serverless-examples)
 
 
 ## Contributing
