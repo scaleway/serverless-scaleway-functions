@@ -61,6 +61,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Deployment methods](#deployment-methods)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
+  - [Offline testing](#offline-testing)
   - [Info](#info)
   - [Documentation and useful links](#documentation-and-useful-links)
   - [Contributing](#contributing)
@@ -485,6 +486,12 @@ You can fetch the logs of a specific function for with the `--function` option. 
 ```bash
 serverless logs --function <function_or_container_name>
 ```
+
+## Offline testing
+
+Deploying function locally provides a better developer experience by allowing for faster testing process and debugging. 
+
+It's not supported at th moment but we are currently working on different ways to provide serverless offline support, stay tuned. 
 
 ## Info
 
