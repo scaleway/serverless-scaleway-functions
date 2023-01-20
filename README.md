@@ -491,7 +491,7 @@ serverless logs --function <function_or_container_name>
 
 Deploying functions locally provides a shorter development feedback loop, allowing for faster testing and debugging. This is something we are actively working on, so watch this space!
 
-It's not supported at th moment but we are currently working on different ways to provide serverless offline support, stay tuned. 
+<remove this line>
 
 ## Info
 
