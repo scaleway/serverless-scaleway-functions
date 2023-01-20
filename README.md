@@ -491,8 +491,6 @@ serverless logs --function <function_or_container_name>
 
 Deploying functions locally provides a shorter development feedback loop, allowing for faster testing and debugging. This is something we are actively working on, so watch this space!
 
-<remove this line>
-
 ## Info
 
 The `serverless info` command gives you information about your functions' or containers' current deployement state in JSON format.
