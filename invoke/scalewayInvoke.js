@@ -62,7 +62,7 @@ class ScalewayInvoke {
         process.stdout.write(JSON.stringify(res.data));
       }).
       catch(error => {
-        process.stderr.write(error);
+        process.stderr.write(error.toString());
       });
     }
 
