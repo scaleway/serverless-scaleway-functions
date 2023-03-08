@@ -40,3 +40,8 @@ The `handler name` must be composed of the folder name and the handler function 
 If your code depends on private dependencies, you will need to run `go mod vendor` before deploying your function.
 
 See [Official Go Vendoring reference](https://go.dev/ref/mod#go-mod-vendor).
+
+## Local testing
+
+This examples use the [Go Framework](https://github.com/scaleway/serverless-functions-go) for local testing.
+To call you handler locally run `go run cmd/main.go`.

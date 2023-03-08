@@ -59,6 +59,7 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Events](#events)
     - [Custom domains](#custom-domains)
     - [Deployment methods](#deployment-methods)
+    - [Local testing](#local-testing)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
   - [Offline testing](#offline-testing)
@@ -434,6 +435,14 @@ The `serverless deploy` command applies the configuration located in your `serve
 This can be controlled using the `singleSource` option. By default its value is `false`.
 
 If `singleSource` is set to `true`, functions and containers not defined in your serverless configuration file will be removed the next time you run the `serverless deploy` command.
+
+### Local testing
+
+`serverless invoke local` is **not supported** directly but instead we provide additional packages to install close to your handler.
+
+Documentation is available through runtimes frameworks for :
+* [Go](https://github.com/scaleway/serverless-functions-go)
+* [Python](https://github.com/scaleway/serverless-functions-python)
 
 ### Managing containers
 
