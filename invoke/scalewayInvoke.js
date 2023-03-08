@@ -1,5 +1,6 @@
 const BbPromise = require('bluebird');
 const axios = require('axios');
+const { EOL } = require('os');
 
 const scalewayApi = require('../shared/api/endpoint');
 const setUpDeployment = require('../shared/setUpDeployment');
@@ -62,7 +63,7 @@ class ScalewayInvoke {
         process.stdout.write(JSON.stringify(res.data));
       }).
       catch(error => {
-        process.stderr.write(error.toString());
+        process.stderr.write(error.toString() + EOL);
       });
     }
 
