@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.6
+### Added
+- Local testing example for Go and Python #149
+### Fixed
+- Error display on `serverless invoke` command #148
+- Timeout format in containe examples #145
+- Security deps #143 #144
+
 ## 0.4.5
 ### Added
 - `httpOption` parameter
