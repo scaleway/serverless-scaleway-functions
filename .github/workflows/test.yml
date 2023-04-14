@@ -3,7 +3,7 @@ name: npmtest
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "build-add-gha"]
   pull_request:
     branches: ["main"]
 
