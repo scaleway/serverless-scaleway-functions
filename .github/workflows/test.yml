@@ -1,0 +1,43 @@
+---
+name: npmtest
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        node-version: ["14.x", "16.x", "18.x"]
+
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up node ${{ matrix.node-version }}
+        id: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install serverless framework
+        run: npm install -g serverless
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test
+        env:
+          SCW_PROJECT: ${{ secrets.SCW_PROJECT }}
+          SCW_TOKEN: ${{ secrets.SCW_TOKEN }}

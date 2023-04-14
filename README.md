@@ -516,7 +516,11 @@ The `serverless info` command gives you information about your functions' or con
 
 ## Contributing
 
-This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/): #serverless-containers and #serverless-functions.
+This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and 
+are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/): #serverless-containers 
+and #serverless-functions.
+
+If you are looking for a way to contribute please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md).
 
 For general information about developing Serverless Framework, refer to the Serverless Framework [plugins documentation](https://www.serverless.com/framework/docs/guides/plugins/creating-plugins).
 
@@ -535,6 +539,19 @@ plugins:
 ```
 
 Then you can run commands as normal.
+
+## Help & support
+
+- Scaleway support is available on Scaleway Console.
+- Additionally, you can join our [Slack Community](https://www.scaleway.com/en/docs/tutorials/scaleway-slack-community/)
+
+## Reach Us
+
+We love feedback. Feel free to:
+
+- Open a [Github issue](https://github.com/scaleway/serverless-functions-node/issues/new)
+- Send us a message on the [Scaleway Slack community](https://slack.scaleway.com/), in the
+  [#serverless-functions](https://scaleway-community.slack.com/app_redirect?channel=serverless-functions) channel.
 
 ## License
 
