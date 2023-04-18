@@ -442,6 +442,7 @@ If `singleSource` is set to `true`, functions and containers not defined in your
 Documentation is available through runtimes frameworks for :
 * [Go](https://github.com/scaleway/serverless-functions-go)
 * [Python](https://github.com/scaleway/serverless-functions-python)
+* [Node](https://github.com/scaleway/serverless-functions-node)
 
 ### Managing containers
 
