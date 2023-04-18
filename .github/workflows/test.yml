@@ -38,3 +38,4 @@ jobs:
         env:
           SCW_PROJECT: ${{ secrets.SCW_PROJECT }}
           SCW_TOKEN: ${{ secrets.SCW_TOKEN }}
+          SCW_REGION: ${{ secrets.SCW_REGION }}
