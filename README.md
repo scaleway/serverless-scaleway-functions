@@ -161,6 +161,7 @@ The configuration includes the following parameters:
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
   * `custom_domains` (Optional): List of custom domains, refer to the [how to add a custom domain](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) documentation page
   * `httpOption` (Optional): force https redirection, possible values are `enabled` and `redirected` (default: `enabled`)
+  * `privacy` (Optional): defines whether a function may be executed anonymously (`public`) or only via an authentication mechanism (`private`) (default: `public`)
 
 ### Security and secret management
 
