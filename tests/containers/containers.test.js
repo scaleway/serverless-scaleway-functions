@@ -31,6 +31,9 @@ describe('Service Lifecyle Integration Test', () => {
   let containerName;
 
   beforeAll(() => {
+    expect(scwToken).to.not.be.equal(undefined)
+    expect(scwProject).to.not.be.equal(undefined)
+    expect(scwRegion).to.not.be.equal(undefined)
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);

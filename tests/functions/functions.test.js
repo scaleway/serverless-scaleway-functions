@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const { expect } = require('chai');
-const { expect: jestExpect, it } = require('@jest/globals');
+const { expect: jestExpect, it, fit } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep } = require('../utils/misc');
@@ -38,6 +38,9 @@ describe('Service Lifecyle Integration Test', () => {
   let functionName;
 
   beforeAll(() => {
+    expect(scwToken).to.not.be.equal(undefined)
+    expect(scwProject).to.not.be.equal(undefined)
+    expect(scwRegion).to.not.be.equal(undefined)
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new FunctionApi(apiUrl, scwToken);
@@ -48,7 +51,7 @@ describe('Service Lifecyle Integration Test', () => {
     process.chdir(oldCwd);
   });
 
-  it('should create service in tmp directory', () => {
+  fit('should create service in tmp directory', () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
