@@ -62,7 +62,6 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Local testing](#local-testing)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
-  - [Offline testing](#offline-testing)
   - [Info](#info)
   - [Documentation and useful links](#documentation-and-useful-links)
   - [Contributing](#contributing)
@@ -444,6 +443,7 @@ If `singleSource` is set to `true`, functions and containers not defined in your
 Documentation is available through runtimes frameworks for :
 * [Go](https://github.com/scaleway/serverless-functions-go)
 * [Python](https://github.com/scaleway/serverless-functions-python)
+* [Node](https://github.com/scaleway/serverless-functions-node)
 
 ### Managing containers
 
@@ -496,10 +496,6 @@ You can fetch the logs of a specific function for with the `--function` option. 
 ```bash
 serverless logs --function <function_or_container_name>
 ```
-
-## Offline testing
-
-Deploying functions locally provides a shorter development feedback loop, allowing for faster testing and debugging. This is something we are actively working on, so watch this space!
 
 ## Info
 
