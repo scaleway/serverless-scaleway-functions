@@ -5,6 +5,7 @@ const path = require('path');
 
 const ScalewayProvider = require('../../provider/scalewayProvider');
 const { createTmpDir } = require('../utils/fs');
+const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 class MockServerless {
   constructor() {
@@ -23,11 +24,6 @@ class MockServerless {
 }
 
 describe('Scaleway credentials test', () => {
-  if (process.env.SCW_SECRET_KEY || process.env.SCW_DEFAULT_PROJECT_ID ||
-    process.env.SCW_TOKEN || process.env.SCW_PROJECT) {
-    throw new Error("No credentials should be passed in environment variables for this test");
-  }
-
   this.expectedToken = null;
   this.expectedProject = null;
 

@@ -1,6 +1,7 @@
 const https = require('https');
 const axios = require('axios');
 
+const accountApi = require('./account');
 const domainApi = require('./domain');
 const namespacesApi = require('./namespaces');
 const functionsApi = require('./functions');
@@ -25,11 +26,22 @@ function getApiManager(apiUrl, token) {
   });
 }
 
+class AccountApi {
+  constructor(apiUrl, token) {
+    this.apiManager = getApiManager(apiUrl, token);
+    Object.assign(
+      this,
+      accountApi,
+    );
+  }
+}
+
 class FunctionApi {
   constructor(apiUrl, token) {
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
+      accountApi,
       domainApi,
       namespacesApi,
       functionsApi,
@@ -46,6 +58,7 @@ class ContainerApi {
     this.apiManager = getApiManager(apiUrl, token);
     Object.assign(
       this,
+      accountApi,
       domainApi,
       namespacesApi,
       containersApi,
@@ -57,9 +70,9 @@ class ContainerApi {
   }
 }
 
-
 module.exports = {
   getApiManager,
+  AccountApi,
   FunctionApi,
   ContainerApi,
   RegistryApi,

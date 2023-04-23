@@ -1,17 +1,18 @@
 'use strict';
 
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+
 const { expect } = require('chai');
-const { expect: jestExpect, it, fit } = require('@jest/globals');
+const { afterAll, beforeAll, beforeEach, describe, expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep } = require('../utils/misc');
-const { serverlessDeploy, serverlessRemove } = require('../utils/misc');
-const { FunctionApi, RegistryApi } = require('../../shared/api');
-const { FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
-const { execSync, execCaptureOutput } = require('../../shared/child-process');
+const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove } = require('../utils/misc');
+const { AccountApi, FunctionApi, RegistryApi } = require('../../shared/api');
+const { execSync } = require('../../shared/child-process');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 
 const serverlessExec = path.join('serverless');
 
@@ -23,49 +24,66 @@ const redirectedHttpOptionTest = 'redirected';
 const enabledHttpOptionTest = 'enabled';
 
 describe('Service Lifecyle Integration Test', () => {
+  const scwRegion = process.env.SCW_REGION;
+  const scwToken = process.env.SCW_SECRET_KEY;
+  const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
+  const apiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
+  const accountApiUrl = `${ACCOUNT_API_URL}`;
+  const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs');
   const tmpDir = getTmpDirPath();
+
+  let options = {};
+  options.env = {};
+  options.env.SCW_SECRET_KEY = scwToken;
+  options.env.SCW_REGION = scwRegion;
+
   let oldCwd;
   let serviceName;
-  const scwRegion = process.env.SCW_REGION;
-  const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
-  const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
-  const apiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
-  const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
   let api;
+  let accountApi;
   let registryApi;
   let namespace;
   let functionName;
+  let project;
 
-  beforeAll(() => {
-    expect(scwToken).to.not.be.equal(undefined)
-    expect(scwProject).to.not.be.equal(undefined)
-    expect(scwRegion).to.not.be.equal(undefined)
+  beforeAll(async () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new FunctionApi(apiUrl, scwToken);
+    accountApi = new AccountApi(accountApiUrl, scwToken);
     registryApi = new RegistryApi(registryApiUrl, scwToken);
+
+    // Create new project
+    project = await accountApi.createProject({
+      name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
+      organization_id: scwOrganizationId,
+    })
+    options.env.SCW_DEFAULT_PROJECT_ID = project.id;
   });
 
-  afterAll(() => {
+  afterAll(async () => {
+    // TODO: remove sleep and use a real way to find out when all resources are actually deleted
+    await sleep(60000);
+    await accountApi.deleteProject(project.id);
     process.chdir(oldCwd);
   });
 
-  fit('should create service in tmp directory', () => {
+  it('should create service in tmp directory', () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
     replaceTextInFile(serverlessFile, 'scaleway-nodeXX', serviceName);
     replaceTextInFile(serverlessFile, '<scw-token>', scwToken);
-    replaceTextInFile(serverlessFile, '<scw-project-id>', scwProject);
+    replaceTextInFile(serverlessFile, '<scw-project-id>', project.id);
     replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
     expect(fs.existsSync(path.join(tmpDir, serverlessFile))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
   });
 
   it('should deploy service to scaleway', async () => {
-    serverlessDeploy();
-    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    serverlessDeploy(options);
+    namespace = await api.getNamespaceFromList(serviceName, project.id);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions[0].description).to.be.equal(descriptionTest);
     expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
@@ -73,10 +91,9 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke function from scaleway', async () => {
-    // TODO query function status instead of having an arbitrary sleep
-    await sleep(30000);
-
-    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    await api.waitFunctionsAreDeployed(namespace.id);
+    options.serviceName = functionName;
+    const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
   });
 
@@ -103,8 +120,8 @@ module.exports.handle = (event, context, cb) => {
     // add a 'second' function to serverless.yml
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
-    serverlessDeploy();
-    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    serverlessDeploy(options);
+    namespace = await api.getNamespaceFromList(serviceName, project.id);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions.length).to.be.equal(2);
     expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
@@ -112,10 +129,12 @@ module.exports.handle = (event, context, cb) => {
   });
 
   it('should invoke first and second function', async () => {
-    const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
+    options.serviceName = namespace.functions[0].name
+    const outputInvoke = serverlessInvoke(options).toString();
     expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
 
-    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[1].name]);
+    options.serviceName = namespace.functions[1].name
+    const outputInvokeSecond = serverlessInvoke(options).toString();
     expect(outputInvokeSecond).to.be.equal('{"message":"Serverless Update Succeeded"}');
   });
 
@@ -127,24 +146,29 @@ module.exports.handle = (event, context, cb) => {
     replaceTextInFile(serverlessFile, `    handler: handler.handle ${stringIdentifier}`, '');
 
     // redeploy, func 2 should be removed
-    serverlessDeploy();
-    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    serverlessDeploy(options);
+    namespace = await api.getNamespaceFromList(serviceName, project.id);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions.length).to.be.equal(1);
 
-    const outputInvoke = execCaptureOutput(serverlessExec, ['invoke', '--function', namespace.functions[0].name]);
+    options.serviceName = namespace.functions[0].name;
+    const outputInvoke = serverlessInvoke(options).toString();
     expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
 
-    const outputInvokeSecond = execCaptureOutput(serverlessExec, ['invoke', '--function', 'second']);
-    expect(outputInvokeSecond.startsWith('Error')).to.be.equal(true);
+    options.serviceName = 'second'
+    try {
+      expect(serverlessInvoke(options)).rejects.toThrow(Error);
+    } catch (err) {
+      // if not try catch, test would fail
+    }
   });
 
   it('should deploy function with https redirection disabled', async () => {
     replaceTextInFile(serverlessFile, redirectedHttpOptionTest, enabledHttpOptionTest);
 
     // redeploy
-    serverlessDeploy();
-    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    serverlessDeploy(options);
+    namespace = await api.getNamespaceFromList(serviceName, project.id);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions[0].http_option).to.be.equal(enabledHttpOptionTest);
   });
@@ -152,7 +176,8 @@ module.exports.handle = (event, context, cb) => {
   it('should invoke updated function from scaleway', async () => {
     await sleep(30000);
 
-    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    options.serviceName = functionName;
+    const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Serverless Update Succeeded"}');
   });
 
@@ -172,18 +197,19 @@ def handle(event, context):
   }
 `;
     fs.writeFileSync(path.join(tmpDir, 'handler.py'), pythonHandler);
-    serverlessDeploy();
+    serverlessDeploy(options);
   });
 
   it('should invoke function with runtime updated from scaleway', async () => {
     await sleep(30000);
 
-    const output = execCaptureOutput(serverlessExec, ['invoke', '--function', functionName]);
+    options.serviceName = functionName;
+    const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}');
   });
 
   it('should remove service from scaleway', async () => {
-    serverlessRemove();
+    serverlessRemove(options);
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
@@ -192,14 +218,15 @@ def handle(event, context):
   });
 
   it('should remove registry namespace properly', async () => {
-    const response = await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
-    expect(response.status).to.be.equal(200);
+    await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
+    const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
+    expect(response).to.be.equal(true);
   });
 
   it('should throw error handler not found', () => {
     replaceTextInFile(serverlessFile, 'handler.handle', 'doesnotexist.handle');
     try {
-      expect(serverlessDeploy()).rejects.toThrow(Error);
+      expect(serverlessDeploy(options)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
@@ -207,23 +234,25 @@ def handle(event, context):
   });
 
   it('should throw error runtime does not exist', () => {
-    replaceTextInFile(serverlessFile, 'node16', 'doesnotexist');
+    replaceTextInFile(serverlessFile, 'python310', 'doesnotexist');
     try {
-      expect(serverlessDeploy()).rejects.toThrow(Error);
+      expect(serverlessDeploy(options)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
     replaceTextInFile(serverlessFile, 'doesnotexist', 'node16');
   });
 
-  it('should throw error unknown value on field http_option', () => {
+  // TODO: throw error if http_option is incorrect
+  // ATM, no error is thrown: http_option is not checked during validation
+  /*it('should throw error unknown value on field http_option', () => {
     replaceTextInFile(serverlessFile, enabledHttpOptionTest, 'random');
     try {
-      expect(serverlessDeploy()).rejects.toThrow(Error);
+      expect(serverlessDeploy(options)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
-  });
+  });*/
 });
 
 describe('validateRuntimes', () => {

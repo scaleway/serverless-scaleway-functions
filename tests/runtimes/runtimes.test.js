@@ -1,51 +1,73 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
 const { expect } = require('chai');
 const { getTmpDirPath } = require('../utils/fs');
 const { getServiceName, createTestService, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
-const { FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
-const { FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+
+const { AccountApi, FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const crypto = require('crypto');
 
 const scwRegion = process.env.SCW_REGION;
-const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
-const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
+const scwToken = process.env.SCW_SECRET_KEY;
+const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
+
+let options = {};
+options.env = {};
+options.env.SCW_SECRET_KEY = scwToken;
+options.env.SCW_REGION = scwRegion;
+
+const tmpDir = getTmpDirPath();
+const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
+const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 const devModuleDir = path.resolve(__dirname, '..', '..');
 const examplesDir = path.resolve(devModuleDir, 'examples');
 let api;
+let accountApi;
+let namespace = {};
+let project;
+let runtimeServiceName;
 const oldCwd = process.cwd();
-const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 
 const exampleRepositories = fs.readdirSync(examplesDir);
 
 describe.each(exampleRepositories)(
   'test runtimes',
   (runtime) => {
-    const runtimeServiceName = getServiceName(runtime);
-    const tmpDir = getTmpDirPath();
 
-    let namespace = {};
+    beforeAll( async () => {
+      accountApi = new AccountApi(accountApiUrl, scwToken);
+      // Create new project
+      project = await accountApi.createProject({
+        name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
+        organization_id: scwOrganizationId,
+      })
+      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+
+      runtimeServiceName = getServiceName(runtime);
+      createTestService(tmpDir, oldCwd, {
+        devModuleDir,
+        templateName: path.resolve(examplesDir, runtime),
+        serviceName: runtimeServiceName,
+        runCurrentVersion: true,
+      });
+    });
+
+    afterAll( async () => {
+      // TODO: remove sleep and use a real way to find out when all resources are actually deleted
+      await sleep(60000);
+      await accountApi.deleteProject(project.id);
+      process.chdir(oldCwd);
+    });
 
     const isContainer = ['container', 'container-schedule'].includes(runtime);
-
-    createTestService(tmpDir, oldCwd, {
-      devModuleDir,
-      templateName: path.resolve(examplesDir, runtime),
-      serviceName: runtimeServiceName,
-      runCurrentVersion: true,
-      serverlessConfigHook: (config) => {
-        // use right SCW token and project for the deployment as well as service name
-        const newConfig = { ...config };
-        newConfig.provider.scwToken = scwToken;
-        newConfig.provider.scwProject = scwProject;
-        newConfig.provider.scwRegion = scwRegion;
-        return newConfig;
-      },
-    });
 
     it(`should create service for runtime ${runtime} in tmp directory`, () => {
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
@@ -54,19 +76,19 @@ describe.each(exampleRepositories)(
 
     it(`should deploy service for runtime ${runtime} to scaleway`, async () => {
       process.chdir(tmpDir);
-      let options = {};
+      let optionsWithSecrets = options;
       if (runtime === 'secrets') {
-        options = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
+        optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
-      serverlessDeploy(options);
+      serverlessDeploy(optionsWithSecrets);
       // If runtime is container => get container
       if (isContainer) {
         api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName, scwProject);
+        namespace = await api.getNamespaceFromList(runtimeServiceName, project.id);
         namespace.containers = await api.listContainers(namespace.id);
       } else {
         api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName, scwProject);
+        namespace = await api.getNamespaceFromList(runtimeServiceName, project.id);
         namespace.functions = await api.listFunctions(namespace.id);
       }
     });
@@ -95,7 +117,7 @@ describe.each(exampleRepositories)(
 
     it(`should remove service for runtime ${runtime} from scaleway`, async () => {
       process.chdir(tmpDir);
-      serverlessRemove();
+      serverlessRemove(options);
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
@@ -104,10 +126,9 @@ describe.each(exampleRepositories)(
     });
 
     it(`should remove registry namespace for runtime ${runtime} properly`, async () => {
-      const response = await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
-      expect(response.status).to.be.equal(200);
+      await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
+      const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
+      expect(response).to.be.equal(true);
     });
-
-    process.chdir(oldCwd);
   },
 );

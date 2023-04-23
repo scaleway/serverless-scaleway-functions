@@ -48,6 +48,11 @@ function serverlessDeploy(options) {
   return execSync(`${serverlessExec} deploy`, options);
 }
 
+function serverlessInvoke(options) {
+  options = mergeOptionsWithEnv(options);
+  return execSync(`${serverlessExec} invoke --function ${options.serviceName}`, options);
+}
+
 function serverlessRemove(options) {
   options = mergeOptionsWithEnv(options);
   return execSync(`${serverlessExec} remove`, options);
@@ -100,6 +105,7 @@ module.exports = {
   serverlessExec,
   getServiceName,
   serverlessDeploy,
+  serverlessInvoke,
   serverlessRemove,
   createTestService,
   sleep,

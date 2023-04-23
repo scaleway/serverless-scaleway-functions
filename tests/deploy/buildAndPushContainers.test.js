@@ -1,6 +1,7 @@
 const rewire = require('rewire');
 const { expect } = require('chai');
 const { Readable } = require('stream');
+const { describe, it } = require('@jest/globals');
 
 const buildAndPushContainers = rewire('../../deploy/lib/buildAndPushContainers.js');
 const extractStreamContents = buildAndPushContainers.__get__('extractStreamContents');
