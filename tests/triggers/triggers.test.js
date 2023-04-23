@@ -40,32 +40,32 @@ const runtimesToTest = [
   { name: 'container-schedule', isFunction: false },
 ];
 
+beforeAll( async () => {
+  // Create new project
+  project = await accountApi.createProject({
+    name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
+    organization_id: scwOrganizationId,
+  })
+  options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+});
+
+afterAll( async () => {
+  // TODO: remove sleep and use a real way to find out when all resources are actually deleted
+  await sleep(60000);
+  await accountApi.deleteProject(project.id);
+  process.chdir(oldCwd);
+});
+
 describe.each(runtimesToTest)(
   'test triggers',
   (runtime) => {
 
-    beforeAll( async () => {
-      // Create new project
-      project = await accountApi.createProject({
-        name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
-        organization_id: scwOrganizationId,
-      })
-      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-
-      runtimeServiceName = getServiceName(runtime.name);
-      createTestService(tmpDir, oldCwd, {
-        devModuleDir,
-        templateName: path.resolve(examplesDir, runtime.name),
-        serviceName: runtimeServiceName,
-        runCurrentVersion: true,
-      });
-    });
-
-    afterAll( async () => {
-      // TODO: remove sleep and use a real way to find out when all resources are actually deleted
-      await sleep(60000);
-      await accountApi.deleteProject(project.id);
-      process.chdir(oldCwd);
+    runtimeServiceName = getServiceName(runtime.name);
+    createTestService(tmpDir, oldCwd, {
+      devModuleDir,
+      templateName: path.resolve(examplesDir, runtime.name),
+      serviceName: runtimeServiceName,
+      runCurrentVersion: true,
     });
 
     it(`${runtime.name}: should create service in tmp directory`, () => {

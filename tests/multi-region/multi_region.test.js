@@ -37,27 +37,28 @@ let project;
 
 const regions = ['fr-par', 'nl-ams', 'pl-waw'];
 
+beforeAll( async () => {
+  accountApi = new AccountApi(accountApiUrl, scwToken);
+  // Create new project
+  project = await accountApi.createProject({
+    name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
+    organization_id: scwOrganizationId,
+  })
+  options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+});
+
+afterAll( async () => {
+  // TODO: remove sleep and use a real way to find out when all resources are actually deleted
+  await sleep(60000);
+  await accountApi.deleteProject(project.id);
+  process.chdir(oldCwd);
+});
+
 describe.each(regions)(
   'test regions',
   (region) => {
 
-    beforeAll( async () => {
-      accountApi = new AccountApi(accountApiUrl, scwToken);
-      // Create new project
-      options.env.SCW_REGION = region;
-      project = await accountApi.createProject({
-        name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
-        organization_id: scwOrganizationId,
-      })
-      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-    });
-
-    afterAll( async () => {
-      // TODO: remove sleep and use a real way to find out when all resources are actually deleted
-      await sleep(60000);
-      await accountApi.deleteProject(project.id);
-      process.chdir(oldCwd);
-    });
+    options.env.SCW_REGION = region;
 
     it('should create service in tmp directory', () => {
       const tmpDir = getTmpDirPath();
