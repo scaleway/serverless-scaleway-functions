@@ -114,7 +114,7 @@ describe('Service Lifecyle Integration Test', () => {
     await image.push(auth);
 
     // registry lag
-    await sleep(30000);
+    await sleep(60000);
 
     const params = {
       redeploy: false,

@@ -1,16 +1,18 @@
 'use strict';
 
-const path = require('path');
+const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 
 const { expect } = require('chai');
 
+const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, createTestService, serverlessDeploy, serverlessRemove, sleep } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, sleep } = require('../utils/misc');
+
 const { AccountApi, FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
-const crypto = require('crypto');
 
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
@@ -21,6 +23,7 @@ options.env = {};
 options.env.SCW_SECRET_KEY = scwToken;
 options.env.SCW_REGION = scwRegion;
 
+const serverlessExec = path.join('serverless');
 const tmpDir = getTmpDirPath();
 const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
@@ -31,7 +34,8 @@ const examplesDir = path.resolve(devModuleDir, 'examples');
 let api;
 let namespace = {};
 let project;
-let runtimeServiceName;
+let templateName;
+let serviceName;
 const accountApi = new AccountApi(accountApiUrl, scwToken);
 const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 
@@ -60,15 +64,13 @@ describe.each(runtimesToTest)(
   'test triggers',
   (runtime) => {
 
-    runtimeServiceName = getServiceName(runtime.name);
-    createTestService(tmpDir, oldCwd, {
-      devModuleDir,
-      templateName: path.resolve(examplesDir, runtime.name),
-      serviceName: runtimeServiceName,
-      runCurrentVersion: true,
-    });
-
     it(`${runtime.name}: should create service in tmp directory`, () => {
+      templateName = path.resolve(examplesDir, runtime.name)
+      serviceName = getServiceName(runtime.name);
+      execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
+      process.chdir(tmpDir);
+      execSync(`npm link ${oldCwd}`);
+      replaceTextInFile('serverless.yml', 'scaleway-nodeXX', serviceName);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
     });
@@ -78,11 +80,11 @@ describe.each(runtimesToTest)(
       serverlessDeploy(options);
       if (runtime.isFunction) {
         api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName, project.id);
+        namespace = await api.getNamespaceFromList(serviceName, project.id);
         namespace.functions = await api.listFunctions(namespace.id);
       } else {
         api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName, project.id);
+        namespace = await api.getNamespaceFromList(serviceName, project.id);
         namespace.containers = await api.listContainers(namespace.id);
       }
     });

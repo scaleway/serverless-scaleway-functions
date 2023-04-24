@@ -1,17 +1,19 @@
 'use strict';
 
 const axios = require('axios');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 const { expect } = require('chai');
-const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, createTestService, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
+
+const { execSync } = require('../../shared/child-process');
+const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove } = require('../utils/misc');
 
 const { AccountApi, FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
-const crypto = require('crypto');
 
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
@@ -22,6 +24,7 @@ options.env = {};
 options.env.SCW_SECRET_KEY = scwToken;
 options.env.SCW_REGION = scwRegion;
 
+const serverlessExec = path.join('serverless');
 const tmpDir = getTmpDirPath();
 const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
@@ -33,7 +36,8 @@ let api;
 let accountApi;
 let namespace = {};
 let project;
-let runtimeServiceName;
+let serviceName;
+let templateName;
 const oldCwd = process.cwd();
 
 const exampleRepositories = fs.readdirSync(examplesDir);
@@ -59,17 +63,15 @@ describe.each(exampleRepositories)(
   'test runtimes',
   (runtime) => {
 
-    runtimeServiceName = getServiceName(runtime);
-    createTestService(tmpDir, oldCwd, {
-      devModuleDir,
-      templateName: path.resolve(examplesDir, runtime),
-      serviceName: runtimeServiceName,
-      runCurrentVersion: true,
-    });
-
     const isContainer = ['container', 'container-schedule'].includes(runtime);
 
     it(`should create service for runtime ${runtime} in tmp directory`, () => {
+      templateName = path.resolve(examplesDir, runtime)
+      serviceName = getServiceName(runtime);
+      execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
+      process.chdir(tmpDir);
+      execSync(`npm link ${oldCwd}`);
+      replaceTextInFile('serverless.yml', 'scaleway-nodeXX', serviceName);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
     });
