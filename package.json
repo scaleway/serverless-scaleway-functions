@@ -9,7 +9,7 @@
     "git": "https://github.com/scaleway/serverless-scaleway-functions"
   },
   "scripts": {
-    "test": "jest --runInBand",
+    "test": "jest --maxWorkers 5",
     "test:functions": "jest --maxWorkers 5 tests/functions",
     "test:containers": "jest --maxWorkers 5 tests/containers",
     "test:multi-region": "jest --maxWorkers 5 tests/multi-region",
