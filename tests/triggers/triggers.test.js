@@ -6,9 +6,8 @@ const path = require('path');
 
 const { expect } = require('chai');
 
-const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, sleep } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, sleep, createTestService } = require('../utils/misc');
 
 const { AccountApi, FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
@@ -67,9 +66,12 @@ describe.each(runtimesToTest)(
       tmpDir = getTmpDirPath();
       templateName = path.resolve(examplesDir, runtime.name)
       serviceName = getServiceName(runtime.name);
-      execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
-      process.chdir(tmpDir);
-      execSync(`npm link ${oldCwd}`);
+      createTestService(tmpDir, oldCwd, {
+        devModuleDir,
+        templateName: path.resolve(examplesDir, runtime.name),
+        serviceName: serviceName,
+        runCurrentVersion: true,
+      });
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
     });
