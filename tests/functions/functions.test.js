@@ -109,7 +109,7 @@ module.exports.handle = (event, context, cb) => {
 `;
 
     fs.writeFileSync(path.join(tmpDir, 'handler.js'), newJsHandler);
-    serverlessDeploy();
+    serverlessDeploy(options);
   });
 
   it('should create and deploy second function', async () => {

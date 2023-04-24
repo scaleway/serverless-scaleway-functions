@@ -102,7 +102,7 @@ describe('Build and deploy on container with a base image private', () => {
 
   it('should deploy service/container to scaleway', async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, scwProject);
+    namespace = await api.getNamespaceFromList(serviceName, project.id);
     namespace.containers = await api.listContainers(namespace.id);
     containerName = namespace.containers[0].name;
   });
