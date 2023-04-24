@@ -24,7 +24,6 @@ options.env.SCW_SECRET_KEY = scwToken;
 options.env.SCW_REGION = scwRegion;
 
 const serverlessExec = path.join('serverless');
-const tmpDir = getTmpDirPath();
 const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
@@ -36,6 +35,7 @@ let namespace = {};
 let project;
 let templateName;
 let serviceName;
+let tmpDir;
 const accountApi = new AccountApi(accountApiUrl, scwToken);
 const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 
@@ -57,7 +57,6 @@ afterAll( async () => {
   // TODO: remove sleep and use a real way to find out when all resources are actually deleted
   await sleep(60000);
   await accountApi.deleteProject(project.id);
-  process.chdir(oldCwd);
 });
 
 describe.each(runtimesToTest)(
@@ -65,12 +64,12 @@ describe.each(runtimesToTest)(
   (runtime) => {
 
     it(`${runtime.name}: should create service in tmp directory`, () => {
+      tmpDir = getTmpDirPath();
       templateName = path.resolve(examplesDir, runtime.name)
       serviceName = getServiceName(runtime.name);
       execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
       process.chdir(tmpDir);
       execSync(`npm link ${oldCwd}`);
-      replaceTextInFile('serverless.yml', 'scaleway-nodeXX', serviceName);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
     });
@@ -135,6 +134,7 @@ describe.each(runtimesToTest)(
       await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
       const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
       expect(response).to.be.equal(true);
+      process.chdir(oldCwd);
     });
   },
 );

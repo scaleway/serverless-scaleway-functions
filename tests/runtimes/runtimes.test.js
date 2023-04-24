@@ -25,7 +25,6 @@ options.env.SCW_SECRET_KEY = scwToken;
 options.env.SCW_REGION = scwRegion;
 
 const serverlessExec = path.join('serverless');
-const tmpDir = getTmpDirPath();
 const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
@@ -38,6 +37,7 @@ let namespace = {};
 let project;
 let serviceName;
 let templateName;
+let tmpDir;
 const oldCwd = process.cwd();
 
 const exampleRepositories = fs.readdirSync(examplesDir);
@@ -56,7 +56,6 @@ afterAll( async () => {
   // TODO: remove sleep and use a real way to find out when all resources are actually deleted
   await sleep(60000);
   await accountApi.deleteProject(project.id);
-  process.chdir(oldCwd);
 });
 
 describe.each(exampleRepositories)(
@@ -66,12 +65,12 @@ describe.each(exampleRepositories)(
     const isContainer = ['container', 'container-schedule'].includes(runtime);
 
     it(`should create service for runtime ${runtime} in tmp directory`, () => {
+      tmpDir = getTmpDirPath();
       templateName = path.resolve(examplesDir, runtime)
       serviceName = getServiceName(runtime);
       execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
       process.chdir(tmpDir);
       execSync(`npm link ${oldCwd}`);
-      replaceTextInFile('serverless.yml', 'scaleway-nodeXX', serviceName);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
     });
@@ -86,11 +85,11 @@ describe.each(exampleRepositories)(
       // If runtime is container => get container
       if (isContainer) {
         api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName, project.id);
+        namespace = await api.getNamespaceFromList(serviceName, project.id);
         namespace.containers = await api.listContainers(namespace.id);
       } else {
         api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(runtimeServiceName, project.id);
+        namespace = await api.getNamespaceFromList(serviceName, project.id);
         namespace.functions = await api.listFunctions(namespace.id);
       }
     });
@@ -131,6 +130,7 @@ describe.each(exampleRepositories)(
       await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
       const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
       expect(response).to.be.equal(true);
+      process.chdir(oldCwd);
     });
   },
 );
