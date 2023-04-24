@@ -1,6 +1,5 @@
 'use strict';
 
-const axios = require('axios');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -10,9 +9,7 @@ const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove,
-  serverlessInvoke
-} = require('../utils/misc');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove, serverlessInvoke } = require('../utils/misc');
 const { AccountApi, FunctionApi, RegistryApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 
