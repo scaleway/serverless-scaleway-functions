@@ -9,9 +9,9 @@ const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove, serverlessInvoke } = require('../utils/misc');
-const { AccountApi, FunctionApi, RegistryApi } = require('../../shared/api');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay } = require('../utils/misc');
+const { AccountApi, FunctionApi } = require('../../shared/api');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
 
 const serverlessExec = path.join('serverless');
 
@@ -36,26 +36,33 @@ const regions = ['fr-par', 'nl-ams', 'pl-waw'];
 
 beforeAll( async () => {
   accountApi = new AccountApi(accountApiUrl, scwToken);
-  // Create new project
-  project = await accountApi.createProject({
-    name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
-    organization_id: scwOrganizationId,
-  })
-  options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+  // Create new project : this can fail because of quotas, so we try multiple times
+  try {
+    project = accountApi.createProject({
+      name: `test-slsframework-${crypto.randomBytes(6)
+        .toString('hex')}`,
+      organization_id: scwOrganizationId,
+    })
+    const createdProject = retryPromiseWithDelay(project, 5, 60000);
+    await createdProject;
+    options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+  } catch (err) {
+    throw err;
+  }
 });
 
 afterAll( async () => {
-  // TODO: remove sleep and use a real way to find out when all resources are actually deleted
-  await sleep(60000);
-  await accountApi.deleteProject(project.id);
+  try {
+    await retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000)
+  } catch (err) {
+    throw err;
+  }
   process.chdir(oldCwd);
 });
 
 describe.each(regions)(
   'test regions',
   (region) => {
-
-    options.env.SCW_REGION = region;
 
     it('should create service in tmp directory', () => {
       const tmpDir = getTmpDirPath();
@@ -72,6 +79,7 @@ describe.each(regions)(
     it (`should deploy service for region ${region}`, async () => {
       apiUrl = `${FUNCTIONS_API_URL}/${region}`;
       api = new FunctionApi(apiUrl, scwToken);
+      options.env.SCW_REGION = region;
       serverlessDeploy(options);
       namespace = await api.getNamespaceFromList(serviceName, project.id);
       namespace.functions = await api.listFunctions(namespace.id);
@@ -93,14 +101,5 @@ describe.each(regions)(
         expect(err.response.status).to.be.equal(404);
       }
     });
-
-    it (`should remove registry namespace properly for region ${region}`, async () => {
-      const registryApiUrl = `${REGISTRY_API_URL}/${region}/`;
-      const registryApi = new RegistryApi(registryApiUrl, scwToken);
-      await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
-      const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
-      expect(response).to.be.equal(true);
-    });
-
   },
 );

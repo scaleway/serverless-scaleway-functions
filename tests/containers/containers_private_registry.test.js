@@ -9,7 +9,7 @@ const { expect } = require('chai');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove, serverlessInvoke } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay } = require('../utils/misc');
 const { AccountApi, ContainerApi, RegistryApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { ACCOUNT_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
@@ -52,12 +52,19 @@ describe('Build and deploy on container with a base image private', () => {
     accountApi = new AccountApi(accountApiUrl, scwToken);
     registryApi = new RegistryApi(registryApiUrl, scwToken);
 
-    // Create new project
-    project = await accountApi.createProject({
-      name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
-      organization_id: scwOrganizationId,
-    })
-    options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+    // Create new project : this can fail because of quotas, so we try multiple times
+    try {
+      project = accountApi.createProject({
+        name: `test-slsframework-${crypto.randomBytes(6)
+          .toString('hex')}`,
+        organization_id: scwOrganizationId,
+      })
+      const createdProject = retryPromiseWithDelay(project, 5, 60000);
+      await createdProject;
+      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+    } catch (err) {
+      throw err;
+    }
 
     // pull the base image, create a private registry, push it into that registry, and remove the image locally
     // to check that the image is pulled at build time
@@ -84,9 +91,11 @@ describe('Build and deploy on container with a base image private', () => {
     await registryApi.deleteRegistryNamespace(privateRegistryNamespaceId);
     const response = await api.waitNamespaceIsDeleted(privateRegistryNamespaceId);
     expect(response).to.be.equal(true);
-    // TODO: remove sleep and use a real way to find out when all resources are actually deleted
-    await sleep(60000);
-    await accountApi.deleteProject(project.id);
+    try {
+      await retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000)
+    } catch (err) {
+      throw err;
+    }
     process.chdir(oldCwd);
   });
 
@@ -121,11 +130,5 @@ describe('Build and deploy on container with a base image private', () => {
     } catch (err) {
       expect(err.response.status).to.be.equal(404);
     }
-  });
-
-  it('should remove registry namespace properly', async () => {
-    await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
-    const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
-    expect(response).to.be.equal(true);
   });
 });

@@ -1,29 +1,49 @@
 'use strict';
 
-const { Api, RegistryApi } = require('../../shared/api');
-const { FUNCTIONS_API_URL } = require('../../shared/constants');
+const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 
-const removeAllTestNamespaces = async (api, registryApi) => {
-  const namespaces = await api.listNamespaces();
-  namespaces.forEach(async (namespace) => {
-    if (!namespace.name.includes('scwtestsls')) {
-      return undefined;
+const removeAllTestProjects = async () => {
+  const projects = await accountApi.listProjects(process.env.SCW_ORGANIZATION_ID);
+  for (const project of projects) {
+    if (project.name.includes('test-slsframework-')) {
+      process.env.SCW_DEFAULT_PROJECT_ID = project.id;
+      try {
+        await removeAllTestNamespaces();
+        accountApi.deleteProject(project.id);
+      } catch (err) {
+        console.log(err)
+      }
     }
+  }
+}
+const removeAllTestNamespaces = async () => {
+  const functions = await functionApi.listNamespaces();
+  for (const functionSrv of functions) {
     try {
-      await api.deleteNamespace(namespace.id);
-      await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
+      await functionApi.deleteNamespace(functionSrv.id);
+      await functionApi.waitNamespaceIsDeleted(functionSrv.id);
     } catch (err) {
-      // Ignore errors, as we might manually delete registry namespaces from registry for example
+      console.log(err)
     }
-    return undefined;
-  });
-};
+  }
+  const containers = await containerApi.listNamespaces();
+  for (const container of containers) {
+    try {
+      await containerApi.deleteNamespace(container.id);
+      await containerApi.waitNamespaceIsDeleted(container.id);
+    } catch (err) {
+      console.log(err)
+    }
+  }
+}
 
-const api = new Api(FUNCTIONS_API_URL, process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN);
-const registryApi = new RegistryApi(process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN);
+const functionApi = new FunctionApi(FUNCTIONS_API_URL+`/${process.env.SCW_REGION}`, process.env.SCW_SECRET_KEY);
+const containerApi = new ContainerApi(CONTAINERS_API_URL+`/${process.env.SCW_REGION}`, process.env.SCW_SECRET_KEY);
+const accountApi = new AccountApi(ACCOUNT_API_URL, process.env.SCW_SECRET_KEY);
 
-removeAllTestNamespaces(api, registryApi);
+removeAllTestProjects();
 
 module.exports = {
-  removeAllTestNamespaces,
+  removeAllTestProjects,
 };

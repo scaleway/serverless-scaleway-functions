@@ -7,10 +7,10 @@ const path = require('path');
 const { expect } = require('chai');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, sleep, createTestService } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, createTestService, retryPromiseWithDelay } = require('../utils/misc');
 
-const { AccountApi, FunctionApi, RegistryApi, ContainerApi } = require('../../shared/api');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL, REGISTRY_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const scwRegion = process.env.SCW_REGION;
@@ -22,7 +22,6 @@ options.env = {};
 options.env.SCW_SECRET_KEY = scwToken;
 options.env.SCW_REGION = scwRegion;
 
-const serverlessExec = path.join('serverless');
 const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
@@ -36,7 +35,6 @@ let templateName;
 let serviceName;
 let tmpDir;
 const accountApi = new AccountApi(accountApiUrl, scwToken);
-const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 
 const runtimesToTest = [
   { name: 'nodejs-schedule', isFunction: true },
@@ -44,18 +42,27 @@ const runtimesToTest = [
 ];
 
 beforeAll( async () => {
-  // Create new project
-  project = await accountApi.createProject({
-    name: `test-slsframework-${crypto.randomBytes(6).toString('hex')}`,
-    organization_id: scwOrganizationId,
-  })
-  options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+  // Create new project : this can fail because of quotas, so we try multiple times
+  try {
+    project = accountApi.createProject({
+      name: `test-slsframework-${crypto.randomBytes(6)
+        .toString('hex')}`,
+      organization_id: scwOrganizationId,
+    })
+    const createdProject = retryPromiseWithDelay(project, 5, 60000);
+    await createdProject;
+    options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+  } catch (err) {
+    throw err;
+  }
 });
 
 afterAll( async () => {
-  // TODO: remove sleep and use a real way to find out when all resources are actually deleted
-  await sleep(60000);
-  await accountApi.deleteProject(project.id);
+  try {
+    await retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000)
+  } catch (err) {
+    throw err;
+  }
 });
 
 describe.each(runtimesToTest)(
@@ -130,13 +137,6 @@ describe.each(runtimesToTest)(
       } catch (err) {
         // If not try catch, test would fail
       }
-    });
-
-    it(`${runtime.name}: should remove registry namespace properly`, async () => {
-      await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
-      const response = await api.waitNamespaceIsDeleted(namespace.registry_namespace_id);
-      expect(response).to.be.equal(true);
-      process.chdir(oldCwd);
     });
   },
 );

@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 
 const { execSync, execCaptureOutput } = require('../../shared/child-process');
+const { describe, it } = require('@jest/globals');
 
 describe('Synchronous command execution test', () => {
   it('should execute a command synchronously', () => {

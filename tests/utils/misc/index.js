@@ -99,6 +99,18 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function retryPromiseWithDelay(promise, nthTry, delayTime) {
+  try {
+    return await promise;
+  } catch (err) {
+    if (nthTry === 1) {
+      return Promise.reject(err);
+    }
+    await sleep(delayTime);
+    return retryPromiseWithDelay(promise, nthTry-1, delayTime);
+  }
+}
+
 module.exports = {
   logger,
   testServiceIdentifier,
@@ -109,4 +121,5 @@ module.exports = {
   serverlessRemove,
   createTestService,
   sleep,
+  retryPromiseWithDelay,
 };
