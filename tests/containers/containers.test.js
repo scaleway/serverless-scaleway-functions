@@ -53,7 +53,7 @@ describe('Service Lifecyle Integration Test', () => {
           .toString('hex')}`,
         organization_id: scwOrganizationId,
       })
-      const project = retryPromiseWithDelay(projectToCreate, 5, 60000);
+      project = retryPromiseWithDelay(projectToCreate, 5, 60000);
       await project;
       options.env.SCW_DEFAULT_PROJECT_ID = project.id;
     } catch (err) {
