@@ -45,12 +45,13 @@ beforeAll( async () => {
   accountApi = new AccountApi(accountApiUrl, scwToken);
   // Create new project : this can fail because of quotas, so we try multiple times
   try {
-    project = accountApi.createProject({
+    const projectToCreate = accountApi.createProject({
       name: `test-slsframework-${crypto.randomBytes(6)
         .toString('hex')}`,
       organization_id: scwOrganizationId,
     })
-    await retryPromiseWithDelay(project, 5, 60000);
+    const project = retryPromiseWithDelay(projectToCreate, 5, 60000);
+    await project;
     options.env.SCW_DEFAULT_PROJECT_ID = project.id;
   } catch (err) {
     throw err;

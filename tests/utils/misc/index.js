@@ -101,8 +101,7 @@ function sleep(ms) {
 
 async function retryPromiseWithDelay(promise, nthTry, delayTime) {
   try {
-    const res = await promise;
-    return res;
+    return await promise;
   } catch (err) {
     if (nthTry === 1) {
       return Promise.reject(err);

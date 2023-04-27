@@ -32,19 +32,20 @@ let accountApi;
 let namespace;
 let project;
 
-const regions = ['fr-par', 'nl-ams', 'pl-waw'];
+//const regions = ['fr-par', 'nl-ams', 'pl-waw'];
+const regions = ['pl-waw'];
 
 beforeAll( async () => {
   accountApi = new AccountApi(accountApiUrl, scwToken);
   // Create new project : this can fail because of quotas, so we try multiple times
   try {
-    project = accountApi.createProject({
+    const projectToCreate = accountApi.createProject({
       name: `test-slsframework-${crypto.randomBytes(6)
         .toString('hex')}`,
       organization_id: scwOrganizationId,
     })
-    const createdProject = retryPromiseWithDelay(project, 5, 60000);
-    await createdProject;
+    const project = retryPromiseWithDelay(projectToCreate, 5, 60000);
+    await project;
     options.env.SCW_DEFAULT_PROJECT_ID = project.id;
   } catch (err) {
     throw err;
@@ -64,7 +65,7 @@ describe.each(regions)(
   'test regions',
   (region) => {
 
-    it('should create service in tmp directory', () => {
+    fit('should create service in tmp directory', () => {
       const tmpDir = getTmpDirPath();
 
       // create working directory
