@@ -75,8 +75,10 @@ describe('Build and deploy on container with a base image private', () => {
     privateRegistryImageRepo = `rg.${scwRegion}.scw.cloud/${registryName}/python`;
 
     const docker = new Docker();
-    await docker.pull(`${originalImageRepo}:${imageTag}`);
-    const originalImage = docker.getImage(`${originalImageRepo}:${imageTag}`);
+    const pullStream = await docker.pull(`${originalImageRepo}:${imageTag}`).then();
+    // Wait for pull to finish
+    await new Promise(res => docker.modem.followProgress(pullStream, res));
+    const originalImage = await docker.getImage(`${originalImageRepo}:${imageTag}`);
     await originalImage.tag({repo: privateRegistryImageRepo, tag: imageTag});
     const privateRegistryImage = docker.getImage(`${privateRegistryImageRepo}:${imageTag}`);
     await privateRegistryImage.push({

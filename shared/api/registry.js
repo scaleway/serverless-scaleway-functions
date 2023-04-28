@@ -17,6 +17,12 @@ class RegistryApi {
     });
   }
 
+  listRegistryNamespace() {
+    return this.apiManager.get(`namespaces`)
+      .then(response => response.data.namespaces)
+      .catch(manageError);
+  }
+
   deleteRegistryNamespace(namespaceId) {
     return this.apiManager.delete(`namespaces/${namespaceId}`)
       .catch(manageError);

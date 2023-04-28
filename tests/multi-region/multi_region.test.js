@@ -32,8 +32,7 @@ let accountApi;
 let namespace;
 let project;
 
-//const regions = ['fr-par', 'nl-ams', 'pl-waw'];
-const regions = ['pl-waw'];
+const regions = ['fr-par', 'nl-ams', 'pl-waw'];
 
 beforeAll( async () => {
   accountApi = new AccountApi(accountApiUrl, scwToken);
