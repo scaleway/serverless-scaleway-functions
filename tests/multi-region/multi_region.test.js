@@ -43,9 +43,9 @@ beforeAll( async () => {
       name: `test-slsframework-${crypto.randomBytes(6)
         .toString('hex')}`,
       organization_id: scwOrganizationId,
-    })
-    project = retryPromiseWithDelay(projectToCreate, 5, 60000);
-    await project;
+    });
+    const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
+    project = await Promise.resolve(promise);
     options.env.SCW_DEFAULT_PROJECT_ID = project.id;
   } catch (err) {
     throw err;
@@ -54,7 +54,8 @@ beforeAll( async () => {
 
 afterAll( async () => {
   try {
-    await retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000)
+    const promise = retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000);
+    await Promise.resolve(promise);
   } catch (err) {
     throw err;
   }
@@ -65,7 +66,7 @@ describe.each(regions)(
   'test regions',
   (region) => {
 
-    fit('should create service in tmp directory', () => {
+    it('should create service in tmp directory', () => {
       const tmpDir = getTmpDirPath();
 
       // create working directory
