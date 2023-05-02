@@ -1,7 +1,7 @@
 'use strict';
 
-const { AccountApi, FunctionApi, ContainerApi, RegistryApi } = require('../../shared/api');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 
 const removeAllTestProjects = async () => {
   const projects = await accountApi.listProjects(process.env.SCW_ORGANIZATION_ID);
@@ -36,20 +36,10 @@ const removeAllTestNamespaces = async () => {
       console.log(err)
     }
   }
-
-  const registries = await registryApi.listRegistryNamespace();
-  for (const registry of registries) {
-    try {
-      await registryApi.deleteRegistryNamespace(registry.id);
-    } catch (err) {
-      console.log(err)
-    }
-  }
 }
 
 const functionApi = new FunctionApi(FUNCTIONS_API_URL+`/${process.env.SCW_REGION}`, process.env.SCW_SECRET_KEY);
 const containerApi = new ContainerApi(CONTAINERS_API_URL+`/${process.env.SCW_REGION}`, process.env.SCW_SECRET_KEY);
-const registryApi = new RegistryApi(REGISTRY_API_URL+`/${process.env.SCW_REGION}`, process.env.SCW_SECRET_KEY)
 const accountApi = new AccountApi(ACCOUNT_API_URL, process.env.SCW_SECRET_KEY);
 
 removeAllTestProjects();

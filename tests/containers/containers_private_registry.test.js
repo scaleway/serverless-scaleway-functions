@@ -10,7 +10,7 @@ const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay } = require('../utils/misc');
-const { AccountApi, ContainerApi, RegistryApi } = require('../../shared/api');
+const { AccountApi, ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { ACCOUNT_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 
@@ -22,7 +22,6 @@ describe('Build and deploy on container with a base image private', () => {
   const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
   const accountApiUrl = `${ACCOUNT_API_URL}/`;
-  const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'container');
   const tmpDir = getTmpDirPath();
 
@@ -35,7 +34,6 @@ describe('Build and deploy on container with a base image private', () => {
   let serviceName;
   let api;
   let accountApi;
-  let registryApi;
   let namespace;
   let project;
   let containerName;
@@ -50,7 +48,6 @@ describe('Build and deploy on container with a base image private', () => {
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);
     accountApi = new AccountApi(accountApiUrl, scwToken);
-    registryApi = new RegistryApi(registryApiUrl, scwToken);
 
     // Create new project : this can fail because of quotas, so we try multiple times
     try {
@@ -69,7 +66,7 @@ describe('Build and deploy on container with a base image private', () => {
     // pull the base image, create a private registry, push it into that registry, and remove the image locally
     // to check that the image is pulled at build time
     const registryName = `private-registry-${crypto.randomBytes(16).toString('hex')}`;
-    const privateRegistryNamespace = await registryApi.createRegistryNamespace({name: registryName, project_id: project.id});
+    const privateRegistryNamespace = await api.createNamespace({name: registryName, project_id: project.id});
     privateRegistryNamespaceId = privateRegistryNamespace.id;
 
     privateRegistryImageRepo = `rg.${scwRegion}.scw.cloud/${registryName}/python`;
@@ -90,7 +87,7 @@ describe('Build and deploy on container with a base image private', () => {
   });
 
   afterAll(async () => {
-    await registryApi.deleteRegistryNamespace(privateRegistryNamespaceId);
+    await api.deleteNamespace(privateRegistryNamespaceId);
     const response = await api.waitNamespaceIsDeleted(privateRegistryNamespaceId);
     expect(response).to.be.equal(true);
     try {
