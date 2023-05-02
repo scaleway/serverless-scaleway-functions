@@ -39,7 +39,9 @@ let templateName;
 let tmpDir;
 const oldCwd = process.cwd();
 
-const exampleRepositories = fs.readdirSync(examplesDir);
+const exampleRepositories = fs.readdirSync(examplesDir, { withFileTypes: true })
+  .filter((item) => item.isDirectory())
+  .map((item) => item.name);
 
 beforeAll( async () => {
   accountApi = new AccountApi(accountApiUrl, scwToken);
@@ -125,13 +127,13 @@ describe.each(exampleRepositories)(
     });
 
     it(`should remove service for runtime ${runtime} from scaleway`, async () => {
-      process.chdir(tmpDir);
       serverlessRemove(options);
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
         expect(err.response.status).to.be.equal(404);
       }
+      process.chdir(oldCwd);
     });
   },
 );

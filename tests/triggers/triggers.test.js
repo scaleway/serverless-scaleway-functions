@@ -12,6 +12,7 @@ const { getServiceName, serverlessDeploy, serverlessRemove, createTestService, r
 const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { execSync } = require('../../shared/child-process');
 
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
@@ -64,6 +65,7 @@ afterAll( async () => {
   } catch (err) {
     throw err;
   }
+  process.chdir(oldCwd);
 });
 
 describe.each(runtimesToTest)(
@@ -86,6 +88,7 @@ describe.each(runtimesToTest)(
 
     it(`${runtime.name}: should deploy function service to scaleway`, async () => {
       process.chdir(tmpDir);
+      execSync(`npm link ${oldCwd}`);
       serverlessDeploy(options);
       if (runtime.isFunction) {
         api = new FunctionApi(functionApiUrl, scwToken);
