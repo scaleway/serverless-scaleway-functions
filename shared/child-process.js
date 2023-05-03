@@ -9,7 +9,6 @@ function execSync(command, options = null) {
   } catch (error) {
     if (error.stdout) process.stdout.write(error.stdout);
     if (error.stderr) process.stderr.write(error.stderr);
-    console.log(error.toString());
     throw error;
   }
 }
