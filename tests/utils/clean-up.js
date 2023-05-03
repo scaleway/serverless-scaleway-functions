@@ -17,7 +17,6 @@ const removeAllTestProjects = async () => {
       try {
         await removeProjectById(projectId);
       } catch (err) {
-        console.log(err)
       }
     }
   }
@@ -29,7 +28,6 @@ const removeProjectById = async (projectId) => {
     await removeAllTestNamespaces();
     accountApi.deleteProject(projectId);
   } catch (err) {
-    console.log(err)
   }
 }
 
@@ -42,7 +40,6 @@ const removeAllTestNamespaces = async () => {
         await functionApi.deleteNamespace(functionSrv.id);
         await functionApi.waitNamespaceIsDeleted(functionSrv.id);
       } catch (err) {
-        console.log(err)
       }
     }
 
@@ -53,7 +50,6 @@ const removeAllTestNamespaces = async () => {
         await containerApi.deleteNamespace(container.id);
         await containerApi.waitNamespaceIsDeleted(container.id);
       } catch (err) {
-        console.log(err)
       }
     }
 
@@ -63,7 +59,6 @@ const removeAllTestNamespaces = async () => {
       try {
         await registryApi.deleteRegistryNamespace(registry.id);
       } catch (err) {
-        console.log(err)
       }
     }
   }

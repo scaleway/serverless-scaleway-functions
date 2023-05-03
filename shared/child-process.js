@@ -8,6 +8,8 @@ function execSync(command, options = null) {
     return child_process.execSync(command, options);
   } catch (error) {
     if (error.stdout) process.stdout.write(error.stdout);
+    if (error.status) process.stdout.write(error.status); // TODO: remove this line
+    if (error.signal) process.stdout.write(error.signal); // TODO: remove this line
     if (error.stderr) process.stderr.write(error.stderr);
     throw error;
   }
