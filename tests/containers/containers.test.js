@@ -14,6 +14,7 @@ const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRem
 const { AccountApi, ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { ACCOUNT_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 
@@ -63,8 +64,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   afterAll(async () => {
     try {
-      const promise = retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000);
-      await Promise.resolve(promise);
+      await removeProjectById(project.id);
     } catch (err) {
       throw err;
     }

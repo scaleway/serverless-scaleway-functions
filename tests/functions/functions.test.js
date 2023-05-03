@@ -13,6 +13,7 @@ const { AccountApi, FunctionApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
+const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 
@@ -68,8 +69,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   afterAll(async () => {
     try {
-      const promise = retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000);
-      await Promise.resolve(promise);
+      await removeProjectById(project.id);
     } catch (err) {
       throw err;
     }

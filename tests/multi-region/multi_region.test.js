@@ -12,6 +12,7 @@ const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay } = require('../utils/misc');
 const { AccountApi, FunctionApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
+const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 
@@ -53,8 +54,7 @@ beforeAll( async () => {
 
 afterAll( async () => {
   try {
-    const promise = retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 30000);
-    await Promise.resolve(promise);
+    await removeProjectById(project.id);
   } catch (err) {
     throw err;
   }

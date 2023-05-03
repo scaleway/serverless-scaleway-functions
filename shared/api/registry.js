@@ -25,6 +25,7 @@ class RegistryApi {
 
   deleteRegistryNamespace(namespaceId) {
     return this.apiManager.delete(`namespaces/${namespaceId}`)
+      .then(response => response.data)
       .catch(manageError);
   }
 
