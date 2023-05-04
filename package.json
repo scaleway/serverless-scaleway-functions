@@ -41,12 +41,13 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup-tests.js"
     ],
+    "globalTeardown": "<rootDir>/tests/utils/clean-up.js",
     "testPathIgnorePatterns": [
       "tests/utils",
       "tests/setup-tests.js"
     ],
-    "globalTeardown": "<rootDir>/tests/utils/clean-up.js",
-    "verbose": true
+    "verbose": true,
+    "workerThread": true
   },
   "dependencies": {
     "@serverless/utils": "^6.8.2",
@@ -58,13 +59,13 @@
     "tar-fs": "^2.1.1"
   },
   "devDependencies": {
-    "@jest/globals": "^29.4.3",
+    "@jest/globals": "^29.5.0",
     "chai": "^4.3.7",
     "eslint": "^8.27.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.26.0",
     "fs-extra": "^10.1.0",
-    "jest": "^29.4.3",
+    "jest": "^29.5.0",
     "jest-circus": "^29.5.0",
     "rewire": "^6.0.0"
   }
