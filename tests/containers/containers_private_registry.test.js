@@ -90,17 +90,6 @@ describe('Build and deploy on container with a base image private', () => {
     await privateRegistryImage.remove();
   });
 
-  afterAll(async () => {
-    await registryApi.deleteRegistryNamespace(privateRegistryNamespaceId);
-    await sleep(60000); // registry lag
-    try {
-      await removeProjectById(project.id);
-    } catch (err) {
-      throw err;
-    }
-    process.chdir(oldCwd);
-  });
-
   it('should create service in tmp directory', async () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
     process.chdir(tmpDir);

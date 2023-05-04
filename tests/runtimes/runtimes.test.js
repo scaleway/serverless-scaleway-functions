@@ -61,14 +61,6 @@ beforeAll( async () => {
   }
 });
 
-afterAll( async () => {
-  try {
-    await removeProjectById(project.id);
-  } catch (err) {
-    throw err;
-  }
-});
-
 describe.each(exampleRepositories)(
   'test runtimes',
   (runtime) => {

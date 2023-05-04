@@ -53,19 +53,19 @@ const removeAllTestNamespaces = async () => {
       }
     }
 
-    const registryApi = new RegistryApi(REGISTRY_API_URL + `/${region}`, process.env.SCW_SECRET_KEY);
+    /*const registryApi = new RegistryApi(REGISTRY_API_URL + `/${region}`, process.env.SCW_SECRET_KEY);
     const registries = await registryApi.listRegistryNamespace();
     for (const registry of registries) {
       try {
         await registryApi.deleteRegistryNamespace(registry.id);
       } catch (err) {
       }
-    }
+    }*/
   }
 }
 
 removeAllTestProjects();
 
 module.exports = {
-  removeAllTestProjects, removeProjectById
+  removeAllTestProjects
 };

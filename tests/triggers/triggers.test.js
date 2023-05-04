@@ -58,16 +58,6 @@ beforeAll( async () => {
   }
 });
 
-afterAll( async () => {
-  try {
-    const promise = retryPromiseWithDelay(accountApi.deleteProject(project.id), 5, 60000);
-    await Promise.resolve(promise);
-  } catch (err) {
-    throw err;
-  }
-  process.chdir(oldCwd);
-});
-
 describe.each(runtimesToTest)(
   'test triggers',
   (runtime) => {

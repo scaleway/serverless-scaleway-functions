@@ -1,7 +1,5 @@
 'use strict';
 
-const { afterAll, jest: requiredJest } = require('@jest/globals');
-//const { removeAllTestProjects } = require('./utils/clean-up');
+const { jest: requiredJest } = require('@jest/globals');
 
 requiredJest.setTimeout(500000);
-//afterAll(() => removeAllTestProjects()); // check globalTeardown

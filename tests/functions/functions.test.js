@@ -67,15 +67,6 @@ describe('Service Lifecyle Integration Test', () => {
     }
   });
 
-  afterAll(async () => {
-    try {
-      await removeProjectById(project.id);
-    } catch (err) {
-      throw err;
-    }
-    process.chdir(oldCwd);
-  });
-
   it('should create service in tmp directory', () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
     process.chdir(tmpDir);

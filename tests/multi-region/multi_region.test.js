@@ -52,15 +52,6 @@ beforeAll( async () => {
   }
 });
 
-afterAll( async () => {
-  try {
-    await removeProjectById(project.id);
-  } catch (err) {
-    throw err;
-  }
-  process.chdir(oldCwd);
-});
-
 describe.each(regions)(
   'test regions',
   (region) => {
