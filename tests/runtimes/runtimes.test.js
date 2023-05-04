@@ -13,8 +13,7 @@ const { getServiceName, sleep, serverlessDeploy, serverlessRemove, retryPromiseW
 
 const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
-const { removeProjectById } = require('../utils/clean-up');
+const { beforeAll, describe, it } = require('@jest/globals');
 
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;

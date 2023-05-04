@@ -6,14 +6,13 @@ const fs = require('fs');
 const path = require('path');
 
 const { expect } = require('chai');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay, sleep } = require('../utils/misc');
 const { AccountApi, ContainerApi, RegistryApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { ACCOUNT_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
-const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 

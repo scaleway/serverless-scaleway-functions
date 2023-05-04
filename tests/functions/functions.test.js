@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 const { expect } = require('chai');
-const { afterAll, beforeAll, beforeEach, describe, expect: jestExpect, it } = require('@jest/globals');
+const { beforeAll, beforeEach, describe, expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, retryPromiseWithDelay } = require('../utils/misc');
@@ -13,7 +13,6 @@ const { AccountApi, FunctionApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
-const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 

@@ -7,14 +7,13 @@ const path = require('path');
 const tar = require('tar-fs');
 
 const { expect } = require('chai');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, retryPromiseWithDelay } = require('../utils/misc');
 const { AccountApi, ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { ACCOUNT_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
-const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 
@@ -54,8 +53,9 @@ describe('Service Lifecyle Integration Test', () => {
       organization_id: scwOrganizationId,
     });
     const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-    await project = Promise.resolve(promise)
-      .then(options.env.SCW_DEFAULT_PROJECT_ID = project.id)
+    project = Promise.resolve(promise)
+    await project
+      .then(() => options.env.SCW_DEFAULT_PROJECT_ID = project.id)
       .catch(err => console.error(err));
   });
 

@@ -24,7 +24,7 @@ const removeProjectById = async (projectId) => {
   process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   await removeAllTestNamespaces()
     .then(() => accountApi.deleteProject(projectId))
-    .catch(() => console.log("Executed at the wrong time"));
+    .catch(() => console.log(`Executed at the wrong time for project ${projectId}`));
 }
 
 const removeAllTestNamespaces = async () => {
