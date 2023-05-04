@@ -48,18 +48,15 @@ describe('Service Lifecyle Integration Test', () => {
     accountApi = new AccountApi(accountApiUrl, scwToken);
 
     // Create new project : this can fail because of quotas, so we try multiple times
-    try {
-      const projectToCreate = accountApi.createProject({
-        name: `test-slsframework-${crypto.randomBytes(6)
-          .toString('hex')}`,
-        organization_id: scwOrganizationId,
-      });
-      const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-      project = await Promise.resolve(promise);
-      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-    } catch (err) {
-      throw err;
-    }
+    const projectToCreate = accountApi.createProject({
+      name: `test-slsframework-${crypto.randomBytes(6)
+        .toString('hex')}`,
+      organization_id: scwOrganizationId,
+    });
+    const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
+    await Promise.resolve(promise)
+      .then(options.env.SCW_DEFAULT_PROJECT_ID = project.id)
+      .catch(err => console.error(err));
   });
 
   it('should create service in tmp directory', () => {

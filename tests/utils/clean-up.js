@@ -24,7 +24,7 @@ const removeProjectById = async (projectId) => {
   process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   await removeAllTestNamespaces()
     .then(() => accountApi.deleteProject(projectId))
-    .catch(() => console.log("pb 2"));
+    .catch(() => console.log("Executed at the wrong time"));
 }
 
 const removeAllTestNamespaces = async () => {
@@ -34,7 +34,7 @@ const removeAllTestNamespaces = async () => {
     for (const functionSrv of functions) {
       await functionApi.deleteNamespace(functionSrv.id)
         .then(async() => await functionApi.waitNamespaceIsDeleted(functionSrv.id))
-        .catch(() => console.log("pb 3"));
+        .catch();
     }
 
     const containerApi = new ContainerApi(CONTAINERS_API_URL + `/${region}`, process.env.SCW_SECRET_KEY);
@@ -42,21 +42,17 @@ const removeAllTestNamespaces = async () => {
     for (const container of containers) {
       await containerApi.deleteNamespace(container.id)
         .then(async () => await containerApi.waitNamespaceIsDeleted(container.id))
-        .catch(() => console.log("pb 4"));
+        .catch();
     }
 
     const registryApi = new RegistryApi(REGISTRY_API_URL + `/${region}`, process.env.SCW_SECRET_KEY);
     const registries = await registryApi.listRegistryNamespace();
     for (const registry of registries) {
       await registryApi.deleteRegistryNamespace(registry.id)
-        .catch(() => console.log("pb 5"))
+        .catch()
     }
   }
 }
 
 removeAllTestProjects()
   .catch(() => console.log("An error occurred during clean-up"));
-
-module.exports = async () => {
-  await removeAllTestProjects;
-};

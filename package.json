@@ -41,13 +41,12 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup-tests.js"
     ],
-    "globalTeardown": "<rootDir>/tests/utils/clean-up.js",
     "testPathIgnorePatterns": [
       "tests/utils",
       "tests/setup-tests.js"
     ],
     "verbose": true,
-    "workerThread": true
+    "workerThreads": true
   },
   "dependencies": {
     "@serverless/utils": "^6.8.2",
