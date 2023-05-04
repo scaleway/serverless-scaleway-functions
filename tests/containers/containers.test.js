@@ -54,7 +54,7 @@ describe('Service Lifecyle Integration Test', () => {
       organization_id: scwOrganizationId,
     });
     const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-    await Promise.resolve(promise)
+    await project = Promise.resolve(promise)
       .then(options.env.SCW_DEFAULT_PROJECT_ID = project.id)
       .catch(err => console.error(err));
   });

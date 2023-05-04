@@ -45,8 +45,7 @@
       "tests/utils",
       "tests/setup-tests.js"
     ],
-    "verbose": true,
-    "workerThreads": true
+    "verbose": true
   },
   "dependencies": {
     "@serverless/utils": "^6.8.2",
