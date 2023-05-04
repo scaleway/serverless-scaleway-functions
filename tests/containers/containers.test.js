@@ -7,13 +7,14 @@ const path = require('path');
 const tar = require('tar-fs');
 
 const { expect } = require('chai');
-const { beforeAll, describe, it } = require('@jest/globals');
+const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, retryPromiseWithDelay } = require('../utils/misc');
 const { AccountApi, ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { ACCOUNT_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 
@@ -47,17 +48,23 @@ describe('Service Lifecyle Integration Test', () => {
     accountApi = new AccountApi(accountApiUrl, scwToken);
 
     // Create new project : this can fail because of quotas, so we try multiple times
-    const projectToCreate = accountApi.createProject({
-      name: `test-slsframework-${crypto.randomBytes(6)
-        .toString('hex')}`,
-      organization_id: scwOrganizationId,
-    });
-    const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-    project = Promise.resolve(promise)
-    await project
-      .then(() => options.env.SCW_DEFAULT_PROJECT_ID = project.id)
-      .catch(err => console.error(err));
+    try {
+      const projectToCreate = accountApi.createProject({
+        name: `test-slsframework-${crypto.randomBytes(6)
+          .toString('hex')}`,
+        organization_id: scwOrganizationId,
+      });
+      const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
+      project = await Promise.resolve(promise);
+      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
+    } catch (err) {
+      throw err;
+    }
   });
+
+  afterAll( async () => {
+    await removeProjectById(project.id).catch();
+  })
 
   it('should create service in tmp directory', () => {
     execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);

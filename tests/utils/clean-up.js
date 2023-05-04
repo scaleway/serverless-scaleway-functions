@@ -8,19 +8,8 @@ const regions = ['fr-par', 'nl-ams', 'pl-waw'];
 
 let projectId;
 
-const removeAllTestProjects = async () => {
-  const projects = await accountApi.listProjects(process.env.SCW_ORGANIZATION_ID);
-  for (const project of projects) {
-    if (project.name.includes('test-slsframework-')) {
-      projectId = project.id;
-      process.env.SCW_DEFAULT_PROJECT_ID = projectId;
-      await removeProjectById(projectId)
-        .catch();
-    }
-  }
-}
-
-const removeProjectById = async (projectId) => {
+exports.removeProjectById = async (project) => {
+  projectId = project;
   process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   await removeAllTestNamespaces()
     .then(() => accountApi.deleteProject(projectId))
@@ -53,6 +42,3 @@ const removeAllTestNamespaces = async () => {
     }
   }
 }
-
-removeAllTestProjects()
-  .catch(() => console.log("An error occurred during clean-up"));

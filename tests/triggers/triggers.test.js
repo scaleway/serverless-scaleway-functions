@@ -11,8 +11,9 @@ const { getServiceName, serverlessDeploy, serverlessRemove, createTestService, r
 
 const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
 const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
-const { beforeAll, describe, it } = require('@jest/globals');
+const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 const { execSync } = require('../../shared/child-process');
+const { removeProjectById } = require('../utils/clean-up');
 
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
@@ -57,6 +58,10 @@ beforeAll( async () => {
     throw err;
   }
 });
+
+afterAll( async () => {
+  await removeProjectById(project.id).catch();
+})
 
 describe.each(runtimesToTest)(
   'test triggers',
