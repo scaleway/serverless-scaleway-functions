@@ -1,7 +1,6 @@
 'use strict';
 
 const axios = require('axios');
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,16 +8,15 @@ const { expect } = require('chai');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove, retryPromiseWithDelay } = require('../utils/misc');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove, createProject } = require('../utils/misc');
 
-const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { FunctionApi, ContainerApi } = require('../../shared/api');
+const { FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 const { removeProjectById } = require('../utils/clean-up');
 
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
-const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
 
 let options = {};
 options.env = {};
@@ -26,15 +24,13 @@ options.env.SCW_SECRET_KEY = scwToken;
 options.env.SCW_REGION = scwRegion;
 
 const serverlessExec = path.join('serverless');
-const accountApiUrl = `${ACCOUNT_API_URL}`;
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
 const devModuleDir = path.resolve(__dirname, '..', '..');
 const examplesDir = path.resolve(devModuleDir, 'examples');
+let projectId;
 let api;
-let accountApi;
 let namespace = {};
-let project;
 let serviceName;
 let templateName;
 let tmpDir;
@@ -45,24 +41,12 @@ const exampleRepositories = fs.readdirSync(examplesDir, { withFileTypes: true })
   .map((item) => item.name);
 
 beforeAll( async () => {
-  accountApi = new AccountApi(accountApiUrl, scwToken);
-  // Create new project : this can fail because of quotas, so we try multiple times
-  try {
-    const projectToCreate = accountApi.createProject({
-      name: `test-slsframework-${crypto.randomBytes(6)
-        .toString('hex')}`,
-      organization_id: scwOrganizationId,
-    });
-    const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-    project = await Promise.resolve(promise);
-    options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-  } catch (err) {
-    throw err;
-  }
+  await createProject().then((project) => {projectId = project.id;});
+  options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 });
 
 afterAll( async () => {
-  await removeProjectById(project.id).catch();
+  await removeProjectById(projectId).catch();
 })
 
 describe.each(exampleRepositories)(
@@ -91,11 +75,11 @@ describe.each(exampleRepositories)(
       // If runtime is container => get container
       if (isContainer) {
         api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(serviceName, project.id);
+        namespace = await api.getNamespaceFromList(serviceName, projectId);
         namespace.containers = await api.listContainers(namespace.id);
       } else {
         api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(serviceName, project.id);
+        namespace = await api.getNamespaceFromList(serviceName, projectId);
         namespace.functions = await api.listFunctions(namespace.id);
       }
     });

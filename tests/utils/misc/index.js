@@ -4,6 +4,9 @@ const path = require('path');
 
 const { execSync } = require('../../../shared/child-process');
 const { readYamlFile, writeYamlFile } = require('../fs');
+const crypto = require('crypto');
+const { AccountApi } = require('../../../shared/api');
+const { ACCOUNT_API_URL } = require('../../../shared/constants');
 
 const logger = console;
 
@@ -12,6 +15,7 @@ const testServiceIdentifier = 'scwtestsls';
 const serverlessExec = 'serverless';
 
 const project = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
+const organizationId = process.env.SCW_ORGANIZATION_ID;
 const secretKey = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
 const region = process.env.SCW_REGION;
 
@@ -99,17 +103,13 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function retryPromiseWithDelay(promise, nthTry, delayTime) {
-  try {
-    const res = await promise;
-    return res;
-  } catch (err) {
-    if (nthTry === 1) {
-      return Promise.reject(err);
-    }
-    await sleep(delayTime);
-    return retryPromiseWithDelay(promise, nthTry-1, delayTime);
-  }
+async function createProject() {
+  const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey);
+  return accountApi.createProject({
+    name: `test-slsframework-${crypto.randomBytes(6)
+      .toString('hex')}`,
+    organization_id: organizationId,
+  });
 }
 
 module.exports = {
@@ -122,5 +122,5 @@ module.exports = {
   serverlessRemove,
   createTestService,
   sleep,
-  retryPromiseWithDelay,
+  createProject,
 };

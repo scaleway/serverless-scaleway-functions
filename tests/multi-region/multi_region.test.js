@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,16 +8,14 @@ const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay } = require('../utils/misc');
-const { AccountApi, FunctionApi } = require('../../shared/api');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
+const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, createProject } = require('../utils/misc');
+const { FunctionApi } = require('../../shared/api');
+const { FUNCTIONS_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
 
 const scwToken = process.env.SCW_SECRET_KEY;
-const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
-const accountApiUrl = `${ACCOUNT_API_URL}`;
 
 let options = {};
 options.env = {};
@@ -27,33 +24,20 @@ options.env.SCW_SECRET_KEY = scwToken;
 const functionTemplateName = path.resolve(__dirname, '..', '..', 'examples', 'python3');
 const oldCwd = process.cwd();
 const serviceName = getServiceName();
+let projectId;
 let apiUrl;
 let api;
-let accountApi;
 let namespace;
-let project;
 
 const regions = ['fr-par', 'nl-ams', 'pl-waw'];
 
 beforeAll( async () => {
-  accountApi = new AccountApi(accountApiUrl, scwToken);
-  // Create new project : this can fail because of quotas, so we try multiple times
-  try {
-    const projectToCreate = accountApi.createProject({
-      name: `test-slsframework-${crypto.randomBytes(6)
-        .toString('hex')}`,
-      organization_id: scwOrganizationId,
-    });
-    const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-    project = await Promise.resolve(promise);
-    options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-  } catch (err) {
-    throw err;
-  }
+  await createProject().then((project) => {projectId = project.id;});
+  options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 });
 
 afterAll( async () => {
-  await removeProjectById(project.id).catch();
+  await removeProjectById(projectId).catch();
 })
 
 describe.each(regions)(
@@ -77,7 +61,7 @@ describe.each(regions)(
       api = new FunctionApi(apiUrl, scwToken);
       options.env.SCW_REGION = region;
       serverlessDeploy(options);
-      namespace = await api.getNamespaceFromList(serviceName, project.id);
+      namespace = await api.getNamespaceFromList(serviceName, projectId);
       namespace.functions = await api.listFunctions(namespace.id);
     });
 

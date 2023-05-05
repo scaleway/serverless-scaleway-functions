@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
@@ -10,10 +9,10 @@ const { expect } = require('chai');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, retryPromiseWithDelay } = require('../utils/misc');
-const { AccountApi, ContainerApi } = require('../../shared/api');
+const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, createProject } = require('../utils/misc');
+const { ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
-const { ACCOUNT_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { CONTAINERS_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
@@ -21,9 +20,7 @@ const serverlessExec = path.join('serverless');
 describe('Service Lifecyle Integration Test', () => {
   const scwRegion = process.env.SCW_REGION;
   const scwToken = process.env.SCW_SECRET_KEY;
-  const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
-  const accountApiUrl = `${ACCOUNT_API_URL}`;
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'container');
   const tmpDir = getTmpDirPath();
 
@@ -35,35 +32,21 @@ describe('Service Lifecyle Integration Test', () => {
   let oldCwd;
   let serviceName;
   const descriptionTest = 'slsfw test description';
+  let projectId;
   let api;
-  let accountApi;
   let namespace;
   let containerName;
-  let project;
 
   beforeAll(async () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);
-    accountApi = new AccountApi(accountApiUrl, scwToken);
-
-    // Create new project : this can fail because of quotas, so we try multiple times
-    try {
-      const projectToCreate = accountApi.createProject({
-        name: `test-slsframework-${crypto.randomBytes(6)
-          .toString('hex')}`,
-        organization_id: scwOrganizationId,
-      });
-      const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-      project = await Promise.resolve(promise);
-      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-    } catch (err) {
-      throw err;
-    }
+    await createProject().then((project) => {projectId = project.id;});
+    options.env.SCW_DEFAULT_PROJECT_ID = projectId;
   });
 
   afterAll( async () => {
-    await removeProjectById(project.id).catch();
+    await removeProjectById(projectId).catch();
   })
 
   it('should create service in tmp directory', () => {
@@ -78,7 +61,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should deploy service/container to scaleway', async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, project.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
     namespace.containers = await api.listContainers(namespace.id);
     expect(namespace.containers[0].description).to.be.equal(descriptionTest);
     containerName = namespace.containers[0].name;

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "clean-up": "node tests/teardown.js",
-    "test": "jest --maxWorkers 5",
+    "test": "jest --maxWorkers 5 --no-cache",
     "test:functions": "jest --maxWorkers 5 tests/functions",
     "test:containers": "jest --maxWorkers 5 tests/containers",
     "test:multi-region": "jest --maxWorkers 5 tests/multi-region",
@@ -37,14 +37,15 @@
     "testEnvironment": "node",
     "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.js$",
     "useStderr": true,
-    "setupFilesAfterEnv": [
+    "globalTeardown": "<rootDir>/tests/teardown.js",
+    "setupFiles": [
       "<rootDir>/tests/setup-tests.js"
     ],
     "testPathIgnorePatterns": [
       "tests/utils",
-      "tests/setup-tests.js"
+      "tests/setup-tests.js",
+      "tests/teardown.js"
     ],
-    "globalTeardown": "<rootDir>/tests/teardown.js",
     "verbose": true
   },
   "dependencies": {

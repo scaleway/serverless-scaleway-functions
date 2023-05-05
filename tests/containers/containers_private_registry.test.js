@@ -9,10 +9,10 @@ const { expect } = require('chai');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, retryPromiseWithDelay, sleep } = require('../utils/misc');
-const { AccountApi, ContainerApi, RegistryApi } = require('../../shared/api');
+const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, createProject } = require('../utils/misc');
+const { ContainerApi, RegistryApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
-const { ACCOUNT_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
+const { CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
@@ -20,10 +20,8 @@ const serverlessExec = path.join('serverless');
 describe('Build and deploy on container with a base image private', () => {
   const scwRegion = process.env.SCW_REGION;
   const scwToken = process.env.SCW_SECRET_KEY;
-  const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
   const registryApiUrl = `${REGISTRY_API_URL}/${scwRegion}/`;
-  const accountApiUrl = `${ACCOUNT_API_URL}/`;
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'container');
   const tmpDir = getTmpDirPath();
 
@@ -34,11 +32,10 @@ describe('Build and deploy on container with a base image private', () => {
 
   let oldCwd;
   let serviceName;
+  let projectId;
   let api;
-  let accountApi;
   let registryApi;
   let namespace;
-  let project;
   let containerName;
 
   const originalImageRepo = 'python';
@@ -50,27 +47,15 @@ describe('Build and deploy on container with a base image private', () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);
-    accountApi = new AccountApi(accountApiUrl, scwToken);
     registryApi = new RegistryApi(registryApiUrl, scwToken);
 
-    // Create new project : this can fail because of quotas, so we try multiple times
-    try {
-      const projectToCreate = accountApi.createProject({
-        name: `test-slsframework-${crypto.randomBytes(6)
-          .toString('hex')}`,
-        organization_id: scwOrganizationId,
-      });
-      const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-      project = await Promise.resolve(promise);
-      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-    } catch (err) {
-      throw err;
-    }
+    await createProject().then((project) => {projectId = project.id;});
+    options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
     // pull the base image, create a private registry, push it into that registry, and remove the image locally
     // to check that the image is pulled at build time
     const registryName = `private-registry-${crypto.randomBytes(16).toString('hex')}`;
-    const privateRegistryNamespace = await registryApi.createRegistryNamespace({name: registryName, project_id: project.id});
+    const privateRegistryNamespace = await registryApi.createRegistryNamespace({name: registryName, project_id: projectId});
     privateRegistryNamespaceId = privateRegistryNamespace.id;
 
     privateRegistryImageRepo = `rg.${scwRegion}.scw.cloud/${registryName}/python`;
@@ -91,7 +76,7 @@ describe('Build and deploy on container with a base image private', () => {
   });
 
   afterAll( async () => {
-    await removeProjectById(project.id).catch();
+    await removeProjectById(projectId).catch();
   })
 
   it('should create service in tmp directory', async () => {
@@ -106,7 +91,7 @@ describe('Build and deploy on container with a base image private', () => {
 
   it('should deploy service/container to scaleway', async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, project.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
     namespace.containers = await api.listContainers(namespace.id);
     containerName = namespace.containers[0].name;
   });

@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
@@ -8,11 +7,11 @@ const { expect } = require('chai');
 const { afterAll, beforeAll, beforeEach, describe, expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, retryPromiseWithDelay } = require('../utils/misc');
-const { AccountApi, FunctionApi } = require('../../shared/api');
+const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, createProject } = require('../utils/misc');
+const { FunctionApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { validateRuntime } = require('../../deploy/lib/createFunctions');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
+const { FUNCTIONS_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
 
 const serverlessExec = path.join('serverless');
@@ -27,9 +26,7 @@ const enabledHttpOptionTest = 'enabled';
 describe('Service Lifecyle Integration Test', () => {
   const scwRegion = process.env.SCW_REGION;
   const scwToken = process.env.SCW_SECRET_KEY;
-  const scwOrganizationId = process.env.SCW_ORGANIZATION_ID;
   const apiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
-  const accountApiUrl = `${ACCOUNT_API_URL}`;
   const templateName = path.resolve(__dirname, '..', '..', 'examples', 'nodejs');
   const tmpDir = getTmpDirPath();
 
@@ -40,35 +37,21 @@ describe('Service Lifecyle Integration Test', () => {
 
   let oldCwd;
   let serviceName;
+  let projectId;
   let api;
-  let accountApi;
   let namespace;
   let functionName;
-  let project;
 
   beforeAll(async () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new FunctionApi(apiUrl, scwToken);
-    accountApi = new AccountApi(accountApiUrl, scwToken);
-
-    // Create new project : this can fail because of quotas, so we try multiple times
-    try {
-      const projectToCreate = accountApi.createProject({
-        name: `test-slsframework-${crypto.randomBytes(6)
-          .toString('hex')}`,
-        organization_id: scwOrganizationId,
-      });
-      const promise = retryPromiseWithDelay(projectToCreate, 5, 60000);
-      project = await Promise.resolve(promise);
-      options.env.SCW_DEFAULT_PROJECT_ID = project.id;
-    } catch (err) {
-      throw err;
-    }
+    await createProject().then((project) => {projectId = project.id;});
+    options.env.SCW_DEFAULT_PROJECT_ID = projectId;
   });
 
   afterAll( async () => {
-    await removeProjectById(project.id).catch();
+    await removeProjectById(projectId).catch();
   })
 
   it('should create service in tmp directory', () => {
@@ -77,7 +60,7 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`npm link ${oldCwd}`);
     replaceTextInFile(serverlessFile, 'scaleway-nodeXX', serviceName);
     replaceTextInFile(serverlessFile, '<scw-token>', scwToken);
-    replaceTextInFile(serverlessFile, '<scw-project-id>', project.id);
+    replaceTextInFile(serverlessFile, '<scw-project-id>', projectId);
     replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
     expect(fs.existsSync(path.join(tmpDir, serverlessFile))).to.be.equal(true);
     expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
@@ -85,7 +68,7 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should deploy service to scaleway', async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, project.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions[0].description).to.be.equal(descriptionTest);
     expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
@@ -123,7 +106,7 @@ module.exports.handle = (event, context, cb) => {
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, project.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions.length).to.be.equal(2);
     expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
@@ -149,7 +132,7 @@ module.exports.handle = (event, context, cb) => {
 
     // redeploy, func 2 should be removed
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, project.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions.length).to.be.equal(1);
 
@@ -170,7 +153,7 @@ module.exports.handle = (event, context, cb) => {
 
     // redeploy
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, project.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
     namespace.functions = await api.listFunctions(namespace.id);
     expect(namespace.functions[0].http_option).to.be.equal(enabledHttpOptionTest);
   });
