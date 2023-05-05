@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
-    "serverless-scaleway-functions": "^0.4.6"
+    "serverless-scaleway-functions": ">=0.4.6"
   },
   "description": ""
 }
