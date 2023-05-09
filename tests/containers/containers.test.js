@@ -127,7 +127,8 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should deploy updated service/container to scaleway', () => {
-    replaceTextInFile('my-container/server.py', 'Hello, World from Scaleway Container !', 'Container successfully updated');
+    replaceTextInFile('serverless.yml', '# registryImage: ""', 'registryImage: docker.io/library/nginx:latest');
+    replaceTextInFile('serverless.yml', '# port: 8080', 'port: 80');
     serverlessDeploy();
   });
 
@@ -135,7 +136,7 @@ describe('Service Lifecyle Integration Test', () => {
     await sleep(30000);
 
     let output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
-    expect(output).to.be.equal('{"message":"Container successfully updated"}');
+    expect(output).to.contain('Welcome to nginx!');
   });
 
   it('should remove service from scaleway', async () => {
