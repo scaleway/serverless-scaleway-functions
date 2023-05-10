@@ -1,0 +1,18 @@
+{
+  "name": "typescript-with-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "@scaleway/serverless-functions": ">=1.0.2",
+    "serverless-scaleway-functions": ">=0.4.6",
+    "typescript": "^5.0.2"
+  }
+}

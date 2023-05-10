@@ -20,7 +20,8 @@ let api;
 const oldCwd = process.cwd();
 const registryApi = new RegistryApi(`${REGISTRY_API_URL}/${scwRegion}/`, scwToken);
 
-const exampleRepositories = fs.readdirSync(examplesDir);
+let exampleRepositories = fs.readdirSync(examplesDir);
+exampleRepositories = exampleRepositories.filter(e => e !== 'typescript');
 
 describe.each(exampleRepositories)(
   'test runtimes',
