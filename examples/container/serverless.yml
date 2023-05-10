@@ -19,6 +19,8 @@ custom:
   containers:
     first:
       directory: my-container
+      # registryImage: ""
+      # port: 8080
       # description: ""
       # minScale: 1
       # memoryLimit: 256
@@ -26,7 +28,6 @@ custom:
       # maxScale: 2
       # maxConcurrency: 50
       # timeout: "20s"
-      # port: 8080
       # httpOption: redirected
       # Local environment variables - used only in given function
       env:

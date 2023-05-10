@@ -7,10 +7,13 @@ const Docker = require('dockerode');
 const tar = require('tar-fs');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
+const { getServiceName, sleep, serverlessDeploy, serverlessRemove,
+  serverlessInvoke
+} = require('../utils/misc');
 const { ContainerApi, RegistryApi } = require('../../shared/api');
 const { CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 const { execSync, execCaptureOutput } = require('../../shared/child-process');
+const { it } = require('@jest/globals');
 
 const serverlessExec = path.join('serverless');
 
@@ -133,9 +136,20 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should invoke updated container from scaleway', async () => {
     await sleep(30000);
-
     let output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
     expect(output).to.be.equal('{"message":"Container successfully updated"}');
+  });
+
+  it('should deploy with registry image specified', () => {
+    replaceTextInFile('serverless.yml', '# registryImage: ""', 'registryImage: docker.io/library/nginx:latest');
+    replaceTextInFile('serverless.yml', '# port: 8080', 'port: 80');
+    serverlessDeploy();
+  });
+
+  it('should invoke updated container with specified registry image', async () => {
+    await sleep(30000);
+    let output = execCaptureOutput(serverlessExec, ['invoke', '--function', containerName]);
+    expect(output).to.contain('Welcome to nginx!');
   });
 
   it('should remove service from scaleway', async () => {

@@ -150,6 +150,7 @@ The configuration includes the following parameters:
 * `package.patterns`: you can leave this parameter at default, or enable it to include/exclude directories to/from the deployment
 * `functions`: configuration of your functions. It is a `.yml` dictionary, and the key is the function name 
   * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
+  * `registryImage` (Containers only, Optional): name of the registry image. If no registry image is provided, the image will be build locally using the Dockerfile.
   * `env` (Optional): environment variables specific to the current function
   * `secret` (Optional): secret environment variables specific to the current function, see [this example project](./examples/secrets)
   * `minScale` (Optional): how many function instances we keep running (default: 0)
