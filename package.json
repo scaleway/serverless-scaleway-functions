@@ -11,7 +11,7 @@
   "scripts": {
     "clean-up": "node tests/teardown.js",
     "test": "jest --maxWorkers 5 --no-cache",
-    "test:functions": "jest --maxWorkers 5 tests/functions",
+    "test:functions": "jest --maxWorkers 6 tests/functions",
     "test:containers": "jest --maxWorkers 5 tests/containers",
     "test:multi-region": "jest --maxWorkers 5 tests/multi-region",
     "test:provider": "jest --maxWorkers 5 tests/provider",
