@@ -13,7 +13,7 @@ exports.removeProjectById = async (project) => {
   process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   await removeAllTestNamespaces()
     .then(() => accountApi.deleteProject(projectId))
-    .catch();
+    .catch(() => console.log(`project ${projectId} not deleted`));
 }
 
 const removeAllTestNamespaces = async () => {

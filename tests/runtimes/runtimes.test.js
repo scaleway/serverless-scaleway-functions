@@ -8,10 +8,12 @@ const { expect } = require('chai');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove, createProject } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, createProject,
+  sleep
+} = require('../utils/misc');
 
-const { FunctionApi, ContainerApi } = require('../../shared/api');
-const { FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { FunctionApi } = require('../../shared/api');
+const { FUNCTIONS_API_URL } = require('../../shared/constants');
 const { afterAll, beforeAll, describe, it } = require('@jest/globals');
 const { removeProjectById } = require('../utils/clean-up');
 
@@ -25,7 +27,6 @@ options.env.SCW_REGION = scwRegion;
 
 const serverlessExec = path.join('serverless');
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
-const containerApiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
 const devModuleDir = path.resolve(__dirname, '..', '..');
 const examplesDir = path.resolve(devModuleDir, 'examples');
 let projectId;
@@ -36,26 +37,24 @@ let templateName;
 let tmpDir;
 const oldCwd = process.cwd();
 
-const exampleRepositories = fs.readdirSync(examplesDir, { withFileTypes: true })
-  .filter((item) => item.isDirectory())
-  .map((item) => item.name);
+/* Some examples are already indirectly tested in other tests, so we don't test them again here. For
+* example, container-schedule and nodejs-schedule are tested in triggers, python3 in multi_regions,
+* etc... */
+const exampleRepositories = [
+  'go', 'multiple', 'nodejs-es-modules', 'php', 'rust', 'secrets'
+]
 
-beforeAll( async () => {
-  await createProject().then((project) => {projectId = project.id;});
-  options.env.SCW_DEFAULT_PROJECT_ID = projectId;
-});
+describe("test runtimes", () => {
 
-afterAll( async () => {
-  await removeProjectById(projectId).catch();
-})
+  it.concurrent.each(exampleRepositories)(
+    'test runtimes %s',
+    async (runtime) => {
 
-describe.each(exampleRepositories)(
-  'test runtimes',
-  (runtime) => {
+      // Should create project
+      await createProject().then((project) => {projectId = project.id;});
+      options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
-    const isContainer = ['container', 'container-schedule'].includes(runtime);
-
-    it(`should create service for runtime ${runtime} in tmp directory`, () => {
+      // should create service for runtime ${runtime} in tmp directory
       tmpDir = getTmpDirPath();
       templateName = path.resolve(examplesDir, runtime)
       serviceName = getServiceName(runtime);
@@ -64,49 +63,32 @@ describe.each(exampleRepositories)(
       execSync(`npm link ${oldCwd}`);
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
-    });
 
-    it(`should deploy service for runtime ${runtime} to scaleway`, async () => {
+      // should deploy service for runtime ${runtime} to scaleway
       let optionsWithSecrets = options;
       if (runtime === 'secrets') {
         optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
       serverlessDeploy(optionsWithSecrets);
-      // If runtime is container => get container
-      if (isContainer) {
-        api = new ContainerApi(containerApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(serviceName, projectId);
-        namespace.containers = await api.listContainers(namespace.id);
-      } else {
-        api = new FunctionApi(functionApiUrl, scwToken);
-        namespace = await api.getNamespaceFromList(serviceName, projectId);
-        namespace.functions = await api.listFunctions(namespace.id);
-      }
-    });
+      api = new FunctionApi(functionApiUrl, scwToken);
+      namespace = await api.getNamespaceFromList(serviceName, projectId);
+      namespace.functions = await api.listFunctions(namespace.id);
 
-    it(`should invoke function for runtime ${runtime} from scaleway`, async () => {
+      // should invoke function for runtime ${runtime} from scaleway
       let deployedApplication;
-      if (isContainer) {
-        deployedApplication = namespace.containers[0];
-      } else {
-        deployedApplication = namespace.functions[0];
-      }
-      await sleep(30000);
+      deployedApplication = namespace.functions[0];
       const response = await axios.get(`https://${deployedApplication.domain_name}`);
       expect(response.status).to.be.equal(200);
 
       if (runtime === 'secrets') {
-        // wait to be sure that function have been redeployed because namespace have been updated
-        await sleep(30000);
         expect(response.data.env_vars).to.eql([
           'env_notSecret1', 'env_notSecretA',
           'env_secret1', 'env_secret2', 'env_secret3',
           'env_secretA', 'env_secretB', 'env_secretC',
         ]);
       }
-    });
 
-    it(`should remove service for runtime ${runtime} from scaleway`, async () => {
+      // should remove service for runtime ${runtime} from scaleway
       serverlessRemove(options);
       try {
         await api.getNamespace(namespace.id);
@@ -114,6 +96,11 @@ describe.each(exampleRepositories)(
         expect(err.response.status).to.be.equal(404);
       }
       process.chdir(oldCwd);
-    });
-  },
-);
+
+      // Should delete project
+      await sleep(60000); // registry lag
+      await removeProjectById(projectId).catch();
+
+    },
+  );
+})
