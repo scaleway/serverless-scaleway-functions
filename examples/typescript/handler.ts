@@ -1,6 +1,8 @@
+import {Callback, Context, Event} from "@scaleway/serverless-functions/framework/dist/types/types";
+
 export {handle};
 
-function handle(event: Record<string, unknown>, context: Record<string, unknown>, cb: unknown) {
+function handle(event: Event, context: Context, cb: Callback) {
     return {
         body: "Hello world!",
         headers: { "Content-Type": ["application/json"] },
