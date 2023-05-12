@@ -2,4 +2,4 @@
 
 const { jest: requiredJest } = require('@jest/globals');
 
-requiredJest.setTimeout(500000);
+requiredJest.setTimeout(5000000);

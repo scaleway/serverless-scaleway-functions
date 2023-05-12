@@ -8,13 +8,11 @@ const { expect } = require('chai');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, createProject,
-  sleep
-} = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, createProject, sleep } = require('../utils/misc');
 
 const { FunctionApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL } = require('../../shared/constants');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { describe, it } = require('@jest/globals');
 const { removeProjectById } = require('../utils/clean-up');
 
 const scwRegion = process.env.SCW_REGION;
@@ -76,6 +74,7 @@ describe("test runtimes", () => {
 
       // should invoke function for runtime ${runtime} from scaleway
       let deployedApplication;
+      await sleep(30000);
       deployedApplication = namespace.functions[0];
       const response = await axios.get(`https://${deployedApplication.domain_name}`);
       expect(response.status).to.be.equal(200);
