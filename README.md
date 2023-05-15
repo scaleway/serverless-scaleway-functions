@@ -263,6 +263,9 @@ functions:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
 
+Note: if you wish to use Typescript, you can do so by transpiling your code locally before deploying it. An example is
+available [here](examples/typescript).
+
 ### Python
 
 Similar to `node`, path to handler file `src/testing/handler.py`:

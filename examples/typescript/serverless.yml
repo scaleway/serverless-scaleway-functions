@@ -1,0 +1,18 @@
+service: typescript-hello-world
+configValidationMode: off
+provider:
+  name: scaleway
+  runtime: node20
+
+plugins:
+  - serverless-scaleway-functions
+
+package:
+  patterns:
+    - "!node_modules/**"
+    - "!.gitignore"
+    - "!.git/**"
+
+functions:
+  first:
+    handler: handler.handle
