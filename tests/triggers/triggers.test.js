@@ -94,7 +94,7 @@ describe("test triggers", () => {
     // should remove services from scaleway
     serverlessRemove(options);
     try {
-      await api.getNamespace(namespace.id).catch((err) => console.error(err));
+      await api.getNamespace(namespace.id);
     } catch (err) {
       expect(err.response.status).to.be.equal(404);
     }
