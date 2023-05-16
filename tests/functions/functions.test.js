@@ -158,6 +158,8 @@ module.exports.handle = (event, context, cb) => {
     namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
     namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
     expect(namespace.functions[0].http_option).to.be.equal(enabledHttpOptionTest);
+    functionName = namespace.functions[0].name;
+
   });
 
   it('should invoke updated function from scaleway', async () => {
