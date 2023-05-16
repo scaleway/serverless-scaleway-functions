@@ -1,7 +1,7 @@
 'use strict';
 
-const { AccountApi, FunctionApi, ContainerApi } = require('../../shared/api');
-const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
+const { AccountApi, FunctionApi, ContainerApi, RegistryApi } = require('../../shared/api');
+const { ACCOUNT_API_URL, FUNCTIONS_API_URL, CONTAINERS_API_URL, REGISTRY_API_URL } = require('../../shared/constants');
 
 const accountApi = new AccountApi(ACCOUNT_API_URL, process.env.SCW_SECRET_KEY);
 const regions = ['fr-par', 'nl-ams', 'pl-waw'];
@@ -31,6 +31,13 @@ const removeAllTestNamespaces = async () => {
     for (const container of containers) {
       await containerApi.deleteNamespace(container.id)
         .then(async () => await containerApi.waitNamespaceIsDeleted(container.id))
+        .catch();
+    }
+
+    const registryApi = new RegistryApi(REGISTRY_API_URL + `/${region}`, process.env.SCW_SECRET_KEY);
+    const registries = await registryApi.listRegistryNamespace(projectId);
+    for (const registry of registries) {
+      await registryApi.deleteRegistryNamespace(registry.id)
         .catch();
     }
   }

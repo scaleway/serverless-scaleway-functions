@@ -17,8 +17,8 @@ class RegistryApi {
     });
   }
 
-  listRegistryNamespace() {
-    return this.apiManager.get(`namespaces`)
+  listRegistryNamespace(projectId) {
+    return this.apiManager.get(`namespaces?projectId=${projectId}`)
       .then(response => response.data.namespaces)
       .catch(manageError);
   }
