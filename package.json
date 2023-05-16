@@ -9,7 +9,7 @@
     "git": "https://github.com/scaleway/serverless-scaleway-functions"
   },
   "scripts": {
-    "clean-up": "node tests/teardown.js",
+    "clean-up": "node tests/utils/clean-up.js",
     "test": "jest --maxWorkers 5 --maxConcurrency 6 --no-cache",
     "test:functions": "jest --maxWorkers 6 tests/functions",
     "test:containers": "jest --maxWorkers 5 tests/containers",
@@ -37,7 +37,6 @@
     "testEnvironment": "node",
     "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.js$",
     "useStderr": true,
-    "globalTeardown": "<rootDir>/tests/teardown.js",
     "setupFiles": [
       "<rootDir>/tests/setup-tests.js"
     ],

@@ -46,7 +46,9 @@ describe('Service Lifecyle Integration Test', () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new FunctionApi(apiUrl, scwToken);
-    await createProject().then((project) => {projectId = project.id;});
+    await createProject()
+      .then((project) => {projectId = project.id;})
+      .catch((err) => console.error(err));
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
   });
 
@@ -68,15 +70,15 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should deploy service to scaleway', async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
-    namespace.functions = await api.listFunctions(namespace.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+    namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
     expect(namespace.functions[0].description).to.be.equal(descriptionTest);
     expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
     functionName = namespace.functions[0].name;
   });
 
   it('should invoke function from scaleway', async () => {
-    await api.waitFunctionsAreDeployed(namespace.id);
+    await api.waitFunctionsAreDeployed(namespace.id).catch((err) => console.error(err));;
     options.serviceName = functionName;
     const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
@@ -106,8 +108,8 @@ module.exports.handle = (event, context, cb) => {
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
-    namespace.functions = await api.listFunctions(namespace.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+    namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
     expect(namespace.functions.length).to.be.equal(2);
     expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
     expect(namespace.functions[1].http_option).to.be.equal(enabledHttpOptionTest);
@@ -132,8 +134,8 @@ module.exports.handle = (event, context, cb) => {
 
     // redeploy, func 2 should be removed
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
-    namespace.functions = await api.listFunctions(namespace.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+    namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
     expect(namespace.functions.length).to.be.equal(1);
 
     options.serviceName = namespace.functions[0].name;
@@ -153,8 +155,8 @@ module.exports.handle = (event, context, cb) => {
 
     // redeploy
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
-    namespace.functions = await api.listFunctions(namespace.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+    namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
     expect(namespace.functions[0].http_option).to.be.equal(enabledHttpOptionTest);
   });
 
