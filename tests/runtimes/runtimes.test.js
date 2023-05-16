@@ -66,7 +66,7 @@ describe("test runtimes", () => {
         optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
       serverlessDeploy(optionsWithSecrets);
-      const api = new FunctionApi(functionApiUrl, scwToken);
+      let api = new FunctionApi(functionApiUrl, scwToken);
       namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
       namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
 
