@@ -18,21 +18,11 @@ const { removeProjectById } = require('../utils/clean-up');
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
 
-let options = {};
-options.env = {};
-options.env.SCW_SECRET_KEY = scwToken;
-options.env.SCW_REGION = scwRegion;
-
 const serverlessExec = path.join('serverless');
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const devModuleDir = path.resolve(__dirname, '..', '..');
 const examplesDir = path.resolve(devModuleDir, 'examples');
-let projectId;
-let api;
-let namespace = {};
-let serviceName;
-let templateName;
-let tmpDir;
+
 const oldCwd = process.cwd();
 
 /* Some examples are already indirectly tested in other tests, so we don't test them again here. For
@@ -48,14 +38,22 @@ describe("test runtimes", () => {
     'test runtimes %s',
     async (runtime) => {
 
+      let options = {};
+      options.env = {};
+      options.env.SCW_SECRET_KEY = scwToken;
+      options.env.SCW_REGION = scwRegion;
+
+      let projectId;
+      let namespace = {};
+
       // Should create project
-      await createProject().then((project) => {projectId = project.id;});
+      await createProject().then((project) => {projectId = project.id;}).catch((err) => console.error(err));
       options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
       // should create service for runtime ${runtime} in tmp directory
-      tmpDir = getTmpDirPath();
-      templateName = path.resolve(examplesDir, runtime)
-      serviceName = getServiceName(runtime);
+      const tmpDir = getTmpDirPath();
+      const templateName = path.resolve(examplesDir, runtime)
+      const serviceName = getServiceName(runtime);
       execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
       process.chdir(tmpDir);
       execSync(`npm link ${oldCwd}`);
@@ -68,15 +66,15 @@ describe("test runtimes", () => {
         optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
       serverlessDeploy(optionsWithSecrets);
-      api = new FunctionApi(functionApiUrl, scwToken);
-      namespace = await api.getNamespaceFromList(serviceName, projectId);
-      namespace.functions = await api.listFunctions(namespace.id);
+      const api = new FunctionApi(functionApiUrl, scwToken);
+      namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+      namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
 
       // should invoke function for runtime ${runtime} from scaleway
       let deployedApplication;
       await sleep(30000);
       deployedApplication = namespace.functions[0];
-      const response = await axios.get(`https://${deployedApplication.domain_name}`);
+      const response = await axios.get(`https://${deployedApplication.domain_name}`).catch((err) => console.error(err));
       expect(response.status).to.be.equal(200);
 
       if (runtime === 'secrets') {
@@ -97,8 +95,7 @@ describe("test runtimes", () => {
       process.chdir(oldCwd);
 
       // Should delete project
-      await sleep(60000); // registry lag
-      await removeProjectById(projectId).catch();
+      await removeProjectById(projectId).catch((err) => console.error(err));
 
     },
   );

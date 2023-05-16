@@ -17,28 +17,30 @@ const serverlessExec = path.join('serverless');
 
 const scwToken = process.env.SCW_SECRET_KEY;
 
-let options = {};
-options.env = {};
-options.env.SCW_SECRET_KEY = scwToken;
-
 const functionTemplateName = path.resolve(__dirname, '..', '..', 'examples', 'python3');
 const oldCwd = process.cwd();
 const serviceName = getServiceName();
-let projectId;
-let apiUrl;
-let api;
-let namespace;
 
 const regions = ['fr-par', 'nl-ams', 'pl-waw'];
+
 describe("test regions", () => {
 
   it.concurrent.each(regions)(
   'region %s',
   async (region) => {
 
+      let options = {};
+      options.env = {};
+      options.env.SCW_SECRET_KEY = scwToken;
+
+      let projectId;
+      let apiUrl;
+      let api;
+      let namespace;
+
       // should create project
       // not in beforeAll because of a known bug between concurrent tests and async beforeAll
-      await createProject().then((project) => {projectId = project.id;});
+      await createProject().then((project) => {projectId = project.id;}).catch((err) => console.error(err));
       options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
       // should create working directory
@@ -55,8 +57,8 @@ describe("test regions", () => {
       api = new FunctionApi(apiUrl, scwToken);
       options.env.SCW_REGION = region;
       serverlessDeploy(options);
-      namespace = await api.getNamespaceFromList(serviceName, projectId);
-      namespace.functions = await api.listFunctions(namespace.id);
+      namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+      namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
 
       // should invoke service for region ${region}
       const deployedFunction = namespace.functions[0];
@@ -74,8 +76,7 @@ describe("test regions", () => {
       }
 
       // should remove project
-      await sleep(60000);
-      await removeProjectById(projectId).catch();
+      await removeProjectById(projectId).catch((err) => console.error(err));
     },
   );
 })

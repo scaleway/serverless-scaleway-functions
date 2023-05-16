@@ -18,14 +18,14 @@ const cleanup = async () => {
   }
 }
 
-cleanup().catch();
-
 const removeProjectById = async (projectId) => {
   process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   await removeAllTestNamespaces(projectId)
     .then(() => accountApi.deleteProject(projectId))
-    .catch(() => console.log(`project ${projectId} not deleted`));
+    .catch(() => console.log(`failed to delete project ${projectId}`));
 }
+
+module.exports = { removeProjectById, cleanup };
 
 const removeAllTestNamespaces = async (projectId) => {
   for (const region of regions) {

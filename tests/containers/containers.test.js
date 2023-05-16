@@ -41,12 +41,14 @@ describe('Service Lifecyle Integration Test', () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);
-    await createProject().then((project) => {projectId = project.id;});
+    await createProject()
+      .then((project) => {projectId = project.id;})
+      .catch((err) => console.error(err));
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
   });
 
   afterAll( async () => {
-    await removeProjectById(projectId).catch();
+    await removeProjectById(projectId).catch((err) => console.error(err));
   })
 
   it('should create service in tmp directory', () => {
@@ -61,8 +63,8 @@ describe('Service Lifecyle Integration Test', () => {
 
   it('should deploy service/container to scaleway', async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
-    namespace.containers = await api.listContainers(namespace.id);
+    namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+    namespace.containers = await api.listContainers(namespace.id).catch((err) => console.error(err));
     expect(namespace.containers[0].description).to.be.equal(descriptionTest);
     containerName = namespace.containers[0].name;
   });
@@ -105,19 +107,19 @@ describe('Service Lifecyle Integration Test', () => {
       redeploy: false,
       registry_image: imageName,
     };
-    await api.updateContainer(namespace.containers[0].id, params);
+    await api.updateContainer(namespace.containers[0].id, params).catch((err) => console.error(err));
 
-    const nsContainers = await api.listContainers(namespace.id);
+    const nsContainers = await api.listContainers(namespace.id).catch((err) => console.error(err));
     expect(nsContainers[0].registry_image).to.be.equal(imageName);
 
     serverlessDeploy(options);
 
-    const nsContainersAfterSlsDeploy = await api.listContainers(namespace.id);
+    const nsContainersAfterSlsDeploy = await api.listContainers(namespace.id).catch((err) => console.error(err));
     expect(nsContainersAfterSlsDeploy[0].registry_image).to.not.contains('test-container');
   });
 
   it('should invoke container from scaleway', async () => {
-    await api.waitContainersAreDeployed(namespace.id);
+    await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
     options.serviceName = containerName;
     const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Hello, World from Scaleway Container !"}');
@@ -129,7 +131,7 @@ describe('Service Lifecyle Integration Test', () => {
   });
 
   it('should invoke updated container from scaleway', async () => {
-    await api.waitContainersAreDeployed(namespace.id);
+    await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
     const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Container successfully updated"}');
   });
