@@ -6,9 +6,8 @@ const path = require('path');
 
 const { expect } = require('chai');
 
-const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, createProject, sleep } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, createProject, sleep, createTestService } = require('../utils/misc');
 
 const { FunctionApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL } = require('../../shared/constants');
@@ -18,7 +17,6 @@ const { removeProjectById } = require('../utils/clean-up');
 const scwRegion = process.env.SCW_REGION;
 const scwToken = process.env.SCW_SECRET_KEY;
 
-const serverlessExec = path.join('serverless');
 const functionApiUrl = `${FUNCTIONS_API_URL}/${scwRegion}`;
 const devModuleDir = path.resolve(__dirname, '..', '..');
 const examplesDir = path.resolve(devModuleDir, 'examples');
@@ -43,6 +41,7 @@ describe("test runtimes", () => {
       options.env.SCW_SECRET_KEY = scwToken;
       options.env.SCW_REGION = scwRegion;
 
+      let api;
       let projectId;
       let namespace = {};
 
@@ -51,12 +50,15 @@ describe("test runtimes", () => {
       options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
       // should create service for runtime ${runtime} in tmp directory
+      // should create service for runtime ${runtime} in tmp directory
       const tmpDir = getTmpDirPath();
-      const templateName = path.resolve(examplesDir, runtime)
       const serviceName = getServiceName(runtime);
-      execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
-      process.chdir(tmpDir);
-      execSync(`npm link ${oldCwd}`);
+      createTestService(tmpDir, oldCwd, {
+        devModuleDir,
+        templateName: path.resolve(examplesDir, runtime),
+        serviceName: serviceName,
+        runCurrentVersion: true,
+      });
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
 
@@ -66,7 +68,7 @@ describe("test runtimes", () => {
         optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
       serverlessDeploy(optionsWithSecrets);
-      let api = new FunctionApi(functionApiUrl, scwToken);
+      api = new FunctionApi(functionApiUrl, scwToken);
       namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
       namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
 
