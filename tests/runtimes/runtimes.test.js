@@ -63,7 +63,8 @@ describe("test runtimes", () => {
       // should deploy service for runtime ${runtime} to scaleway
       let optionsWithSecrets = options;
       if (runtime === 'secrets') {
-        optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
+        optionsWithSecrets.env.ENV_SECRETC = 'valueC';
+        optionsWithSecrets.env.ENV_SECRET3 = 'value3';
       }
       serverlessDeploy(optionsWithSecrets);
 
