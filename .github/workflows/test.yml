@@ -13,8 +13,13 @@ permissions:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
-        node-version: ["20.x"]
+        tests: [
+          "containers", "containers-private", "deploy", "domains", "functions",
+          "multi-region", "provider", "runtimes", "shared", "triggers"
+        ]
+        node-version: ["16.x", "18.x", "20.x"]
 
     runs-on: ubuntu-22.04
     steps:
@@ -34,17 +39,10 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm run test
+        run: npm run test:${{ matrix.tests }}
         env:
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_REGION: ${{ vars.SCW_REGION }}
-          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-
-      - name: Run cleanup
-        if: always()
-        run: npm run clean-up
-        env:
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
 
   clean-up:
