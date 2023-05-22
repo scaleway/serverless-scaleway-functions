@@ -63,6 +63,7 @@ describe("test triggers", () => {
     expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
 
     // should deploy function service to scaleway
+    process.chdir(tmpDir);
     serverlessDeploy(options);
     if (runtime.isFunction) {
       api = new FunctionApi(functionApiUrl, scwToken);
