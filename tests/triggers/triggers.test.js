@@ -5,13 +5,12 @@ const path = require('path');
 
 const { expect } = require('chai');
 
-const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, createTestService, createProject, sleep } = require('../utils/misc');
+const { getTmpDirPath, replaceTextInFile} = require('../utils/fs');
+const { getServiceName, serverlessDeploy, serverlessRemove, createProject, createTestService } = require('../utils/misc');
 
 const { FunctionApi, ContainerApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
 const { describe, it } = require('@jest/globals');
-const { execSync } = require('../../shared/child-process');
 const { removeProjectById } = require('../utils/clean-up');
 
 const scwRegion = process.env.SCW_REGION;
@@ -64,8 +63,6 @@ describe("test triggers", () => {
     expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
 
     // should deploy function service to scaleway
-    process.chdir(tmpDir);
-    execSync(`npm link ${oldCwd}`);
     serverlessDeploy(options);
     if (runtime.isFunction) {
       api = new FunctionApi(functionApiUrl, scwToken);
@@ -92,6 +89,7 @@ describe("test triggers", () => {
     expect(deployedTriggers[0].schedule).to.be.equal('1 * * * *');
 
     // should remove services from scaleway
+    process.chdir(tmpDir);
     serverlessRemove(options);
     try {
       await api.getNamespace(namespace.id);

@@ -43,13 +43,11 @@ describe("test runtimes", () => {
 
       let api;
       let projectId;
-      let namespace = {};
 
       // Should create project
       await createProject().then((project) => {projectId = project.id;}).catch((err) => console.error(err));
       options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
-      // should create service for runtime ${runtime} in tmp directory
       // should create service for runtime ${runtime} in tmp directory
       const tmpDir = getTmpDirPath();
       const serviceName = getServiceName(runtime);
@@ -68,14 +66,14 @@ describe("test runtimes", () => {
         optionsWithSecrets = { env: { ENV_SECRETC: 'valueC', ENV_SECRET3: 'value3' } };
       }
       serverlessDeploy(optionsWithSecrets);
+
       api = new FunctionApi(functionApiUrl, scwToken);
-      namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
+      let namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
       namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
 
       // should invoke function for runtime ${runtime} from scaleway
-      let deployedApplication;
+      const deployedApplication = namespace.functions[0];
       await sleep(30000);
-      deployedApplication = namespace.functions[0];
       const response = await axios.get(`https://${deployedApplication.domain_name}`).catch((err) => console.error(err));
       expect(response.status).to.be.equal(200);
 
@@ -88,13 +86,13 @@ describe("test runtimes", () => {
       }
 
       // should remove service for runtime ${runtime} from scaleway
-      serverlessRemove(options);
+      process.chdir(tmpDir);
+      serverlessRemove(optionsWithSecrets);
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
         expect(err.response.status).to.be.equal(404);
       }
-      process.chdir(oldCwd);
 
       // Should delete project
       await removeProjectById(projectId).catch((err) => console.error(err));
