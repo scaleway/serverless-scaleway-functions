@@ -10,7 +10,6 @@
   },
   "scripts": {
     "clean-up": "node tests/teardown.js",
-    "test": "jest --no-cache",
     "test:containers": "jest tests/containers/containers.test.js",
     "test:containers-private": "jest tests/containers/containers_private_registry.test.js",
     "test:deploy": "jest tests/deploy",
@@ -18,9 +17,9 @@
     "test:functions": "jest tests/functions",
     "test:multi-region": "jest --maxConcurrency 3 tests/multi-region",
     "test:provider": "jest tests/provider",
-    "test:runtimes": "jest tests/runtimes",
+    "test:runtimes": "jest --maxConcurrency 3 tests/runtimes",
     "test:shared": "jest tests/shared",
-    "test:triggers": "jest tests/triggers",
+    "test:triggers": "jest --maxConcurrency 3 tests/triggers",
     "coverage": "jest --coverage",
     "lint": "eslint . --cache"
   },
