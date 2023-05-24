@@ -9,9 +9,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
-    "serverless-scaleway-functions": "^0.4.6"
+    "@scaleway/serverless-functions": "^1.0.2",
+    "serverless-scaleway-functions": ">=0.4.6"
   },
   "description": ""
 }

@@ -62,7 +62,6 @@ Serverless Framework handles everything from creating namespaces to function/cod
     - [Local testing](#local-testing)
     - [Managing containers](#managing-containers)
   - [Logs](#logs)
-  - [Offline testing](#offline-testing)
   - [Info](#info)
   - [Documentation and useful links](#documentation-and-useful-links)
   - [Contributing](#contributing)
@@ -151,12 +150,14 @@ The configuration includes the following parameters:
 * `package.patterns`: you can leave this parameter at default, or enable it to include/exclude directories to/from the deployment
 * `functions`: configuration of your functions. It is a `.yml` dictionary, and the key is the function name 
   * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
+  * `registryImage` (Containers only, Optional): name of the registry image. If no registry image is provided, the image will be build locally using the Dockerfile.
   * `env` (Optional): environment variables specific to the current function
   * `secret` (Optional): secret environment variables specific to the current function, see [this example project](./examples/secrets)
   * `minScale` (Optional): how many function instances we keep running (default: 0)
   * `maxScale` (Optional): maximum number of instances this function can scale to (default: 20)
   * `maxConcurrency` (Containers only, Optional): Concurrency defines the number of simultaneous requests your container can handle at the same time (default: 50)
-  * `memoryLimit`: RAM allocated to the function instances. See the introduction for the list of supported values
+  * `memoryLimit`: RAM allocated to the function instances. See the introduction for the list of supported values. For containers, please check valid memory limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
+  * `cpuLimit`: (Containers only) CPU allocated to the container instances. Please check valid CPU limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
   * `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
   * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
@@ -261,6 +262,9 @@ functions:
   second:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
+
+Note: if you wish to use Typescript, you can do so by transpiling your code locally before deploying it. An example is
+available [here](examples/typescript).
 
 ### Python
 
@@ -444,6 +448,7 @@ If `singleSource` is set to `true`, functions and containers not defined in your
 Documentation is available through runtimes frameworks for :
 * [Go](https://github.com/scaleway/serverless-functions-go)
 * [Python](https://github.com/scaleway/serverless-functions-python)
+* [Node](https://github.com/scaleway/serverless-functions-node)
 
 ### Managing containers
 
@@ -497,10 +502,6 @@ You can fetch the logs of a specific function for with the `--function` option. 
 serverless logs --function <function_or_container_name>
 ```
 
-## Offline testing
-
-Deploying functions locally provides a shorter development feedback loop, allowing for faster testing and debugging. This is something we are actively working on, so watch this space!
-
 ## Info
 
 The `serverless info` command gives you information about your functions' or containers' current deployement state in JSON format.
@@ -513,6 +514,11 @@ The `serverless info` command gives you information about your functions' or con
 - [Scaleway Cloud Provider](https://scaleway.com)
 - [Scaleway Serverless sample projects](https://github.com/scaleway/serverless-examples)
 
+## Troubleshooting
+
+### Rate Limiting Issue
+
+If you are experiencing rate limiting issues (error 429) in your application, consider engaging with the support and/or the community. When seeking assistance, remember to provide relevant details, such as the specific rate limiting error messages, the affected components, and any relevant configuration information. This will enable us to better understand your situation and provide appropriate guidance or solutions.
 
 ## Contributing
 

@@ -14,6 +14,7 @@ const { ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { CONTAINERS_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
+const { it } = require('@jest/globals');
 
 const serverlessExec = path.join('serverless');
 
@@ -134,6 +135,19 @@ describe('Service Lifecyle Integration Test', () => {
     await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
     const output = serverlessInvoke(options).toString();
     expect(output).to.be.equal('{"message":"Container successfully updated"}');
+  });
+
+  it('should deploy with registry image specified', () => {
+    replaceTextInFile('serverless.yml', '# registryImage: ""', 'registryImage: docker.io/library/nginx:latest');
+    replaceTextInFile('serverless.yml', '# port: 8080', 'port: 80');
+    serverlessDeploy(options);
+  });
+
+  it('should invoke updated container with specified registry image', async () => {
+    await sleep(30000);
+    options.serviceName = containerName;
+    const output = serverlessInvoke(options).toString();
+    expect(output).to.contain('Welcome to nginx!');
   });
 
   it('should remove service from scaleway', async () => {

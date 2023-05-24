@@ -57,6 +57,7 @@ describe("test runtimes", () => {
         serviceName: serviceName,
         runCurrentVersion: true,
       });
+
       expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
       expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
 
