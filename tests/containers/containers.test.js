@@ -14,7 +14,6 @@ const { ContainerApi } = require('../../shared/api');
 const { execSync } = require('../../shared/child-process');
 const { CONTAINERS_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
-const { it } = require('@jest/globals');
 
 const serverlessExec = path.join('serverless');
 
