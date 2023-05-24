@@ -82,7 +82,7 @@ describe("test triggers", () => {
     } else {
       deployedApplication = namespace.containers[0];
     }
-    const deployedTriggers = await api.listTriggersForApplication(deployedApplication.id).catch((err) => console.error(err));
+    const deployedTriggers = await api.listTriggersForApplication(deployedApplication.id, runtime.isFunction).catch((err) => console.error(err));
 
     expect(deployedTriggers.length).to.be.equal(1);
     expect(deployedTriggers[0].args.myInput).to.be.equal('myValue');
