@@ -7,7 +7,7 @@ const path = require('path');
 const { expect } = require('chai');
 
 const { getTmpDirPath } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, createProject, sleep, createTestService } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, createProject, sleep, createTestService, serverlessInvoke } = require('../utils/misc');
 
 const { FunctionApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL } = require('../../shared/constants');
@@ -75,15 +75,13 @@ describe("test runtimes", () => {
       // should invoke function for runtime ${runtime} from scaleway
       const deployedApplication = namespace.functions[0];
       await sleep(30000);
-      const response = await axios.get(`https://${deployedApplication.domain_name}`).catch((err) => console.error(err));
-      expect(response.status).to.be.equal(200);
+      process.chdir(tmpDir);
+      optionsWithSecrets.serviceName = deployedApplication.name;
+      const output = serverlessInvoke(optionsWithSecrets).toString();
+      expect(output).not.to.be.equal('');
 
       if (runtime === 'secrets') {
-        expect(response.data.env_vars).to.eql([
-          'env_notSecret1', 'env_notSecretA',
-          'env_secret1', 'env_secret2', 'env_secret3',
-          'env_secretA', 'env_secretB', 'env_secretC',
-        ]);
+        expect(output).to.be.equal('{"env_vars":["env_notSecret1","env_notSecretA","env_secret1","env_secret2","env_secret3","env_secretA","env_secretB","env_secretC"]}');
       }
 
       // should remove service for runtime ${runtime} from scaleway
