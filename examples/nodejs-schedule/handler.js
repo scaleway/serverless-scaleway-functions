@@ -1,6 +1,8 @@
 module.exports.handle = (event, context, callback) => {
+  console.log(JSON.stringify(event, null, 4));
+
   const result = {
-    message: "Hello from Serverless Framework and Scaleway Functions :D",
+    message: "Hello from Scaleway functions",
   };
 
   const response = {
@@ -9,7 +11,6 @@ module.exports.handle = (event, context, callback) => {
     body: JSON.stringify(result),
   };
 
-  // either return cb(undefined, response) or return response
   return response;
 };
 
