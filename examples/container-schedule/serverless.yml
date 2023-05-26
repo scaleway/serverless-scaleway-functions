@@ -1,4 +1,5 @@
 service: container-event-example
+configValidationMode: off
 
 provider:
   name: scaleway

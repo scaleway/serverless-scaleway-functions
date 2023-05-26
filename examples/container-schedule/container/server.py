@@ -5,22 +5,25 @@ import os
 import json
 
 DEFAULT_PORT = "8080"
-MESSAGE = "Hello, World from Scaleway Container !"
+MESSAGE = "Hello from the Python event example"
 
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def root():
-    print(request)
-    print(request.data)
-    print(request.json())
+    app.logger.info(f"Event data: {request.json}")
+
+    if request.json:
+        field_a = request.json.get("field-a")
+        field_b = request.json.get("field-b")
+        app.logger.info(f"field-a = {field_a}")
+        app.logger.info(f"field-b = {field_b}")
 
     return json.dumps({"message": MESSAGE})
 
 
 if __name__ == "__main__":
-    # Scaleway's system will inject a PORT environment variable on which your application should start the server.
     port_env = os.getenv("PORT", DEFAULT_PORT)
     port = int(port_env)
 
