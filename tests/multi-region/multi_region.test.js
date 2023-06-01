@@ -1,71 +1,97 @@
-'use strict';
+"use strict";
 
-const path = require('path');
-const fs = require('fs');
-const axios = require('axios');
-const { expect } = require('chai');
-const { execSync } = require('../../shared/child-process');
-const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessRemove} = require('../utils/misc');
-const { FunctionApi, RegistryApi } = require('../../shared/api');
-const { REGISTRY_API_URL, FUNCTIONS_API_URL } = require('../../shared/constants');
+const fs = require("fs");
+const path = require("path");
 
-const serverlessExec = path.join('serverless');
+const { describe, it, expect } = require("@jest/globals");
 
-const functionTemplateName = path.resolve(__dirname, '..', '..', 'examples', 'python3');
+const { execSync } = require("../../shared/child-process");
+const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
+const {
+  getServiceName,
+  serverlessDeploy,
+  serverlessRemove,
+  serverlessInvoke,
+  createProject,
+} = require("../utils/misc");
+const { FunctionApi } = require("../../shared/api");
+const { FUNCTIONS_API_URL } = require("../../shared/constants");
+const { removeProjectById } = require("../utils/clean-up");
+
+const serverlessExec = path.join("serverless");
+
+const scwToken = process.env.SCW_SECRET_KEY;
+
+const functionTemplateName = path.resolve(
+  __dirname,
+  "..",
+  "..",
+  "examples",
+  "python3"
+);
 const oldCwd = process.cwd();
 const serviceName = getServiceName();
-const scwProject = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
-const scwToken = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
-let apiUrl;
-let api;
-let namespace;
 
-const regions = ['fr-par', 'nl-ams', 'pl-waw'];
+const regions = ["fr-par", "nl-ams", "pl-waw"];
 
-describe.each(regions)(
-  'test regions',
-  (region) => {
-    it(`should deploy service for region ${region}`, async () => {
-      const tmpDir = getTmpDirPath();
+describe("test regions", () => {
+  it.concurrent.each(regions)("region %s", async (region) => {
+    let options = {};
+    options.env = {};
+    options.env.SCW_SECRET_KEY = scwToken;
 
-      // create working directory
-      execSync(`${serverlessExec} create --template-path ${functionTemplateName} --path ${tmpDir}`);
-      process.chdir(tmpDir);
-      execSync(`npm link ${oldCwd}`);
-      replaceTextInFile('serverless.yml', 'scaleway-python3', serviceName);
-      replaceTextInFile('serverless.yml', '<scw-token>', scwToken);
-      replaceTextInFile('serverless.yml', '<scw-project-id>', scwProject);
-      expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
-      expect(fs.existsSync(path.join(tmpDir, 'handler.py'))).to.be.equal(true);
+    let projectId, api, namespace, apiUrl;
 
-      // deploy function
-      apiUrl = `${FUNCTIONS_API_URL}/${region}`;
-      api = new FunctionApi(apiUrl, scwToken);
-      serverlessDeploy({ env: { SCW_REGION: region } });
-      namespace = await api.getNamespaceFromList(serviceName, scwProject);
-      namespace.functions = await api.listFunctions(namespace.id);
+    // should create project
+    // not in beforeAll because of a known bug between concurrent tests and async beforeAll
+    await createProject()
+      .then((project) => {
+        projectId = project.id;
+      })
+      .catch((err) => console.error(err));
+    options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
-      // Invoke function
-      await sleep(30000);
-      const deployedFunction = namespace.functions[0];
-      expect(deployedFunction.domain_name.split('.')[3]).to.be.equal(region);
-      let response = await axios.get(`https://${deployedFunction.domain_name}`);
-      expect(response.data.message).to.be.equal('Hello From Python3 runtime on Serverless Framework and Scaleway Functions');
+    // should create working directory
+    const tmpDir = getTmpDirPath();
+    execSync(
+      `${serverlessExec} create --template-path ${functionTemplateName} --path ${tmpDir}`
+    );
+    process.chdir(tmpDir);
+    execSync(`npm link ${oldCwd}`);
+    replaceTextInFile("serverless.yml", "scaleway-python3", serviceName);
+    expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toEqual(true);
+    expect(fs.existsSync(path.join(tmpDir, "handler.py"))).toEqual(true);
 
-      // delete function
-      serverlessRemove({ env: { SCW_REGION: region } });
-      try {
-        await api.getNamespace(namespace.id);
-      } catch (err) {
-        expect(err.response.status).to.be.equal(404);
-      }
-      const registryApiUrl = `${REGISTRY_API_URL}/${region}/`;
-      const registryApi = new RegistryApi(registryApiUrl, scwToken);
-      response = await registryApi.deleteRegistryNamespace(namespace.registry_namespace_id);
-      expect(response.status).to.be.equal(200);
+    // should deploy service for region ${region}
+    apiUrl = `${FUNCTIONS_API_URL}/${region}`;
+    api = new FunctionApi(apiUrl, scwToken);
+    options.env.SCW_REGION = region;
+    serverlessDeploy(options);
+    namespace = await api
+      .getNamespaceFromList(serviceName, projectId)
+      .catch((err) => console.error(err));
+    namespace.functions = await api
+      .listFunctions(namespace.id)
+      .catch((err) => console.error(err));
 
-      process.chdir(oldCwd);
-    });
-  },
-);
+    // should invoke service for region ${region}
+    const deployedFunction = namespace.functions[0];
+    expect(deployedFunction.domain_name.split(".")[3]).toEqual(region);
+    options.serviceName = deployedFunction.name;
+    const output = serverlessInvoke(options).toString();
+    expect(output).toEqual(
+      '"Hello From Python3 runtime on Serverless Framework and Scaleway Functions"'
+    );
+
+    // should remove service for region ${region}
+    serverlessRemove(options);
+    try {
+      await api.getNamespace(namespace.id);
+    } catch (err) {
+      expect(err.response.status).toEqual(404);
+    }
+
+    // should remove project
+    await removeProjectById(projectId).catch((err) => console.error(err));
+  });
+});

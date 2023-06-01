@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
-const ScalewayProvider = require('./provider/scalewayProvider');
-const ScalewayDeploy = require('./deploy/scalewayDeploy');
-const ScalewayRemove = require('./remove/scalewayRemove');
-const ScalewayInvoke = require('./invoke/scalewayInvoke');
-const ScalewayJwt = require('./jwt/scalewayJwt');
-const ScalewayLogs = require('./logs/scalewayLogs');
-const ScalewayInfo = require('./info/scalewayInfo');
+const ScalewayProvider = require("./provider/scalewayProvider");
+const ScalewayDeploy = require("./deploy/scalewayDeploy");
+const ScalewayRemove = require("./remove/scalewayRemove");
+const ScalewayInvoke = require("./invoke/scalewayInvoke");
+const ScalewayJwt = require("./jwt/scalewayJwt");
+const ScalewayLogs = require("./logs/scalewayLogs");
+const ScalewayInfo = require("./info/scalewayInfo");
 
 class ScalewayIndex {
   constructor(serverless, options) {

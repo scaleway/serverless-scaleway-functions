@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 module.exports = {
   getDomainsToCreate(customDomains, existingDomains) {
@@ -11,7 +11,7 @@ module.exports = {
     ) {
       customDomains.forEach((customDomain) => {
         const domainFounds = existingDomains.filter(
-          (existingDomain) => existingDomain.hostname === customDomain,
+          (existingDomain) => existingDomain.hostname === customDomain
         );
 
         if (domainFounds.length === 0) {
@@ -47,6 +47,5 @@ module.exports = {
     });
 
     return formattedDomains;
-  }
-
-}
+  },
+};

@@ -1,0 +1,84 @@
+---
+name: npmtest
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        tests:
+          [
+            "containers",
+            "containers-private",
+            "deploy",
+            "domains",
+            "functions",
+            "multi-region",
+            "provider",
+            "runtimes",
+            "shared",
+            "triggers",
+          ]
+        node-version: ["16.x", "18.x", "20.x"]
+
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up node ${{ matrix.node-version }}
+        id: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install serverless framework
+        run: npm install -g serverless
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npx prettier --check .
+
+      - name: Run tests
+        run: npm run test:${{ matrix.tests }}
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_REGION: ${{ vars.SCW_REGION }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+
+  clean-up:
+    if: ${{ always() }}
+    needs: test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up node 18.x
+        id: setup-node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: "npm"
+
+      - name: Install serverless framework
+        run: npm install -g serverless
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run cleanup
+        run: npm run clean-up
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}

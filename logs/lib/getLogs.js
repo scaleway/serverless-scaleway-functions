@@ -1,11 +1,16 @@
-'use strict';
+"use strict";
 
-const BbPromise = require('bluebird');
+const BbPromise = require("bluebird");
 
 module.exports = {
   getLogs() {
     return BbPromise.bind(this)
-      .then(() => this.getNamespaceFromList(this.namespaceName, this.provider.getScwProject()))
+      .then(() =>
+        this.getNamespaceFromList(
+          this.namespaceName,
+          this.provider.getScwProject()
+        )
+      )
       .then(this.listApplications)
       .all()
       .then(this.getApplicationId)
@@ -14,7 +19,7 @@ module.exports = {
   },
 
   listApplications(namespace) {
-    if (typeof this.listFunctions === 'function') {
+    if (typeof this.listFunctions === "function") {
       return this.listFunctions(namespace.id);
     }
     return this.listContainers(namespace.id);

@@ -13,7 +13,7 @@ Suggested code layout:
 ```
 .
 ├── go.mod        # your go.mod defines your module
-├── go.sum        # not always necessary 
+├── go.sum        # not always necessary
 ├── myfunc.go     # your handler method (exported) must be defined here
 └── subpackage    # you can have subpackages
     └── hello.go  # with files inside

@@ -2,12 +2,13 @@
 
 This is the [Scaleway Functions](https://www.scaleway.com/en/serverless-functions/) plugin for [Serverless Framework](https://serverless.com/).
 
->**Requirements**: 
+> **Requirements**:
+
 - You have installed the [Serverless Framework](https://www.serverless.com/framework/docs/getting-started).
 - You have an account and are logged into the [Scaleway console](https://console.scaleway.com)
 - If you have [activated IAM](/identity-and-access-management/iam/how-to/activate-iam), you may need certain [IAM permissions](/identity-and-access-management/iam/concepts/#permission) to carry out some actions described on this page. This means:
-    - you are the [Owner](/identity-and-access-management/iam/concepts/#owner) of the Scaleway [Organization](/identity-and-access-management/iam/concepts/#organization) in which the actions will be carried out, or
-    - you are an IAM user of the Organization, with a [policy](/identity-and-access-management/iam/concepts/#policy) granting you the necessary [permission sets](/identity-and-access-management/iam/reference-content/permission-sets/)
+  - you are the [Owner](/identity-and-access-management/iam/concepts/#owner) of the Scaleway [Organization](/identity-and-access-management/iam/concepts/#organization) in which the actions will be carried out, or
+  - you are an IAM user of the Organization, with a [policy](/identity-and-access-management/iam/concepts/#policy) granting you the necessary [permission sets](/identity-and-access-management/iam/reference-content/permission-sets/)
 - You have generated an [API key](https://www.scaleway.com/en/docs/console/my-project/how-to/generate-api-key/).
 - You have set up the [Scaleway CLI](https://www.scaleway.com/en/cli/).
 - You have installed `node.js` on your local computer
@@ -15,28 +16,36 @@ This is the [Scaleway Functions](https://www.scaleway.com/en/serverless-function
 
 ## Quickstart
 
-1. Export the template you wish to use. You can find the available templates on [this page](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples). 
+1. Export the template you wish to use. You can find the available templates on [this page](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples).
 
-  ```shell
-  export TEMPLATE=python3
-  ```
+```shell
+export TEMPLATE=python3
+```
+
 2. Create the function.
-  ```shell
-  serverless create --path my-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
-  ```
+
+```shell
+serverless create --path my-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
+```
+
 3. Install dependencies.
-  ```shell
-  cd my-func
-  npm i
-  ```
+
+```shell
+cd my-func
+npm i
+```
+
 4. Deploy the function. The URL is returned.
-  ```shell
-  serverless deploy
-  ```
-5. Invoke the function. 
-  ```shell 
-  serverless invoke --function first
-  ```
+
+```shell
+serverless deploy
+```
+
+5. Invoke the function.
+
+```shell
+serverless invoke --function first
+```
 
 ## Contents
 
@@ -73,32 +82,35 @@ The easiest way to create a new project is to use one of our templates. The list
 
 1. Create and change into a new directory. In this tutorial we will use `~/my-srvless-projects`.
 
-  ```bash
-  # mkdir ~/my-srvless-projects
-  # cd ~/my-srvless-projects
-  ```
+```bash
+# mkdir ~/my-srvless-projects
+# cd ~/my-srvless-projects
+```
+
 2. Create a new project using `python3`.
 
-  ```bash
-  serverless create --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/python3 --path myService
-  ```
-3. Install mandatory the following node packages, used by serverless.
-  ```bash
-  cd mypython3functions
-  npm i
-  ```
+```bash
+serverless create --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/python3 --path myService
+```
 
-> **Note:** 
-These packages are only used by serverless, they are not shipped with your functions.
+3. Install mandatory the following node packages, used by serverless.
+
+```bash
+cd mypython3functions
+npm i
+```
+
+> **Note:**
+> These packages are only used by serverless, they are not shipped with your functions.
 
 ## Configure your functions
 
 Your functions are defined within the `serverless.yml` file. It contains the configuration of a namespace containing one or more functions (in the following example we use 1 function) of the same runtime (here `python3`).
 
-Create the `serverless.yml` file using a text editor of your choice. 
+Create the `serverless.yml` file using a text editor of your choice.
 
->**Important**: 
-`provider.name` and `plugins` MUST NOT be changed, as they enable us to use the Scaleway provider.
+> **Important**:
+> `provider.name` and `plugins` MUST NOT be changed, as they enable us to use the Scaleway provider.
 
 ```yml
 service: scaleway-python3
@@ -123,9 +135,9 @@ plugins:
 
 package:
   patterns:
-    - '!node_modules/**'
-    - '!.gitignore'
-    - '!.git/**'
+    - "!node_modules/**"
+    - "!.gitignore"
+    - "!.git/**"
 
 functions:
   first:
@@ -134,45 +146,47 @@ functions:
     env:
       local: local
 ```
-### Parameters 
+
+### Parameters
 
 The configuration includes the following parameters:
 
-* `service`: your namespace name
-* `useDotenv`: load environment variables from `.env` files (default: false), read [Security and secret management](#security-and-secret-management)
-* `configValidationMode`: Configuration validation: 'error' (fatal error), 'warn' (logged to the output) or 'off' (default: warn)
-* `provider.runtime`: the runtime of your functions (check the supported runtimes above)
-* `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
-* `provider.secret`: secret environment variables attached to your namespace are injected to all your namespace functions, see [this example project](./examples/secrets)
-* `scwToken`: the access key (token) you generated with your API key 
-* `scwProject`: the Organization ID of your Scaleway Organization
-* `scwRegion`: the Scaleway region in which the deployment will take place (default: `fr-par`)
-* `package.patterns`: you can leave this parameter at default, or enable it to include/exclude directories to/from the deployment
-* `functions`: configuration of your functions. It is a `.yml` dictionary, and the key is the function name 
-  * `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
-  * `registryImage` (Containers only, Optional): name of the registry image. If no registry image is provided, the image will be build locally using the Dockerfile.
-  * `env` (Optional): environment variables specific to the current function
-  * `secret` (Optional): secret environment variables specific to the current function, see [this example project](./examples/secrets)
-  * `minScale` (Optional): how many function instances we keep running (default: 0)
-  * `maxScale` (Optional): maximum number of instances this function can scale to (default: 20)
-  * `maxConcurrency` (Containers only, Optional): Concurrency defines the number of simultaneous requests your container can handle at the same time (default: 50)
-  * `memoryLimit`: RAM allocated to the function instances. See the introduction for the list of supported values. For containers, please check valid memory limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
-  * `cpuLimit`: (Containers only) CPU allocated to the container instances. Please check valid CPU limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
-  * `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
-  * `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
-  * `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
-  * `custom_domains` (Optional): List of custom domains, refer to the [how to add a custom domain](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) documentation page
-  * `httpOption` (Optional): force https redirection, possible values are `enabled` and `redirected` (default: `enabled`)
-  * `privacy` (Optional): defines whether a function may be executed anonymously (`public`) or only via an authentication mechanism (`private`) (default: `public`)
+- `service`: your namespace name
+- `useDotenv`: load environment variables from `.env` files (default: false), read [Security and secret management](#security-and-secret-management)
+- `configValidationMode`: Configuration validation: 'error' (fatal error), 'warn' (logged to the output) or 'off' (default: warn)
+- `provider.runtime`: the runtime of your functions (check the supported runtimes above)
+- `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
+- `provider.secret`: secret environment variables attached to your namespace are injected to all your namespace functions, see [this example project](./examples/secrets)
+- `scwToken`: the access key (token) you generated with your API key
+- `scwProject`: the Organization ID of your Scaleway Organization
+- `scwRegion`: the Scaleway region in which the deployment will take place (default: `fr-par`)
+- `package.patterns`: you can leave this parameter at default, or enable it to include/exclude directories to/from the deployment
+- `functions`: configuration of your functions. It is a `.yml` dictionary, and the key is the function name
+  - `handler` (Required): file or function which will be executed. See the next section for runtime specific handlers
+  - `registryImage` (Containers only, Optional): name of the registry image. If no registry image is provided, the image will be build locally using the Dockerfile.
+  - `env` (Optional): environment variables specific to the current function
+  - `secret` (Optional): secret environment variables specific to the current function, see [this example project](./examples/secrets)
+  - `minScale` (Optional): how many function instances we keep running (default: 0)
+  - `maxScale` (Optional): maximum number of instances this function can scale to (default: 20)
+  - `maxConcurrency` (Containers only, Optional): Concurrency defines the number of simultaneous requests your container can handle at the same time (default: 50)
+  - `memoryLimit`: RAM allocated to the function instances. See the introduction for the list of supported values. For containers, please check valid memory limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
+  - `cpuLimit`: (Containers only) CPU allocated to the container instances. Please check valid CPU limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
+  - `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
+  - `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
+  - `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
+  - `custom_domains` (Optional): List of custom domains, refer to the [how to add a custom domain](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) documentation page
+  - `httpOption` (Optional): force https redirection, possible values are `enabled` and `redirected` (default: `enabled`)
+  - `privacy` (Optional): defines whether a function may be executed anonymously (`public`) or only via an authentication mechanism (`private`) (default: `public`)
 
 ### Security and secret management
 
->**Important**: 
-We recommend you to not commit in a Version Control System (VCS), and to not share your Project ID or access key to ensure the security of your configuration file, which may contain sensitive data.  
+> **Important**:
+> We recommend you to not commit in a Version Control System (VCS), and to not share your Project ID or access key to ensure the security of your configuration file, which may contain sensitive data.
 
 To keep your information safe and to share or commit your `serverless.yml` file you should remove your credentials from the file. Once you have done so, you can either:
-  - use global environment variables, or
-  - use `.env` file and keep it secret
+
+- use global environment variables, or
+- use `.env` file and keep it secret
 
 To use the `.env` file you can modify your `serverless.yml` file as following:
 
@@ -218,27 +232,27 @@ According to the official documentation, to use ES modules you can specify the m
 This then enables you to write your code for ES modules:
 
 ```javascript
-export {handle};
+export { handle };
 
-function handle (event, context, cb) {
-    return {
-        body: process.version,
-        headers: {"Content-Type": ["text/plain"]},
-        statusCode: 200,
-    };
-};
+function handle(event, context, cb) {
+  return {
+    body: process.version,
+    headers: { "Content-Type": ["text/plain"] },
+    statusCode: 200,
+  };
+}
 ```
 
 The use of ES modules is encouraged since they are more efficient and make setup and debugging much easier.
 
 Note that using `"type": "module"` or `"type": "commonjs"` in your `package.json` file will enable or disable some features in Node runtime, such as:
+
 - `commonjs` is used as the default value
 - `commonjs` allows you to use `require/module.exports` (synchronous code loading - it basically copies all file contents)
 - `module` allows you to use `import/export` ES6 instructions (asynchronous loading - more optimized as it imports only the pieces of code you need)
 
->**Tip**:
-For a comprehensive list of differences, please refer to the [Node.js official documentation](https://nodejs.org/api/esm.html).
-
+> **Tip**:
+> For a comprehensive list of differences, please refer to the [Node.js official documentation](https://nodejs.org/api/esm.html).
 
 ### Node
 
@@ -247,11 +261,13 @@ Path to your handler file (from `serverless.yml`), omit `./`, `../`, and add the
 ```yml
 - src
   - handlers
-    - firstHandler.js  => module.exports.myFirstHandler = ...
-    - secondHandler.js => module.exports.mySecondHandler = ...
+  - firstHandler.js  => module.exports.myFirstHandler = ...
+  - secondHandler.js => module.exports.mySecondHandler = ...
 - serverless.yml
 ```
+
 In serverless.yml:
+
 ```yml
 provider:
   # ...
@@ -269,14 +285,17 @@ available [here](examples/typescript).
 ### Python
 
 Similar to `node`, path to handler file `src/testing/handler.py`:
+
 ```yml
 - src
   - handlers
-    - firstHandler.py  => def my_first_handler
-    - secondHandler.py => def my_second_handler
+  - firstHandler.py  => def my_first_handler
+  - secondHandler.py => def my_second_handler
 - serverless.yml
 ```
+
 In serverless.yml:
+
 ```yml
 provider:
   # ...
@@ -291,16 +310,19 @@ functions:
 ### Golang
 
 Path to your handler's **package**. For example, if you have the following structure:
+
 ```yml
 - src
   - testing
-    - handler.go -> package main in src/testing subdirectory
+  - handler.go -> package main in src/testing subdirectory
   - second
-    - handler.go -> package main in src/second subdirectory
+  - handler.go -> package main in src/second subdirectory
 - serverless.yml
 - handler.go -> package main at the root of project
 ```
+
 Your serverless.yml `functions` should look something like this:
+
 ```yml
 provider:
   # ...
@@ -317,6 +339,7 @@ functions:
 ### PHP
 
 Recommended folder structure for `php` runtimes:
+
 ```yml
 ├── handler.php
 ├── composer.json (not necessary if you do not need dependencies)
@@ -336,6 +359,7 @@ functions:
 ### Rust
 
 Recommended folder structure for `rust` runtimes:
+
 ```yml
 - src
   - handler.rs (with async handler function)
@@ -356,10 +380,11 @@ functions:
 
 With events, you can link your functions with `CRON Schedule (Time based)` triggers.
 
->**Note**:
-We do not include HTTP triggers in our event types, as an HTTP endpoint is created for every function. Triggers are just a new way to trigger your Function, but you can always execute your code via HTTP.
+> **Note**:
+> We do not include HTTP triggers in our event types, as an HTTP endpoint is created for every function. Triggers are just a new way to trigger your Function, but you can always execute your code via HTTP.
 
 Below is a list of supported triggers on Scaleway Serverless, and the configuration parameters required to deploy them:
+
 - **schedule**: trigger your function based on CRON schedules
   - `rate`: CRON Schedule (UNIX Format) on which your function will be executed
   - `input`: key-value mapping to define arguments that will be passed into your function's event object during execution.
@@ -373,7 +398,7 @@ functions:
     # "events" is a list of triggers, the first key being the type of trigger.
     - schedule:
         # CRON Job Schedule (UNIX Format)
-        rate: '1 * * * *'
+        rate: "1 * * * *"
         # Input variable are passed in your function's event during execution
         input:
           key: value
@@ -390,13 +415,14 @@ custom:
       # Events key
       events:
         - schedule:
-            rate: '1 * * * *'
+            rate: "1 * * * *"
             input:
               key: value
               key2: value2
 ```
 
 Refer to the following examples:
+
 - [NodeJS with schedule trigger](./examples/nodejs-schedule)
 - [Container with Schedule Trigger](./examples/container-schedule)
 
@@ -404,9 +430,9 @@ Refer to the following examples:
 
 Custom domains allow users to use their own domains.
 
->**Note**: 
-Refer to [custom domains on functions](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) or
-[custom domains on containers](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/) for more information about domain configuration.
+> **Note**:
+> Refer to [custom domains on functions](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) or
+> [custom domains on containers](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/) for more information about domain configuration.
 
 Integration with serverless framework example:
 
@@ -422,14 +448,14 @@ functions:
       - func2.scaleway.com
 ```
 
-- >**Note**: 
-Your domain must have a record pointing to your function hostname. You should deploy your function once to read its hostname. The configuration of custom domains becomes available after the first deploy.
+- > **Note**:
+  > Your domain must have a record pointing to your function hostname. You should deploy your function once to read its hostname. The configuration of custom domains becomes available after the first deploy.
 
-- >**Note:** 
-Serverless Framework considers the configuration file as the source of truth.
+- > **Note:**
+  > Serverless Framework considers the configuration file as the source of truth.
 
-- >**Important**: 
-If you create a domain with other tools (the Scaleway console, the CLI or APIs) you must refer the created domain into your serverless configuration file. Otherwise it will be deleted as serverless framework will give the priority to its configuration.
+- > **Important**:
+  > If you create a domain with other tools (the Scaleway console, the CLI or APIs) you must refer the created domain into your serverless configuration file. Otherwise it will be deleted as serverless framework will give the priority to its configuration.
 
 ### Deployment methods
 
@@ -446,13 +472,15 @@ If `singleSource` is set to `true`, functions and containers not defined in your
 `serverless invoke local` is **not supported** directly but instead we provide additional packages to install close to your handler.
 
 Documentation is available through runtimes frameworks for :
-* [Go](https://github.com/scaleway/serverless-functions-go)
-* [Python](https://github.com/scaleway/serverless-functions-python)
-* [Node](https://github.com/scaleway/serverless-functions-node)
+
+- [Go](https://github.com/scaleway/serverless-functions-go)
+- [Python](https://github.com/scaleway/serverless-functions-python)
+- [Node](https://github.com/scaleway/serverless-functions-node)
 
 ### Managing containers
 
->**Requirements:** 
+> **Requirements:**
+
 - You have [created a Container Registry namespace](https://www.scaleway.com/en/docs/compute/container-registry/how-to/create-namespace/)
 - You have installed Docker and can build and push your image to your registry.
 
@@ -522,7 +550,11 @@ If you are experiencing rate limiting issues (error 429) in your application, co
 
 ## Contributing
 
-This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/): #serverless-containers and #serverless-functions.
+This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and
+are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/): #serverless-containers
+and #serverless-functions.
+
+If you are looking for a way to contribute please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md).
 
 For general information about developing Serverless Framework, refer to the Serverless Framework [plugins documentation](https://www.serverless.com/framework/docs/guides/plugins/creating-plugins).
 
@@ -541,6 +573,19 @@ plugins:
 ```
 
 Then you can run commands as normal.
+
+## Help & support
+
+- Scaleway support is available on Scaleway Console.
+- Additionally, you can join our [Slack Community](https://www.scaleway.com/en/docs/tutorials/scaleway-slack-community/)
+
+## Reach Us
+
+We love feedback. Feel free to:
+
+- Open a [Github issue](https://github.com/scaleway/serverless-functions-node/issues/new)
+- Send us a message on the [Scaleway Slack community](https://slack.scaleway.com/), in the
+  [#serverless-functions](https://scaleway-community.slack.com/app_redirect?channel=serverless-functions) channel.
 
 ## License
 

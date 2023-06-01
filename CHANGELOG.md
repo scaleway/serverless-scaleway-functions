@@ -1,36 +1,54 @@
 # Changelog
 
 ## 0.4.6
+
 ### Added
+
 - Local testing example for Go and Python #149
+
 ### Fixed
+
 - Error display on `serverless invoke` command #148
 - Timeout format in containe examples #145
 - Security deps #143 #144
 
 ## 0.4.5
+
 ### Added
+
 - `httpOption` parameter
 - Support for PHP runtime
+
 ### Fixed
+
 - Cron regex was different from console
 
 ## 0.4.4
+
 ### Added
+
 - Support for Rust files (`.rs`)
+
 ### Fixed
+
 - `js-yaml` dependency
 
 ## O.4.3
+
 ### Added
+
 - `description` field is now supported in serverless config files
 
 ### Fixed
+
 - Registry image is now forced by serverless framework to ensure consitency
 - Project_id added to requests to avoid multiple results if same namespace name is used
 - Clean documentaion and examples
+
 ## 0.4.2
+
 ### Added
+
 - Support for custom domains on containers
 - `maxConcurrency` parameter for containers
 - Support of pulling private images
@@ -38,6 +56,7 @@
 - Support for End of Support and End of Life runtimes
 
 ### Fixed
+
 - Dependencies + code cleaning
 
 ## 0.4.1
@@ -51,20 +70,26 @@
 - fix tests [#96](https://github.com/scaleway/serverless-scaleway-functions/pull/96)
 
 ## 0.4.0
+
 ### Added
+
 - `serverless info` command to work with serverless compose
 - `serverless invoke` command
 - Custom Domains support
 - `singleSource` parameter
+
 ### Changed
+
 - Documentation
 - Examples
 - Contributing guideline
 
 ## 0.3.2
+
 ### Fixed
 
 - `serverless jwt` command was using old jwt API
+
 ### Changed
 
 - Configuration files now have a default region instead of placeholder

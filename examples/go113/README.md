@@ -3,6 +3,7 @@
 ## Requirements
 
 Every handler must be in its own package, identified by `package main`, and exporting a main function with the following `lambda.Start` statement:
+
 ```go
 // Must Always be package main
 package main
@@ -10,7 +11,7 @@ package main
 import (
 	"encoding/json"
 	"http"
-	
+
   // Import both of these packages
 	"github.com/scaleway/scaleway-functions-go/events"
 	"github.com/scaleway/scaleway-functions-go/lambda"

@@ -11,9 +11,9 @@ plugins:
 
 package:
   patterns:
-    - '!node_modules/**'
-    - '!.gitignore'
-    - '!.git/**'
+    - "!node_modules/**"
+    - "!.gitignore"
+    - "!.git/**"
 
 custom:
   containers:
@@ -21,7 +21,7 @@ custom:
       directory: my-container
       events:
         - schedule:
-            rate: '1 * * * *'
+            rate: "1 * * * *"
             input:
               myInput: myValue
               mySecondInput: 1

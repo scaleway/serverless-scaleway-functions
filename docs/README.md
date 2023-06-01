@@ -22,6 +22,7 @@ This is a guide on how to `get started` using Scaleway Functions with Serverless
 ## Requirements
 
 In order to start development on this plugin, you will have to run through multiple steps:
+
 - Install node.js
 - Install [Serverless](https://serverless.com) CLI
 - Clone this repository locally
@@ -34,8 +35,7 @@ In order to start development on this plugin, you will have to run through multi
 
 Some template examples are available [inside this plugin's examples directory](../examples) (More informations about available templates/examples [in this page of the documentation](./templates.md)), you may create a project boilerplate from one of these templates with the following command:
 
-
-**Important**: template-path *MUST* be absolute
+**Important**: template-path _MUST_ be absolute
 
 ```
 serverless create --template-path=~/my-srvless-projects/serverless-scaleway-functions/examples/{template} --path=my-function
@@ -52,9 +52,9 @@ You will need to provide both `project ID` and `secret key`. You may retrieve th
 - Login/Register to [Scaleway console](https://console.scaleway.com)
 - Go to your [credentials management page](https://console.scaleway.com/account/credentials)
 - Retrieve your `project ID` and generate a token (see following picture):
-![credentials section](./assets/credentials_section.png)
+  ![credentials section](./assets/credentials_section.png)
 - Retrieve lastly created token's `secret key`:
-![token secret key](./assets/secret_key.png)
+  ![token secret key](./assets/secret_key.png)
 
 Now, when running `serverless` commands from your project directory, serverless CLI will use scaleway plugin to execute commands.
 
@@ -78,7 +78,7 @@ provider:
   scwProject: ${env:SCW_DEFAULT_PROJECT_ID}
 ```
 
-Create a `.env` file next to your `serverless.yml` file : 
+Create a `.env` file next to your `serverless.yml` file :
 
 ```bash
 SCW_SECRET_KEY=XXX
@@ -86,6 +86,7 @@ SCW_DEFAULT_PROJECT_ID=XXX
 ```
 
 - **Environment variables**:
+
 ```bash
 export SCW_TOKEN=<scw-token>
 export SCW_PROJECT=<scw-project-id>
@@ -97,6 +98,7 @@ serverless deploy
 [link to CLI documentation](https://github.com/scaleway/scaleway-cli/blob/master/docs/commands/function.md)
 
 - **serverless.yml** (discouraged) manifest. Inside your manifest, you may inquire your credentials with the following structure under the `provider` key:
+
 ```yml
 provider:
   scwToken: <scw-token>
@@ -104,6 +106,7 @@ provider:
 ```
 
 The priority order is the following (from top: + priority to bottom: - priority):
+
 - CLI
 - Environment variables
 - serverless.yml
@@ -114,6 +117,7 @@ The priority order is the following (from top: + priority to bottom: - priority)
 You may want to update `serverless.yml manifest` file in order to manage functions your Scaleway Functions.
 
 **Note** that in order to use Scaleway Functions plugin, you will need to use the following statement inside your `serverless.yml` file:
+
 ```yml
 plugins:
   - serverless-scaleway-functions
@@ -146,14 +150,15 @@ provider:
 ```yml
 functions:
   myFunction:
-    # handler may vary for each runtimes (e.g in golang, references package while python/node references handler file).    
+    # handler may vary for each runtimes (e.g in golang, references package while python/node references handler file).
     handler: path/to/handler/file
     # Optional runtime if same as the default runtime
-    runtime: <runtime> 
+    runtime: <runtime>
     # Environment only available in this function
     env:
       MY_VARIABLE: "my-value"
 ```
+
 ### Managing containers
 
 **Requirements:** You need to have Docker installed to be able to build and push your image to your Scaleway registry.
@@ -194,7 +199,7 @@ You may use the [container example](../examples/container) to getting started.
 
 ### Runtime and Functions Handler
 
-You must specify a default function'runtime inside `provider.runtime` key inside your serverless.yml file.  
+You must specify a default function'runtime inside `provider.runtime` key inside your serverless.yml file.
 
 If you want to use a different runtime for a specific function, you may define the runtime you wish to use inside functions.myfunction.runtime. This way, you may use the same serverless project to deploy functions written in different languages.
 
@@ -203,6 +208,7 @@ It is not necessary if you wish to deploy containers only.
 ### Runtimes
 
 Available runtimes are:
+
 - `node10`, `node14`, `node16`, `node18` for JavaScript
 - `python37`, `python38`, `python39`, `python310`
 - `go113`, `go117`, `go118`
@@ -210,6 +216,7 @@ Available runtimes are:
 #### Functions Handler
 
 Based on the chosen runtime, the `handler` variable on function might vary:
+
 - `node` : Path to your handler file (from serverless.yml), omit `./`, `../`, suffixed by the exported function to use (example: `myFunction.handle` => file `myFunction.js` exports a function `handle`).
   ```
   - src
@@ -277,6 +284,7 @@ After you deployed them with `serverless deploy`, you can do `serverless jwt` to
 ### Environment Variables
 
 You may inject environment variables in different scope:
+
 - `namespace`, environment variables will be mounted in every functions of the namespace
 - `function`, environment variables will only be mounted to given function.
 
@@ -295,7 +303,6 @@ functions:
     env:
       LOCAL_VARIABLE: mounted-in-this-function
 ```
-
 
 # Serverless Remove: Delete a project
 

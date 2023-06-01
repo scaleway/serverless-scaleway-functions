@@ -1,10 +1,9 @@
-const { expect } = require('chai');
+const fs = require("fs");
+const path = require("path");
 
-const fs = require('fs');
-const path = require('path');
-
-const ScalewayProvider = require('../../provider/scalewayProvider');
-const { createTmpDir } = require('../utils/fs');
+const ScalewayProvider = require("../../provider/scalewayProvider");
+const { createTmpDir } = require("../utils/fs");
+const { afterAll, beforeAll, describe, it, expect } = require("@jest/globals");
 
 class MockServerless {
   constructor() {
@@ -14,20 +13,15 @@ class MockServerless {
     this.cli = {};
     this.cli.log = (logMsg) => {
       console.log(logMsg);
-    }
-  };
+    };
+  }
 
   setProvider(provName, prov) {
     this.service.provider = prov;
-  };
+  }
 }
 
-describe('Scaleway credentials test', () => {
-  if (process.env.SCW_SECRET_KEY || process.env.SCW_DEFAULT_PROJECT_ID ||
-    process.env.SCW_TOKEN || process.env.SCW_PROJECT) {
-    throw new Error("No credentials should be passed in environment variables for this test");
-  }
-
+describe("Scaleway credentials test", () => {
   this.expectedToken = null;
   this.expectedProject = null;
 
@@ -37,18 +31,18 @@ describe('Scaleway credentials test', () => {
   beforeAll(() => {
     // Override scw config file location
     this.dummyScwConfigDir = createTmpDir();
-    this.dummyScwConfigPath = path.join(this.dummyScwConfigDir, 'config.yml');
+    this.dummyScwConfigPath = path.join(this.dummyScwConfigDir, "config.yml");
 
     ScalewayProvider.scwConfigFile = this.dummyScwConfigPath;
   });
 
   afterAll(() => {
     // Delete the dummy config file and directory
-    if(fs.existsSync(this.dummyScwConfigPath)) {
+    if (fs.existsSync(this.dummyScwConfigPath)) {
       fs.unlinkSync(this.dummyScwConfigPath);
     }
 
-    if(fs.existsSync(this.dummyScwConfigDir)) {
+    if (fs.existsSync(this.dummyScwConfigDir)) {
       fs.rmdirSync(this.dummyScwConfigDir);
     }
   });
@@ -58,35 +52,36 @@ describe('Scaleway credentials test', () => {
     this.prov.setCredentials(options);
 
     // Check they're as expected
-    expect(this.prov.scwToken).to.equal(this.expectedToken);
-    expect(this.prov.scwProject).to.equal(this.expectedProject);
+    expect(this.prov.scwToken).toEqual(this.expectedToken);
+    expect(this.prov.scwProject).toEqual(this.expectedProject);
   };
 
   // -------------------------------------
   // These tests must be written in order of increasing precedence, each one getting superceded by the next.
   // -------------------------------------
 
-  it('should return nothing when no credentials found', () => {
-    this.expectedToken = '';
-    this.expectedProject = '';
+  it("should return nothing when no credentials found", () => {
+    this.expectedToken = "";
+    this.expectedProject = "";
 
     this.checkCreds({});
   });
 
-  it('should read from scw config file if present', () => {
+  it("should read from scw config file if present", () => {
     // Write the dummy file
-    const dummyScwConfigContents = 'secret_key: scw-key\ndefault_project_id: scw-proj\n';
+    const dummyScwConfigContents =
+      "secret_key: scw-key\ndefault_project_id: scw-proj\n";
     fs.writeFileSync(this.dummyScwConfigPath, dummyScwConfigContents);
 
-    this.expectedToken = 'scw-key';
-    this.expectedProject = 'scw-proj';
+    this.expectedToken = "scw-key";
+    this.expectedProject = "scw-proj";
 
     this.checkCreds({});
   });
 
-  it('should take values from serverless.yml if present', () => {
-    this.expectedToken = 'conf-token';
-    this.expectedProject = 'conf-proj';
+  it("should take values from serverless.yml if present", () => {
+    this.expectedToken = "conf-token";
+    this.expectedProject = "conf-proj";
 
     this.serverless.service.provider.scwToken = this.expectedToken;
     this.serverless.service.provider.scwProject = this.expectedProject;
@@ -94,12 +89,12 @@ describe('Scaleway credentials test', () => {
     this.checkCreds({});
   });
 
-  it('should read from legacy environment variables if present', () => {
+  it("should read from legacy environment variables if present", () => {
     let originalToken = process.env.SCW_TOKEN;
     let originalProject = process.env.SCW_PROJECT;
 
-    this.expectedToken = 'legacy-token';
-    this.expectedProject = 'legacy-proj';
+    this.expectedToken = "legacy-token";
+    this.expectedProject = "legacy-proj";
 
     process.env.SCW_TOKEN = this.expectedToken;
     process.env.SCW_PROJECT = this.expectedProject;
@@ -110,12 +105,12 @@ describe('Scaleway credentials test', () => {
     process.env.SCW_PROJECT = originalProject;
   });
 
-  it('should read from environment variables if present', () => {
+  it("should read from environment variables if present", () => {
     let originalToken = process.env.SCW_SECRET_KEY;
     let originalProject = process.env.SCW_DEFAULT_PROJECT_ID;
 
-    this.expectedToken = 'env-token';
-    this.expectedProject = 'env-proj';
+    this.expectedToken = "env-token";
+    this.expectedProject = "env-proj";
 
     process.env.SCW_SECRET_KEY = this.expectedToken;
     process.env.SCW_DEFAULT_PROJECT_ID = this.expectedProject;
@@ -126,13 +121,13 @@ describe('Scaleway credentials test', () => {
     process.env.SCW_DEFAULT_PROJECT_ID = originalProject;
   });
 
-  it('should read credentials from options if present', () => {
+  it("should read credentials from options if present", () => {
     let options = {};
-    options['scw-token'] = 'opt-token';
-    options['scw-project'] = 'opt-proj';
+    options["scw-token"] = "opt-token";
+    options["scw-project"] = "opt-proj";
 
-    this.expectedToken = 'opt-token';
-    this.expectedProject = 'opt-proj';
+    this.expectedToken = "opt-token";
+    this.expectedProject = "opt-proj";
 
     this.checkCreds(options);
   });

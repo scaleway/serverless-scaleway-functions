@@ -1,10 +1,14 @@
-'use strict';
+"use strict";
 
-const BbPromise = require('bluebird');
-const secrets = require('../../shared/secrets');
-const singleSource = require('../../shared/singleSource');
-const domainUtils = require('../../shared/domains');
-const { RUNTIME_STATUS_AVAILABLE, RUNTIME_STATUS_EOL, RUNTIME_STATUS_EOS } = require('../../shared/runtimes');
+const BbPromise = require("bluebird");
+const secrets = require("../../shared/secrets");
+const singleSource = require("../../shared/singleSource");
+const domainUtils = require("../../shared/domains");
+const {
+  RUNTIME_STATUS_AVAILABLE,
+  RUNTIME_STATUS_EOL,
+  RUNTIME_STATUS_EOS,
+} = require("../../shared/runtimes");
 
 module.exports = {
   createFunctions() {
@@ -32,7 +36,7 @@ module.exports = {
     const deleteData = singleSource.getElementsToDelete(
       this.serverless.configurationInput.singleSource,
       foundFunctions,
-      Object.keys(functions),
+      Object.keys(functions)
     );
 
     this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
@@ -59,8 +63,14 @@ module.exports = {
 
     this.listDomainsFunction(funcId).then((domains) => {
       const existingDomains = domainUtils.formatDomainsStructure(domains);
-      const domainsToCreate = domainUtils.getDomainsToCreate(customDomains, existingDomains);
-      const domainsIdToDelete = domainUtils.getDomainsToDelete(customDomains, existingDomains);
+      const domainsToCreate = domainUtils.getDomainsToCreate(
+        customDomains,
+        existingDomains
+      );
+      const domainsIdToDelete = domainUtils.getDomainsToDelete(
+        customDomains,
+        existingDomains
+      );
 
       domainsToCreate.forEach((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
@@ -173,13 +183,15 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     params.runtime = this.validateRuntime(
       func,
       availableRuntimes,
-      this.serverless.cli,
+      this.serverless.cli
     );
 
     // checking if there is custom_domains set on function creation.
     if (func.custom_domains && func.custom_domains.length > 0) {
-      this.serverless.cli.log("WARNING: custom_domains are available on function update only. "+
-        "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/")
+      this.serverless.cli.log(
+        "WARNING: custom_domains are available on function update only. " +
+          "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/"
+      );
     }
 
     this.serverless.cli.log(`Creating function ${func.name}...`);

@@ -13,8 +13,8 @@ plugins:
 
 package:
   patterns:
-    - '!.gitignore'
-    - '!.git/**'
+    - "!.gitignore"
+    - "!.git/**"
 
 functions:
   first:

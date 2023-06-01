@@ -1,4 +1,4 @@
-const argon2 = require('argon2');
+const argon2 = require("argon2");
 
 module.exports = {
   // converts an object from serverless framework ({"a": "b", "c": "d"})
@@ -8,11 +8,10 @@ module.exports = {
     if (obj === {} || obj === null || obj === undefined) {
       return [];
     }
-    return Object.keys(obj)
-      .map(k => ({
-        key: k,
-        value: obj[k],
-      }));
+    return Object.keys(obj).map((k) => ({
+      key: k,
+      value: obj[k],
+    }));
   },
 
   // resolves a value from a secret
@@ -30,7 +29,9 @@ module.exports = {
       return process.env[found[1]];
     }
 
-    logger.log(`WARNING: Env var ${found[1]} used in secret ${key} does not exist: this secret will not be created`);
+    logger.log(
+      `WARNING: Env var ${found[1]} used in secret ${key} does not exist: this secret will not be created`
+    );
     return null;
   },
 
@@ -38,25 +39,35 @@ module.exports = {
   // it is computed by making the difference between existing secrets and secrets sent via the framework
   // see unit tests for all use cases
   async mergeSecretEnvVars(existingSecretEnvVars, newSecretEnvVars, logger) {
-    const existingSecretEnvVarsByKey = new Map(existingSecretEnvVars.map(
-      i => [i.key, i.hashed_value],
-    ));
-    const newSecretEnvVarsByKey = new Map(newSecretEnvVars.map(
-      i => [i.key, this.resolveSecretValue(i.key, i.value, logger)],
-    ));
+    const existingSecretEnvVarsByKey = new Map(
+      existingSecretEnvVars.map((i) => [i.key, i.hashed_value])
+    );
+    const newSecretEnvVarsByKey = new Map(
+      newSecretEnvVars.map((i) => [
+        i.key,
+        this.resolveSecretValue(i.key, i.value, logger),
+      ])
+    );
 
     const result = [];
 
     for (const [key, hashedValue] of existingSecretEnvVarsByKey) {
-      if (newSecretEnvVarsByKey.get(key) === undefined || newSecretEnvVarsByKey.get(key) === null) {
+      if (
+        newSecretEnvVarsByKey.get(key) === undefined ||
+        newSecretEnvVarsByKey.get(key) === null
+      ) {
         // secret is removed
-        result.push({key, value: null});
-      } else { // exists in both
-        const hashMatches = await argon2.verify(hashedValue, newSecretEnvVarsByKey.get(key));
+        result.push({ key, value: null });
+      } else {
+        // exists in both
+        const hashMatches = await argon2.verify(
+          hashedValue,
+          newSecretEnvVarsByKey.get(key)
+        );
 
         if (!hashMatches) {
           // secret has changed
-          result.push({key, value: newSecretEnvVarsByKey.get(key)});
+          result.push({ key, value: newSecretEnvVarsByKey.get(key) });
         }
 
         newSecretEnvVarsByKey.delete(key);
@@ -65,7 +76,7 @@ module.exports = {
 
     // new secrets
     newSecretEnvVarsByKey.forEach((value, key) => {
-      result.push({key, value});
+      result.push({ key, value });
     });
 
     return result;

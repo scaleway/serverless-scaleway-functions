@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const { manageError } = require('./utils');
+const { manageError } = require("./utils");
 
 module.exports = {
   getLines(application) {
@@ -8,8 +8,9 @@ module.exports = {
     if (!application.runtime) {
       logsUrl = `containers/${application.id}/logs`;
     }
-    return this.apiManager.get(logsUrl)
-      .then(response => response.data.logs || [])
+    return this.apiManager
+      .get(logsUrl)
+      .then((response) => response.data.logs || [])
       .catch(manageError);
   },
 };

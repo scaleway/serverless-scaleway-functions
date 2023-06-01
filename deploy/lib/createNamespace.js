@@ -1,18 +1,22 @@
-'use strict';
+"use strict";
 
-const BbPromise = require('bluebird');
-const secrets = require('../../shared/secrets');
+const BbPromise = require("bluebird");
+const secrets = require("../../shared/secrets");
 
 module.exports = {
   createServerlessNamespace() {
     return BbPromise.bind(this)
-      .then(() => this.getNamespaceFromList(this.namespaceName, this.provider.getScwProject()))
+      .then(() =>
+        this.getNamespaceFromList(
+          this.namespaceName,
+          this.provider.getScwProject()
+        )
+      )
       .then(this.createIfNotExists);
   },
 
   updateServerlessNamespace() {
-    return BbPromise.bind(this)
-      .then(() => this.updateNamespaceConfiguration());
+    return BbPromise.bind(this).then(() => this.updateNamespaceConfiguration());
   },
 
   saveNamespaceToProvider(namespace) {
@@ -21,33 +25,33 @@ module.exports = {
 
   createIfNotExists(foundNamespace) {
     // If Space already exists -> Do not create
-    if (foundNamespace && foundNamespace.status === 'error') {
+    if (foundNamespace && foundNamespace.status === "error") {
       this.saveNamespaceToProvider(foundNamespace);
       throw new Error(foundNamespace.error_message);
     }
 
-    if (foundNamespace && foundNamespace.status === 'ready') {
+    if (foundNamespace && foundNamespace.status === "ready") {
       this.saveNamespaceToProvider(foundNamespace);
       return BbPromise.resolve();
     }
 
-    if (foundNamespace && foundNamespace.status !== 'ready') {
-      this.serverless.cli.log('Waiting for Namespace to become ready...');
+    if (foundNamespace && foundNamespace.status !== "ready") {
+      this.serverless.cli.log("Waiting for Namespace to become ready...");
       return this.waitNamespaceIsReadyAndSave();
     }
 
-    this.serverless.cli.log('Creating namespace...');
+    this.serverless.cli.log("Creating namespace...");
     const params = {
       name: this.namespaceName,
       project_id: this.provider.getScwProject(),
       environment_variables: this.namespaceVariables,
       secret_environment_variables: secrets.convertObjectToModelSecretsArray(
-        this.namespaceSecretVariables,
+        this.namespaceSecretVariables
       ),
     };
 
     return this.createNamespace(params)
-      .then(response => this.saveNamespaceToProvider(response))
+      .then((response) => this.saveNamespaceToProvider(response))
       .then(() => this.waitNamespaceIsReadyAndSave());
   },
 
@@ -60,8 +64,10 @@ module.exports = {
       if (this.namespaceSecretVariables) {
         params.secret_environment_variables = await secrets.mergeSecretEnvVars(
           this.namespace.secret_environment_variables,
-          secrets.convertObjectToModelSecretsArray(this.namespaceSecretVariables),
-          this.serverless.cli,
+          secrets.convertObjectToModelSecretsArray(
+            this.namespaceSecretVariables
+          ),
+          this.serverless.cli
         );
       }
       return this.updateNamespace(this.namespace.id, params);
@@ -70,7 +76,8 @@ module.exports = {
   },
 
   waitNamespaceIsReadyAndSave() {
-    return this.waitNamespaceIsReady(this.namespace.id)
-      .then(namespace => this.saveNamespaceToProvider(namespace));
+    return this.waitNamespaceIsReady(this.namespace.id).then((namespace) =>
+      this.saveNamespaceToProvider(namespace)
+    );
   },
 };
