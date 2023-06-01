@@ -3,7 +3,6 @@
 const path = require('path');
 const fs = require('fs');
 
-const { expect } = require('chai');
 const { afterAll, beforeAll, beforeEach, describe, expect: jestExpect, it } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
@@ -35,12 +34,7 @@ describe('Service Lifecyle Integration Test', () => {
   options.env.SCW_SECRET_KEY = scwToken;
   options.env.SCW_REGION = scwRegion;
 
-  let oldCwd;
-  let serviceName;
-  let projectId;
-  let api;
-  let namespace;
-  let functionName;
+  let oldCwd, serviceName, projectId, api, namespace, functionName;
 
   beforeAll(async () => {
     oldCwd = process.cwd();
@@ -64,24 +58,24 @@ describe('Service Lifecyle Integration Test', () => {
     replaceTextInFile(serverlessFile, '<scw-token>', scwToken);
     replaceTextInFile(serverlessFile, '<scw-project-id>', projectId);
     replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
-    expect(fs.existsSync(path.join(tmpDir, serverlessFile))).to.be.equal(true);
-    expect(fs.existsSync(path.join(tmpDir, 'handler.js'))).to.be.equal(true);
+    jestExpect(fs.existsSync(path.join(tmpDir, serverlessFile))).toBe(true);
+    jestExpect(fs.existsSync(path.join(tmpDir, 'handler.js'))).toBe(true);
   });
 
   it('should deploy service to scaleway', async () => {
     serverlessDeploy(options);
     namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
     namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
-    expect(namespace.functions[0].description).to.be.equal(descriptionTest);
-    expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
+    jestExpect(namespace.functions[0].description).toEqual(descriptionTest);
+    jestExpect(namespace.functions[0].http_option).toEqual(redirectedHttpOptionTest);
     functionName = namespace.functions[0].name;
   });
 
   it('should invoke function from scaleway', async () => {
-    await api.waitFunctionsAreDeployed(namespace.id).catch((err) => console.error(err));;
+    await api.waitFunctionsAreDeployed(namespace.id).catch((err) => console.error(err));
     options.serviceName = functionName;
     const output = serverlessInvoke(options).toString();
-    expect(output).to.be.equal('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
+    jestExpect(output).toBe('{"message":"Hello from Serverless Framework and Scaleway Functions :D"}');
   });
 
   it('should deploy updated service to scaleway', () => {
@@ -110,19 +104,19 @@ module.exports.handle = (event, context, cb) => {
     serverlessDeploy(options);
     namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
     namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
-    expect(namespace.functions.length).to.be.equal(2);
-    expect(namespace.functions[0].http_option).to.be.equal(redirectedHttpOptionTest);
-    expect(namespace.functions[1].http_option).to.be.equal(enabledHttpOptionTest);
+    jestExpect(namespace.functions.length).toEqual(2);
+    jestExpect(namespace.functions[0].http_option).toEqual(redirectedHttpOptionTest);
+    jestExpect(namespace.functions[1].http_option).toEqual(enabledHttpOptionTest);
   });
 
   it('should invoke first and second function', async () => {
     options.serviceName = namespace.functions[0].name
     const outputInvoke = serverlessInvoke(options).toString();
-    expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
+    jestExpect(outputInvoke).toEqual('{"message":"Serverless Update Succeeded"}');
 
     options.serviceName = namespace.functions[1].name
     const outputInvokeSecond = serverlessInvoke(options).toString();
-    expect(outputInvokeSecond).to.be.equal('{"message":"Serverless Update Succeeded"}');
+    jestExpect(outputInvokeSecond).toEqual('{"message":"Serverless Update Succeeded"}');
   });
 
   it('should remove function second as singleSource is at true', async () => {
@@ -136,15 +130,17 @@ module.exports.handle = (event, context, cb) => {
     serverlessDeploy(options);
     namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
     namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
-    expect(namespace.functions.length).to.be.equal(1);
+    jestExpect(namespace.functions.length).toEqual(1);
 
     options.serviceName = namespace.functions[0].name;
     const outputInvoke = serverlessInvoke(options).toString();
-    expect(outputInvoke).to.be.equal('{"message":"Serverless Update Succeeded"}');
+    jestExpect(outputInvoke).toEqual('{"message":"Serverless Update Succeeded"}');
 
     options.serviceName = 'second'
     try {
-      expect(serverlessInvoke(options)).rejects.toThrow(Error);
+      await jestExpect(serverlessInvoke(options))
+        .rejects
+        .toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
@@ -157,7 +153,7 @@ module.exports.handle = (event, context, cb) => {
     serverlessDeploy(options);
     namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
     namespace.functions = await api.listFunctions(namespace.id).catch((err) => console.error(err));
-    expect(namespace.functions[0].http_option).to.be.equal(enabledHttpOptionTest);
+    jestExpect(namespace.functions[0].http_option).toEqual(enabledHttpOptionTest);
     functionName = namespace.functions[0].name;
 
   });
@@ -167,7 +163,7 @@ module.exports.handle = (event, context, cb) => {
 
     options.serviceName = functionName;
     const output = serverlessInvoke(options).toString();
-    expect(output).to.be.equal('{"message":"Serverless Update Succeeded"}');
+    jestExpect(output).toEqual('{"message":"Serverless Update Succeeded"}');
   });
 
   it('should deploy function with another available runtime', async () => {
@@ -194,7 +190,7 @@ def handle(event, context):
 
     options.serviceName = functionName;
     const output = serverlessInvoke(options).toString();
-    expect(output).to.be.equal('{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}');
+    jestExpect(output).toEqual('{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}');
   });
 
   it('should remove service from scaleway', async () => {
@@ -202,14 +198,14 @@ def handle(event, context):
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).to.be.equal(404);
+      jestExpect(err.response.status).toEqual(404);
     }
   });
 
   it('should throw error handler not found', () => {
     replaceTextInFile(serverlessFile, 'handler.handle', 'doesnotexist.handle');
     try {
-      expect(serverlessDeploy(options)).rejects.toThrow(Error);
+      jestExpect(serverlessDeploy(options)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
@@ -219,7 +215,7 @@ def handle(event, context):
   it('should throw error runtime does not exist', () => {
     replaceTextInFile(serverlessFile, 'python310', 'doesnotexist');
     try {
-      expect(serverlessDeploy(options)).rejects.toThrow(Error);
+      jestExpect(serverlessDeploy(options)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
@@ -251,8 +247,8 @@ describe('validateRuntimes', () => {
       { name: 'go118', language: 'Go' },
     ];
     const actual = () => validateRuntime(func, existingRuntimes);
-    expect(actual).to.throw(Error);
-    expect(actual).to.throw('Runtime "bash4" does not exist, must be one of: node17, go118');
+    jestExpect(actual).toThrow(Error);
+    jestExpect(actual).toThrow('Runtime "bash4" does not exist, must be one of: node17, go118');
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -260,8 +256,8 @@ describe('validateRuntimes', () => {
     const func = { runtime: 'node17' };
     const existingRuntimes = [];
     const actual = () => validateRuntime(func, existingRuntimes);
-    expect(actual).to.throw(Error);
-    expect(actual).to.throw('Runtime "node17" does not exist: cannot list runtimes');
+    jestExpect(actual).toThrow(Error);
+    jestExpect(actual).toThrow('Runtime "node17" does not exist: cannot list runtimes');
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -273,7 +269,7 @@ describe('validateRuntimes', () => {
     ];
     const actual = validateRuntime(func, existingRuntimes);
     const expected = 'node17';
-    expect(actual).to.equal(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -287,7 +283,7 @@ describe('validateRuntimes', () => {
 
     const actual = validateRuntime(func, existingRuntimes, console);
     const expected = 'bash4';
-    expect(actual).to.equal(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith('WARNING: Runtime bash4 is in status beta');
   });
@@ -304,7 +300,7 @@ describe('validateRuntimes', () => {
 
     const actual = validateRuntime(func, existingRuntimes, console);
     const expected = 'bash4';
-    expect(actual).to.equal(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith(
       'WARNING: Runtime bash4 is in status beta: use with caution',

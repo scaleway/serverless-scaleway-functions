@@ -1,5 +1,4 @@
-const { describe, it } = require("@jest/globals");
-const { expect } = require("chai");
+const { describe, it, expect } = require("@jest/globals");
 const domainUtils = require("../../shared/domains");
 
 describe("Domain utils tests ", () => {
@@ -14,13 +13,13 @@ describe("Domain utils tests ", () => {
 
   it("should format domains", () => {
     const res = domainUtils.formatDomainsStructure(structInput);
-    expect(res.length).to.be.eq(2);
+    expect(res.length).toBe(2);
 
-    expect(res[0].id).to.be.eq("id1");
-    expect(res[0].hostname).to.be.eq("host1");
+    expect(res[0].id).toBe("id1");
+    expect(res[0].hostname).toBe("host1");
 
-    expect(res[1].id).to.be.eq("id2");
-    expect(res[1].hostname).to.be.eq("host2");
+    expect(res[1].id).toBe("id2");
+    expect(res[1].hostname).toBe("host2");
   });
 
   it("should filters domains that need to be created", () => {
@@ -30,13 +29,13 @@ describe("Domain utils tests ", () => {
       structInput
     );
 
-    expect(domainsToCreateEmpty.length).to.be.eq(0);
+    expect(domainsToCreateEmpty.length).toBe(0);
 
     // adding host3
     const domainsToCreateOne = domainUtils.getDomainsToCreate(["host1", "host2", "host3"], structInput);
 
-    expect(domainsToCreateOne.length).to.be.eq(1);
-    expect(domainsToCreateOne[0]).to.be.eq("host3");
+    expect(domainsToCreateOne.length).toBe(1);
+    expect(domainsToCreateOne[0]).toBe("host3");
   });
 
   it("should filters domains that need to be deleted", () => {
@@ -46,12 +45,12 @@ describe("Domain utils tests ", () => {
       structInput
     );
 
-    expect(domainsToDeleteEmpty.length).to.be.eq(0);
+    expect(domainsToDeleteEmpty.length).toBe(0);
 
     // removing host 2
     const domainsToDeleteOne = domainUtils.getDomainsToDelete(["host1"], structInput);
 
-    expect(domainsToDeleteOne.length).to.be.eq(1);
-    expect(domainsToDeleteOne[0]).to.be.eq("id2");
+    expect(domainsToDeleteOne.length).toBe(1);
+    expect(domainsToDeleteOne[0]).toBe("id2");
   });
 });

@@ -1,7 +1,6 @@
 const rewire = require('rewire');
-const { expect } = require('chai');
 const { Readable } = require('stream');
-const { describe, it } = require('@jest/globals');
+const { describe, it, expect } = require('@jest/globals');
 
 const buildAndPushContainers = rewire('../../deploy/lib/buildAndPushContainers.js');
 const extractStreamContents = buildAndPushContainers.__get__('extractStreamContents');
@@ -17,7 +16,7 @@ describe('extractStreamContents', () => {
 
     const actual = await extractStreamContents(stream, false);
     const expected = ["line1", "line2", "line3"];
-    expect(actual).to.eql(expected);
+    expect(actual).toEqual(expected);
   });
 });
 
@@ -48,7 +47,7 @@ describe('findErrorInBuildOutput', () => {
 
     const actual = findErrorInBuildOutput(buildOutput);
     const expected = undefined;
-    expect(actual).to.eql(expected);
+    expect(actual).toEqual(expected);
   })
 
   it("should return the error message if there is an error in the build output (step failed)", () => {
@@ -68,7 +67,7 @@ describe('findErrorInBuildOutput', () => {
 
     const actual = findErrorInBuildOutput(buildOutput);
     const expected = "The command '/bin/sh -c unknown_command' returned a non-zero code: 127";
-    expect(actual).to.eql(expected);
+    expect(actual).toEqual(expected);
   })
 
   it("should return the error message if there is an error in the build output (pull failed)", () => {
@@ -80,6 +79,6 @@ describe('findErrorInBuildOutput', () => {
 
     const actual = findErrorInBuildOutput(buildOutput);
     const expected = 'Head "https://rg.fr-par.scw.cloud/v2/some-private-registry/python/manifests/3.10.3-alpine3.15": error parsing HTTP 403 response body: no error details found in HTTP response body: "{\"details\":[{\"action\":\"read\",\"resource\":\"api_namespace\"},{\"action\":\"read\",\"resource\":\"registry_image\"}],\"message\":\"insufficient permissions\",\"type\":\"permissions_denied\"}"';
-    expect(actual).to.eql(expected);
+    expect(actual).toEqual(expected);
   })
 });

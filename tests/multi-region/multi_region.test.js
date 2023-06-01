@@ -3,12 +3,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const { expect } = require('chai');
-const { describe, it } = require('@jest/globals');
+const { describe, it, expect } = require('@jest/globals');
 
 const { execSync } = require('../../shared/child-process');
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, createProject, sleep } = require('../utils/misc');
+const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, createProject } = require('../utils/misc');
 const { FunctionApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL } = require('../../shared/constants');
 const { removeProjectById } = require('../utils/clean-up');
@@ -33,10 +32,7 @@ describe("test regions", () => {
       options.env = {};
       options.env.SCW_SECRET_KEY = scwToken;
 
-      let projectId;
-      let apiUrl;
-      let api;
-      let namespace;
+      let projectId, api, namespace, apiUrl;
 
       // should create project
       // not in beforeAll because of a known bug between concurrent tests and async beforeAll
@@ -49,8 +45,8 @@ describe("test regions", () => {
       process.chdir(tmpDir);
       execSync(`npm link ${oldCwd}`);
       replaceTextInFile('serverless.yml', 'scaleway-python3', serviceName);
-      expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
-      expect(fs.existsSync(path.join(tmpDir, 'handler.py'))).to.be.equal(true);
+      expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).toEqual(true);
+      expect(fs.existsSync(path.join(tmpDir, 'handler.py'))).toEqual(true);
 
       // should deploy service for region ${region}
       apiUrl = `${FUNCTIONS_API_URL}/${region}`;
@@ -62,17 +58,17 @@ describe("test regions", () => {
 
       // should invoke service for region ${region}
       const deployedFunction = namespace.functions[0];
-      expect(deployedFunction.domain_name.split('.')[3]).to.be.equal(region);
+      expect(deployedFunction.domain_name.split('.')[3]).toEqual(region);
       options.serviceName = deployedFunction.name;
       const output = serverlessInvoke(options).toString();
-      expect(output).to.be.equal('"Hello From Python3 runtime on Serverless Framework and Scaleway Functions"');
+      expect(output).toEqual('"Hello From Python3 runtime on Serverless Framework and Scaleway Functions"');
 
       // should remove service for region ${region}
       serverlessRemove(options);
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
-        expect(err.response.status).to.be.equal(404);
+        expect(err.response.status).toEqual(404);
       }
 
       // should remove project

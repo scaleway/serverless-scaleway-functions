@@ -5,8 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const tar = require('tar-fs');
 
-const { expect } = require('chai');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { afterAll, beforeAll, describe, it, expect } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, createProject } = require('../utils/misc');
@@ -29,13 +28,8 @@ describe('Service Lifecyle Integration Test', () => {
   options.env.SCW_SECRET_KEY = scwToken;
   options.env.SCW_REGION = scwRegion;
 
-  let oldCwd;
-  let serviceName;
+  let oldCwd, serviceName, projectId, api, namespace, containerName;
   const descriptionTest = 'slsfw test description';
-  let projectId;
-  let api;
-  let namespace;
-  let containerName;
 
   beforeAll(async () => {
     oldCwd = process.cwd();
@@ -57,15 +51,15 @@ describe('Service Lifecyle Integration Test', () => {
     execSync(`npm link ${oldCwd}`);
     replaceTextInFile('serverless.yml', 'scaleway-container', serviceName);
     replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
-    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
-    expect(fs.existsSync(path.join(tmpDir, 'my-container'))).to.be.equal(true);
+    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, 'my-container'))).toBe(true);
   });
 
   it('should deploy service/container to scaleway', async () => {
     serverlessDeploy(options);
     namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
     namespace.containers = await api.listContainers(namespace.id).catch((err) => console.error(err));
-    expect(namespace.containers[0].description).to.be.equal(descriptionTest);
+    expect(namespace.containers[0].description).toBe(descriptionTest);
     containerName = namespace.containers[0].name;
   });
 
@@ -110,19 +104,19 @@ describe('Service Lifecyle Integration Test', () => {
     await api.updateContainer(namespace.containers[0].id, params).catch((err) => console.error(err));
 
     const nsContainers = await api.listContainers(namespace.id).catch((err) => console.error(err));
-    expect(nsContainers[0].registry_image).to.be.equal(imageName);
+    expect(nsContainers[0].registry_image).toBe(imageName);
 
     serverlessDeploy(options);
 
     const nsContainersAfterSlsDeploy = await api.listContainers(namespace.id).catch((err) => console.error(err));
-    expect(nsContainersAfterSlsDeploy[0].registry_image).to.not.contains('test-container');
+    expect(nsContainersAfterSlsDeploy[0].registry_image).not.toContain('test-container');
   });
 
   it('should invoke container from scaleway', async () => {
     await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
     options.serviceName = containerName;
     const output = serverlessInvoke(options).toString();
-    expect(output).to.be.equal('{"message":"Hello, World from Scaleway Container !"}');
+    expect(output).toBe('{"message":"Hello, World from Scaleway Container !"}');
   });
 
   it('should deploy updated service/container to scaleway', () => {
@@ -133,7 +127,7 @@ describe('Service Lifecyle Integration Test', () => {
   it('should invoke updated container from scaleway', async () => {
     await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
     const output = serverlessInvoke(options).toString();
-    expect(output).to.be.equal('{"message":"Container successfully updated"}');
+    expect(output).toBe('{"message":"Container successfully updated"}');
   });
 
   it('should deploy with registry image specified', () => {
@@ -146,7 +140,7 @@ describe('Service Lifecyle Integration Test', () => {
     await sleep(30000);
     options.serviceName = containerName;
     const output = serverlessInvoke(options).toString();
-    expect(output).to.contain('Welcome to nginx!');
+    expect(output).toContain('Welcome to nginx!');
   });
 
   it('should remove service from scaleway', async () => {
@@ -154,7 +148,7 @@ describe('Service Lifecyle Integration Test', () => {
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).to.be.equal(404);
+      expect(err.response.status).toBe(404);
     }
   });
 

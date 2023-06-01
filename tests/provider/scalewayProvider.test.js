@@ -1,11 +1,9 @@
-const { expect } = require('chai');
-
 const fs = require('fs');
 const path = require('path');
 
 const ScalewayProvider = require('../../provider/scalewayProvider');
 const { createTmpDir } = require('../utils/fs');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { afterAll, beforeAll, describe, it, expect } = require('@jest/globals');
 
 class MockServerless {
   constructor() {
@@ -54,8 +52,8 @@ describe('Scaleway credentials test', () => {
     this.prov.setCredentials(options);
 
     // Check they're as expected
-    expect(this.prov.scwToken).to.equal(this.expectedToken);
-    expect(this.prov.scwProject).to.equal(this.expectedProject);
+    expect(this.prov.scwToken).toEqual(this.expectedToken);
+    expect(this.prov.scwProject).toEqual(this.expectedProject);
   };
 
   // -------------------------------------

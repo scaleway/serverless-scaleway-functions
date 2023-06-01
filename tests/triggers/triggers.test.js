@@ -3,14 +3,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const { expect } = require('chai');
-
 const { getTmpDirPath, replaceTextInFile} = require('../utils/fs');
 const { getServiceName, serverlessDeploy, serverlessRemove, createProject, createTestService } = require('../utils/misc');
 
 const { FunctionApi, ContainerApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL, CONTAINERS_API_URL } = require('../../shared/constants');
-const { describe, it } = require('@jest/globals');
+const { describe, it, expect } = require('@jest/globals');
 const { removeProjectById } = require('../utils/clean-up');
 
 const scwRegion = process.env.SCW_REGION;
@@ -39,8 +37,7 @@ describe("test triggers", () => {
     options.env.SCW_SECRET_KEY = scwToken;
     options.env.SCW_REGION = scwRegion;
 
-    let projectId;
-    let api;
+    let projectId, api;
     let namespace = {};
 
     // should create project
@@ -59,8 +56,8 @@ describe("test triggers", () => {
       serviceName: serviceName,
       runCurrentVersion: true,
     });
-    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
-    expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
+    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).toEqual(true);
+    expect(fs.existsSync(path.join(tmpDir, 'package.json'))).toEqual(true);
 
     // should deploy function service to scaleway
     process.chdir(tmpDir);
@@ -84,10 +81,10 @@ describe("test triggers", () => {
     }
     const deployedTriggers = await api.listTriggersForApplication(deployedApplication.id, runtime.isFunction).catch((err) => console.error(err));
 
-    expect(deployedTriggers.length).to.be.equal(1);
-    expect(deployedTriggers[0].args.myInput).to.be.equal('myValue');
-    expect(deployedTriggers[0].args.mySecondInput).to.be.equal(1);
-    expect(deployedTriggers[0].schedule).to.be.equal('1 * * * *');
+    expect(deployedTriggers.length).toEqual(1);
+    expect(deployedTriggers[0].args.myInput).toEqual('myValue');
+    expect(deployedTriggers[0].args.mySecondInput).toEqual(1);
+    expect(deployedTriggers[0].schedule).toEqual('1 * * * *');
 
     // should remove services from scaleway
     process.chdir(tmpDir);
@@ -95,13 +92,15 @@ describe("test triggers", () => {
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).to.be.equal(404);
+      expect(err.response.status).toEqual(404);
     }
 
     // should throw error invalid schedule
     replaceTextInFile('serverless.yml', '1 * * * *', '10 minutes');
     try {
-      expect(serverlessDeploy(options)).rejects.toThrow(Error);
+      await expect(serverlessDeploy(options))
+        .rejects
+        .toThrow(Error);
     } catch (err) {
       // If not try catch, test would fail
     }
@@ -109,7 +108,9 @@ describe("test triggers", () => {
     // should throw error invalid triggerType
     replaceTextInFile('serverless.yml', 'schedule:', 'queue:');
     try {
-      expect(serverlessDeploy(options)).rejects.toThrow(Error);
+      await expect(serverlessDeploy(options))
+        .rejects
+        .toThrow(Error);
     } catch (err) {
       // If not try catch, test would fail
     }

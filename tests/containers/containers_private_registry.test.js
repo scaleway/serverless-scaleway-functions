@@ -5,8 +5,7 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require('path');
 
-const { expect } = require('chai');
-const { afterAll, beforeAll, describe, it } = require('@jest/globals');
+const { afterAll, beforeAll, describe, it, expect } = require('@jest/globals');
 
 const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
 const { getServiceName, serverlessDeploy, serverlessRemove, serverlessInvoke, createProject } = require('../utils/misc');
@@ -30,13 +29,7 @@ describe('Build and deploy on container with a base image private', () => {
   options.env.SCW_SECRET_KEY = scwToken;
   options.env.SCW_REGION = scwRegion;
 
-  let oldCwd;
-  let serviceName;
-  let projectId;
-  let api;
-  let registryApi;
-  let namespace;
-  let containerName;
+  let oldCwd, serviceName, projectId, api, namespace, containerName, registryApi;
 
   const originalImageRepo = 'python';
   const imageTag = '3-alpine';
@@ -85,8 +78,8 @@ describe('Build and deploy on container with a base image private', () => {
     execSync(`npm link ${oldCwd}`);
     replaceTextInFile('serverless.yml', 'scaleway-container', serviceName);
     replaceTextInFile(path.join('my-container', 'Dockerfile'), 'FROM python:3-alpine', `FROM ${privateRegistryImageRepo}:${imageTag}`);
-    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
-    expect(fs.existsSync(path.join(tmpDir, 'my-container'))).to.be.equal(true);
+    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, 'my-container'))).toBe(true);
   });
 
   it('should deploy service/container to scaleway', async () => {
@@ -100,7 +93,7 @@ describe('Build and deploy on container with a base image private', () => {
     await api.waitContainersAreDeployed(namespace.id);
     options.serviceName = containerName;
     const output = serverlessInvoke(options).toString();
-    expect(output).to.be.equal('{"message":"Hello, World from Scaleway Container !"}');
+    expect(output).toBe('{"message":"Hello, World from Scaleway Container !"}');
   });
 
   it('should remove service from scaleway', async () => {
@@ -108,7 +101,7 @@ describe('Build and deploy on container with a base image private', () => {
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).to.be.equal(404);
+      expect(err.response.status).toBe(404);
     }
   });
 });

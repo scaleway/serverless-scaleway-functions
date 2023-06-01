@@ -1,4 +1,3 @@
-const { expect } = require('chai');
 const { expect: jestExpect, describe, it, beforeEach } = require('@jest/globals');
 const argon2 = require('argon2');
 const secrets = require('../../shared/secrets');
@@ -13,13 +12,13 @@ describe('convertObjectToModelSecretsArray', () => {
       { key: 'env_secretA', value: 'valueA' },
       { key: 'env_secretB', value: 'valueB' },
     ];
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
   });
 
   it('should transform an empty object to an empty array', () => {
     const actual = secrets.convertObjectToModelSecretsArray({});
     const expected = [];
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
   });
 });
 
@@ -32,14 +31,14 @@ describe('resolveSecretValue', () => {
   it('should get a raw secret', () => {
     const actual = secrets.resolveSecretValue('env_secretA', 'valueA', console);
     const expected = 'valueA';
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
   it('should get a raw secret with special characters', () => {
     const actual = secrets.resolveSecretValue('env_secretA', 'value composed of special characters $^/;', console);
     const expected = 'value composed of special characters $^/;';
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -51,7 +50,7 @@ describe('resolveSecretValue', () => {
     process.env = OLD_ENV;
 
     const expected = process.env.ENV_SECRETA;
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -63,7 +62,7 @@ describe('resolveSecretValue', () => {
     process.env = OLD_ENV;
 
     const expected = process.env.ENV_SECRETA;
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -72,7 +71,7 @@ describe('resolveSecretValue', () => {
     const actual = secrets.resolveSecretValue('env_secretA', '${ENV_SECRETA}', console);
 
     const expected = null;
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
 
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith('WARNING: Env var ENV_SECRETA used in secret env_secretA does not exist: this secret will not be created');
@@ -93,7 +92,7 @@ describe('mergeSecretEnvVars', () => {
     const expected = [
       { key: 'env_secretA', value: 'valueA' },
     ];
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -106,7 +105,7 @@ describe('mergeSecretEnvVars', () => {
     const expected = [
       { key: 'env_secretA', value: 'newValueA' },
     ];
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -117,7 +116,7 @@ describe('mergeSecretEnvVars', () => {
 
     const actual = await secrets.mergeSecretEnvVars(existingSecretEnvVars, newSecretEnvVars, console);
     const expected = [{ key: 'env_secretA', value: null }];
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 
@@ -140,7 +139,7 @@ describe('mergeSecretEnvVars', () => {
       { key: 'env_secretB', value: null },
       { key: 'env_secretC', value: 'valueC' },
     ];
-    expect(actual).to.eql(expected);
+    jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
 });

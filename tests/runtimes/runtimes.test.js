@@ -1,17 +1,14 @@
 'use strict';
 
-const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-
-const { expect } = require('chai');
 
 const { getTmpDirPath } = require('../utils/fs');
 const { getServiceName, serverlessDeploy, serverlessRemove, createProject, sleep, createTestService, serverlessInvoke } = require('../utils/misc');
 
 const { FunctionApi } = require('../../shared/api');
 const { FUNCTIONS_API_URL } = require('../../shared/constants');
-const { describe, it } = require('@jest/globals');
+const { describe, it, expect } = require('@jest/globals');
 const { removeProjectById } = require('../utils/clean-up');
 
 const scwRegion = process.env.SCW_REGION;
@@ -41,8 +38,7 @@ describe("test runtimes", () => {
       options.env.SCW_SECRET_KEY = scwToken;
       options.env.SCW_REGION = scwRegion;
 
-      let api;
-      let projectId;
+      let api, projectId;
 
       // Should create project
       await createProject().then((project) => {projectId = project.id;}).catch((err) => console.error(err));
@@ -58,8 +54,8 @@ describe("test runtimes", () => {
         runCurrentVersion: true,
       });
 
-      expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).to.be.equal(true);
-      expect(fs.existsSync(path.join(tmpDir, 'package.json'))).to.be.equal(true);
+      expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).toEqual(true);
+      expect(fs.existsSync(path.join(tmpDir, 'package.json'))).toEqual(true);
 
       // should deploy service for runtime ${runtime} to scaleway
       let optionsWithSecrets = options;
@@ -79,10 +75,10 @@ describe("test runtimes", () => {
       process.chdir(tmpDir);
       optionsWithSecrets.serviceName = deployedApplication.name;
       const output = serverlessInvoke(optionsWithSecrets).toString();
-      expect(output).not.to.be.equal('');
+      expect(output).not.toEqual('');
 
       if (runtime === 'secrets') {
-        expect(output).to.be.equal('{"env_vars":["env_notSecret1","env_notSecretA","env_secret1","env_secret2","env_secret3","env_secretA","env_secretB","env_secretC"]}');
+        expect(output).toEqual('{"env_vars":["env_notSecret1","env_notSecretA","env_secret1","env_secret2","env_secret3","env_secretA","env_secretB","env_secretC"]}');
       }
 
       // should remove service for runtime ${runtime} from scaleway
@@ -91,7 +87,7 @@ describe("test runtimes", () => {
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
-        expect(err.response.status).to.be.equal(404);
+        expect(err.response.status).toEqual(404);
       }
 
       // Should delete project
