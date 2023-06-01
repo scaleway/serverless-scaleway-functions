@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const BbPromise = require('bluebird');
+const BbPromise = require("bluebird");
 
 module.exports = {
   deployContainers() {

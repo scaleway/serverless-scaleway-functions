@@ -3,7 +3,7 @@ const domainUtils = require("../../shared/domains");
 
 describe("Domain utils tests ", () => {
   // represents the data from serverless.yml file
-  const hostnamesInput = ["host1", "host2" ];
+  const hostnamesInput = ["host1", "host2"];
 
   // represents the struct of domains from the API
   const structInput = [
@@ -32,7 +32,10 @@ describe("Domain utils tests ", () => {
     expect(domainsToCreateEmpty.length).toBe(0);
 
     // adding host3
-    const domainsToCreateOne = domainUtils.getDomainsToCreate(["host1", "host2", "host3"], structInput);
+    const domainsToCreateOne = domainUtils.getDomainsToCreate(
+      ["host1", "host2", "host3"],
+      structInput
+    );
 
     expect(domainsToCreateOne.length).toBe(1);
     expect(domainsToCreateOne[0]).toBe("host3");
@@ -48,7 +51,10 @@ describe("Domain utils tests ", () => {
     expect(domainsToDeleteEmpty.length).toBe(0);
 
     // removing host 2
-    const domainsToDeleteOne = domainUtils.getDomainsToDelete(["host1"], structInput);
+    const domainsToDeleteOne = domainUtils.getDomainsToDelete(
+      ["host1"],
+      structInput
+    );
 
     expect(domainsToDeleteOne.length).toBe(1);
     expect(domainsToDeleteOne[0]).toBe("id2");

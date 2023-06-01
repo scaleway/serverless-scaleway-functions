@@ -3,14 +3,14 @@
 ## Topics
 
 - [Contribute to `serverless-scaleway-functions`](#contribute-to-serverless-scaleway-functions)
-    - [Topics](#topics)
-    - [Reporting security issues](#reporting-security-issues)
-    - [Reporting issues](#reporting-issues)
-    - [Suggesting a feature](#suggesting-a-feature)
-    - [Contributing code](#contributing-code)
-        - [Submit code](#submit-code)
-        - [Pull Request Guidelines](#pull-request-guidelines)
-    - [Community Guidelines](#community-guidelines)
+  - [Topics](#topics)
+  - [Reporting security issues](#reporting-security-issues)
+  - [Reporting issues](#reporting-issues)
+  - [Suggesting a feature](#suggesting-a-feature)
+  - [Contributing code](#contributing-code)
+    - [Submit code](#submit-code)
+    - [Pull Request Guidelines](#pull-request-guidelines)
+  - [Community Guidelines](#community-guidelines)
 
 ## Reporting security issues
 
@@ -63,8 +63,8 @@ The goal of the following guidelines is to have Pull Requests (PRs) that are fai
 
 - **Pull Request title should respect [conventional commits](https://www.conventionalcommits.org/en/v1.0.0) specifications** and be clear on what is being changed.
 
-    - A fix for local testing will be titled `fix(local-testing): ...`
-    - A fix for http requests will be titled `fix(http): ...`
+  - A fix for local testing will be titled `fix(local-testing): ...`
+  - A fix for http requests will be titled `fix(http): ...`
 
 - **Keep it readable for human reviewers** and prefer a subset of functionality (code) with tests and documentation over delivering them separately
 

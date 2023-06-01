@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const child_process = require('child_process');
+const child_process = require("child_process");
 
 function execSync(command, options = null) {
   // Same as native but outputs std in case of error
@@ -14,11 +14,11 @@ function execSync(command, options = null) {
 }
 
 function execCaptureOutput(command, args) {
-  let child = child_process.spawnSync(command, args, { encoding : 'utf8' });
+  let child = child_process.spawnSync(command, args, { encoding: "utf8" });
 
-  if(child.error) {
-    if(child.stdout) process.stdout.write(child.stdout);
-    if(child.stderr) process.stderr.write(child.stderr);
+  if (child.error) {
+    if (child.stdout) process.stdout.write(child.stdout);
+    if (child.stderr) process.stderr.write(child.stderr);
     throw child.error;
   }
 

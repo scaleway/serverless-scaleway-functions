@@ -1,6 +1,7 @@
 # Integration tests
 
 This repository contains multiple test suites, each with its own purpose:
+
 - [Functions](): tests that functions lifecycle (`serverless deploy` and `serverless remove`) works properly.
 - [Containers](): tests that container lifecycle (`serverless deploy` and `serverless remove`) works properly.
 - [Runtimes](): tests that our runtimes work properly by using the [examples]() we provide to use our platform.
@@ -8,6 +9,7 @@ This repository contains multiple test suites, each with its own purpose:
 ## Requirements
 
 To run your tests locally, you have to make sure of the following:
+
 - You have docker installed (and usable from your Command Line)
 - You have [Serverless CLI](https://github.com/serverless/serverless) installed (and usable from your Command Line)
 - You have access to Scaleway Function's Product and Scaleway Container Registry (and still have quotas available).
@@ -22,12 +24,14 @@ In order to run tests locally, you have to configure your test suite (for `authe
 To do so, I recommend following the [guide on how to retrieve a token and your project ID](https://github.com/scaleway/serverless-scaleway-functions/blob/master/docs/README.md).
 
 Then, add it to your environment variables:
+
 ```bash
 export SCW_TOKEN=<scw-token>
 export SCW_PROJECT=<scw-project>
 ```
 
 Optionally, you may change the URL of our `functions` API endpoint (if you need to test different environments for example):
+
 ```bash
 export SCW_URL=<url-to-functions-api>
 ```

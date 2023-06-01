@@ -1,26 +1,39 @@
-'use strict';
+"use strict";
 
-const Docker = require('dockerode');
-const fs = require('fs');
-const path = require('path');
-const tar = require('tar-fs');
+const Docker = require("dockerode");
+const fs = require("fs");
+const path = require("path");
+const tar = require("tar-fs");
 
-const { afterAll, beforeAll, describe, it, expect } = require('@jest/globals');
+const { afterAll, beforeAll, describe, it, expect } = require("@jest/globals");
 
-const { getTmpDirPath, replaceTextInFile } = require('../utils/fs');
-const { getServiceName, sleep, serverlessDeploy, serverlessInvoke, serverlessRemove, createProject } = require('../utils/misc');
-const { ContainerApi } = require('../../shared/api');
-const { execSync } = require('../../shared/child-process');
-const { CONTAINERS_API_URL } = require('../../shared/constants');
-const { removeProjectById } = require('../utils/clean-up');
+const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
+const {
+  getServiceName,
+  sleep,
+  serverlessDeploy,
+  serverlessInvoke,
+  serverlessRemove,
+  createProject,
+} = require("../utils/misc");
+const { ContainerApi } = require("../../shared/api");
+const { execSync } = require("../../shared/child-process");
+const { CONTAINERS_API_URL } = require("../../shared/constants");
+const { removeProjectById } = require("../utils/clean-up");
 
-const serverlessExec = path.join('serverless');
+const serverlessExec = path.join("serverless");
 
-describe('Service Lifecyle Integration Test', () => {
+describe("Service Lifecyle Integration Test", () => {
   const scwRegion = process.env.SCW_REGION;
   const scwToken = process.env.SCW_SECRET_KEY;
   const apiUrl = `${CONTAINERS_API_URL}/${scwRegion}`;
-  const templateName = path.resolve(__dirname, '..', '..', 'examples', 'container');
+  const templateName = path.resolve(
+    __dirname,
+    "..",
+    "..",
+    "examples",
+    "container"
+  );
   const tmpDir = getTmpDirPath();
 
   let options = {};
@@ -29,41 +42,53 @@ describe('Service Lifecyle Integration Test', () => {
   options.env.SCW_REGION = scwRegion;
 
   let oldCwd, serviceName, projectId, api, namespace, containerName;
-  const descriptionTest = 'slsfw test description';
+  const descriptionTest = "slsfw test description";
 
   beforeAll(async () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);
     await createProject()
-      .then((project) => {projectId = project.id;})
+      .then((project) => {
+        projectId = project.id;
+      })
       .catch((err) => console.error(err));
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
   });
 
-  afterAll( async () => {
+  afterAll(async () => {
     await removeProjectById(projectId).catch((err) => console.error(err));
-  })
-
-  it('should create service in tmp directory', () => {
-    execSync(`${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`);
-    process.chdir(tmpDir);
-    execSync(`npm link ${oldCwd}`);
-    replaceTextInFile('serverless.yml', 'scaleway-container', serviceName);
-    replaceTextInFile('serverless.yml', '# description: ""', `description: "${descriptionTest}"`);
-    expect(fs.existsSync(path.join(tmpDir, 'serverless.yml'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'my-container'))).toBe(true);
   });
 
-  it('should deploy service/container to scaleway', async () => {
+  it("should create service in tmp directory", () => {
+    execSync(
+      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`
+    );
+    process.chdir(tmpDir);
+    execSync(`npm link ${oldCwd}`);
+    replaceTextInFile("serverless.yml", "scaleway-container", serviceName);
+    replaceTextInFile(
+      "serverless.yml",
+      '# description: ""',
+      `description: "${descriptionTest}"`
+    );
+    expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, "my-container"))).toBe(true);
+  });
+
+  it("should deploy service/container to scaleway", async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId).catch((err) => console.error(err));
-    namespace.containers = await api.listContainers(namespace.id).catch((err) => console.error(err));
+    namespace = await api
+      .getNamespaceFromList(serviceName, projectId)
+      .catch((err) => console.error(err));
+    namespace.containers = await api
+      .listContainers(namespace.id)
+      .catch((err) => console.error(err));
     expect(namespace.containers[0].description).toBe(descriptionTest);
     containerName = namespace.containers[0].name;
   });
 
-  it('should replace container image with test image', async () => {
+  it("should replace container image with test image", async () => {
     // This tests will push a dummy image to the same namespace of the deployed
     // container. And then it will modify the image through the API.
     // After that we run a serverless deploy to ensure the container image
@@ -72,13 +97,13 @@ describe('Service Lifecyle Integration Test', () => {
     // build a new image with same path but different name for testing.
     const regImg = namespace.containers[0].registry_image;
     const contName = namespace.containers[0].name;
-    const imageName = regImg.replace(contName, 'test-container');
+    const imageName = regImg.replace(contName, "test-container");
 
     const docker = new Docker();
 
     // used for pushing
     const auth = {
-      username: 'any',
+      username: "any",
       password: scwToken,
     };
 
@@ -88,9 +113,12 @@ describe('Service Lifecyle Integration Test', () => {
 
     await docker.checkAuth(registryAuth);
 
-    const tarStream = tar.pack(path.join(tmpDir, 'my-container'));
+    const tarStream = tar.pack(path.join(tmpDir, "my-container"));
 
-    await docker.buildImage(tarStream, { t: imageName, registryconfig: registryAuth });
+    await docker.buildImage(tarStream, {
+      t: imageName,
+      registryconfig: registryAuth,
+    });
     const image = docker.getImage(imageName);
     await image.push(auth);
 
@@ -101,49 +129,69 @@ describe('Service Lifecyle Integration Test', () => {
       redeploy: false,
       registry_image: imageName,
     };
-    await api.updateContainer(namespace.containers[0].id, params).catch((err) => console.error(err));
+    await api
+      .updateContainer(namespace.containers[0].id, params)
+      .catch((err) => console.error(err));
 
-    const nsContainers = await api.listContainers(namespace.id).catch((err) => console.error(err));
+    const nsContainers = await api
+      .listContainers(namespace.id)
+      .catch((err) => console.error(err));
     expect(nsContainers[0].registry_image).toBe(imageName);
 
     serverlessDeploy(options);
 
-    const nsContainersAfterSlsDeploy = await api.listContainers(namespace.id).catch((err) => console.error(err));
-    expect(nsContainersAfterSlsDeploy[0].registry_image).not.toContain('test-container');
+    const nsContainersAfterSlsDeploy = await api
+      .listContainers(namespace.id)
+      .catch((err) => console.error(err));
+    expect(nsContainersAfterSlsDeploy[0].registry_image).not.toContain(
+      "test-container"
+    );
   });
 
-  it('should invoke container from scaleway', async () => {
-    await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
+  it("should invoke container from scaleway", async () => {
+    await api
+      .waitContainersAreDeployed(namespace.id)
+      .catch((err) => console.error(err));
     options.serviceName = containerName;
     const output = serverlessInvoke(options).toString();
     expect(output).toBe('{"message":"Hello, World from Scaleway Container !"}');
   });
 
-  it('should deploy updated service/container to scaleway', () => {
-    replaceTextInFile('my-container/server.py', 'Hello, World from Scaleway Container !', 'Container successfully updated');
+  it("should deploy updated service/container to scaleway", () => {
+    replaceTextInFile(
+      "my-container/server.py",
+      "Hello, World from Scaleway Container !",
+      "Container successfully updated"
+    );
     serverlessDeploy(options);
   });
 
-  it('should invoke updated container from scaleway', async () => {
-    await api.waitContainersAreDeployed(namespace.id).catch((err) => console.error(err));
+  it("should invoke updated container from scaleway", async () => {
+    await api
+      .waitContainersAreDeployed(namespace.id)
+      .catch((err) => console.error(err));
     const output = serverlessInvoke(options).toString();
     expect(output).toBe('{"message":"Container successfully updated"}');
   });
 
-  it('should deploy with registry image specified', () => {
-    replaceTextInFile('serverless.yml', '# registryImage: ""', 'registryImage: docker.io/library/nginx:latest');
-    replaceTextInFile('serverless.yml', '# port: 8080', 'port: 80');
+  it("should deploy with registry image specified", () => {
+    replaceTextInFile(
+      "serverless.yml",
+      '# registryImage: ""',
+      "registryImage: docker.io/library/nginx:latest"
+    );
+    replaceTextInFile("serverless.yml", "# port: 8080", "port: 80");
     serverlessDeploy(options);
   });
 
-  it('should invoke updated container with specified registry image', async () => {
+  it("should invoke updated container with specified registry image", async () => {
     await sleep(30000);
     options.serviceName = containerName;
     const output = serverlessInvoke(options).toString();
-    expect(output).toContain('Welcome to nginx!');
+    expect(output).toContain("Welcome to nginx!");
   });
 
-  it('should remove service from scaleway', async () => {
+  it("should remove service from scaleway", async () => {
     serverlessRemove(options);
     try {
       await api.getNamespace(namespace.id);

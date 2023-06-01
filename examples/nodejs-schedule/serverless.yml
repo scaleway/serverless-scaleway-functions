@@ -12,8 +12,8 @@ plugins:
 
 package:
   patterns:
-    - '!.gitignore'
-    - '!.git/**'
+    - "!.gitignore"
+    - "!.git/**"
 
 functions:
   first:
@@ -21,7 +21,7 @@ functions:
     # description: ""
     events:
       - schedule:
-          rate: '1 * * * *'
+          rate: "1 * * * *"
           input:
             myInput: myValue
             mySecondInput: 1

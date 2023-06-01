@@ -1,5 +1,5 @@
-const validate = require('../../shared/validate');
-const { describe, beforeEach, it, expect } = require('@jest/globals');
+const validate = require("../../shared/validate");
+const { describe, beforeEach, it, expect } = require("@jest/globals");
 
 class MockProvider {
   constructor() {
@@ -8,26 +8,23 @@ class MockProvider {
         functions: {},
         custom: {
           containers: {},
-        }
-      }
+        },
+      },
     };
-  };
+  }
 
   addFunction(funcName) {
     this.serverless.service.functions[funcName] = {};
-  };
+  }
 
   addContainer(contName) {
     this.serverless.service.custom.containers[contName] = {};
-  };
+  }
 }
 
-describe('Configuration validation test', () => {
+describe("Configuration validation test", () => {
   // Add validation to this object
-  Object.assign(
-      this,
-      validate
-  );
+  Object.assign(this, validate);
 
   this.provider = null;
   beforeEach(() => {
@@ -35,7 +32,7 @@ describe('Configuration validation test', () => {
     this.provider = new MockProvider();
   });
 
-  it('Should validate a container when it is defined', () => {
+  it("Should validate a container when it is defined", () => {
     this.provider.addContainer("foobar");
 
     expect(this.isDefinedFunction("foobar")).toEqual(false);
@@ -44,7 +41,7 @@ describe('Configuration validation test', () => {
     expect(this.isDefinedContainer("baz")).toEqual(false);
   });
 
-  it('Should validate a function when it is defined', () => {
+  it("Should validate a function when it is defined", () => {
     this.provider.addFunction("qux");
 
     expect(this.isDefinedFunction("qux")).toEqual(true);
@@ -53,11 +50,11 @@ describe('Configuration validation test', () => {
     expect(this.isDefinedContainer("baz")).toEqual(false);
   });
 
-  it('Should not validate a container when none are defined', () => {
+  it("Should not validate a container when none are defined", () => {
     expect(this.isDefinedContainer("qux")).toEqual(false);
   });
 
-  it('Should not validate a function when none are defined', () => {
+  it("Should not validate a function when none are defined", () => {
     expect(this.isDefinedFunction("qux")).toEqual(false);
   });
 });

@@ -8,7 +8,10 @@ module.exports = {
     this.runtime = provider.runtime;
 
     const defaultTokenExpirationDate = new Date();
-    defaultTokenExpirationDate.setFullYear(defaultTokenExpirationDate.getFullYear() + 1);
-    this.tokenExpirationDate = provider.tokenExpiration || defaultTokenExpirationDate.toISOString();
+    defaultTokenExpirationDate.setFullYear(
+      defaultTokenExpirationDate.getFullYear() + 1
+    );
+    this.tokenExpirationDate =
+      provider.tokenExpiration || defaultTokenExpirationDate.toISOString();
   },
 };

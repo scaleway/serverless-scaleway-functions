@@ -15,10 +15,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tests: [
-          "containers", "containers-private", "deploy", "domains", "functions",
-          "multi-region", "provider", "runtimes", "shared", "triggers"
-        ]
+        tests:
+          [
+            "containers",
+            "containers-private",
+            "deploy",
+            "domains",
+            "functions",
+            "multi-region",
+            "provider",
+            "runtimes",
+            "shared",
+            "triggers",
+          ]
         node-version: ["16.x", "18.x", "20.x"]
 
     runs-on: ubuntu-22.04
@@ -37,6 +46,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Check formatting
+        run: npx prettier --check .
 
       - name: Run tests
         run: npm run test:${{ matrix.tests }}

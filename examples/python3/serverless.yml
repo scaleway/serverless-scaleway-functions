@@ -12,9 +12,9 @@ plugins:
 
 package:
   patterns:
-    - '!node_modules/**'
-    - '!.gitignore'
-    - '!.git/**'
+    - "!node_modules/**"
+    - "!.gitignore"
+    - "!.git/**"
 
 functions:
   first:

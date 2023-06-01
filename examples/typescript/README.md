@@ -66,9 +66,9 @@ NODE_ENV=test node handler.js
 
 This will launch a local server, allowing you to test the function. In another terminal, you can now run:
 
-````sh
+```sh
 curl -X GET http://localhost:8080
-````
+```
 
 The expected output is "Hello world!".
 
