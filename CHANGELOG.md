@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.7
+
+### Added
+
+- Typescript example
+- Troubleshooting documentation
+- Allow to define image instead of building them
+- Using local testing packages in code samples
+- Flexible resource limits (vCPU / RAM)
+
+### Fixed
+
+- Github actions for CI
+- Documentation
+
 ## 0.4.6
 
 ### Added
