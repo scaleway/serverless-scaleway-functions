@@ -12,7 +12,7 @@ This is the [Scaleway Functions](https://www.scaleway.com/en/serverless-function
 - You have generated an [API key](https://www.scaleway.com/en/docs/console/my-project/how-to/generate-api-key/).
 - You have set up the [Scaleway CLI](https://www.scaleway.com/en/cli/).
 - You have installed `node.js` on your local computer
-- You have installed the [Serverless](https://serverless.com) CLI on your local computer (to do so, run `npm install serverless -g` in a terminal).
+- You have installed the [Serverless](https://serverless.com) CLI on your local computer (to do so, run `npm install serverless -g` in a terminal) and logged in to your Serverless account on the CLI (to do so, run `serverless login` and follow instructions).
 
 ## Quickstart
 
