@@ -1,37 +1,42 @@
-'use strict';
+"use strict";
 
-const { manageError } = require('./utils');
+const { manageError } = require("./utils");
 
 module.exports = {
   listFunctions(namespaceId) {
     const functionsUrl = `namespaces/${namespaceId}/functions`;
-    return this.apiManager.get(functionsUrl)
-      .then(response => response.data.functions || [])
+    return this.apiManager
+      .get(functionsUrl)
+      .then((response) => response.data.functions || [])
       .catch(manageError);
   },
 
   createFunction(params) {
-    return this.apiManager.post('functions', params)
-      .then(response => response.data)
+    return this.apiManager
+      .post("functions", params)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
   updateFunction(functionId, params) {
     const updateUrl = `functions/${functionId}`;
-    return this.apiManager.patch(updateUrl, params)
-      .then(response => response.data)
+    return this.apiManager
+      .patch(updateUrl, params)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
   deployFunction(functionId, params) {
-    return this.apiManager.post(`functions/${functionId}/deploy`, params)
-      .then(response => response.data)
+    return this.apiManager
+      .post(`functions/${functionId}/deploy`, params)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
   getPresignedUrl(functionId, archiveSize) {
-    return this.apiManager.get(`functions/${functionId}/upload-url?content_length=${archiveSize}`)
-      .then(response => response.data)
+    return this.apiManager
+      .get(`functions/${functionId}/upload-url?content_length=${archiveSize}`)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
@@ -41,7 +46,8 @@ module.exports = {
    * @returns function with status deleting.
    */
   deleteFunction(functionId) {
-    return this.apiManager.delete(`functions/${functionId}`)
+    return this.apiManager
+      .delete(`functions/${functionId}`)
       .then((response) => response.data)
       .catch(manageError);
   },
@@ -52,32 +58,35 @@ module.exports = {
    * @returns function.
    */
   getFunction(functionId) {
-    return this.apiManager.get(`/functions/${functionId}`)
+    return this.apiManager
+      .get(`/functions/${functionId}`)
       .then((response) => response.data)
       .catch(manageError);
   },
 
   waitFunctionsAreDeployed(namespaceId) {
-    return this.listFunctions(namespaceId)
-      .then((functions) => {
-        let functionsAreReady = true;
-        for (let i = 0; i < functions.length; i += 1) {
-          const func = functions[i];
-          if (func.status === 'error') {
-            throw new Error(func.error_message);
-          }
-          if (func.status !== 'ready') {
-            functionsAreReady = false;
-            break;
-          }
+    return this.listFunctions(namespaceId).then((functions) => {
+      let functionsAreReady = true;
+      for (let i = 0; i < functions.length; i += 1) {
+        const func = functions[i];
+        if (func.status === "error") {
+          throw new Error(func.error_message);
         }
-        if (!functionsAreReady) {
-          return new Promise((resolve) => {
-            setTimeout(() => resolve(this.waitFunctionsAreDeployed(namespaceId)), 5000);
-          });
+        if (func.status !== "ready") {
+          functionsAreReady = false;
+          break;
         }
-        return functions;
-      });
+      }
+      if (!functionsAreReady) {
+        return new Promise((resolve) => {
+          setTimeout(
+            () => resolve(this.waitFunctionsAreDeployed(namespaceId)),
+            5000
+          );
+        });
+      }
+      return functions;
+    });
   },
 
   /**
@@ -89,13 +98,17 @@ module.exports = {
   waitForFunctionStatus(functionId, wantedStatus) {
     return this.getFunction(functionId)
       .then((func) => {
-        if (func.status === 'error') {
+        if (func.status === "error") {
           throw new Error(func.error_message);
         }
 
         if (func.status !== wantedStatus) {
           return new Promise((resolve) => {
-            setTimeout(() => resolve(this.waitForFunctionStatus(functionId, wantedStatus)), 5000);
+            setTimeout(
+              () =>
+                resolve(this.waitForFunctionStatus(functionId, wantedStatus)),
+              5000
+            );
           });
         }
 
@@ -130,28 +143,30 @@ module.exports = {
    * @returns
    */
   waitDomainsAreDeployedFunction(functionId) {
-    return this.listDomainsFunction(functionId)
-      .then((domains) => {
-        let domainsAreReady = true;
+    return this.listDomainsFunction(functionId).then((domains) => {
+      let domainsAreReady = true;
 
-        for (let i = 0; i < domains.length; i += 1) {
-          const domain = domains[i];
+      for (let i = 0; i < domains.length; i += 1) {
+        const domain = domains[i];
 
-          if (domain.status === 'error') {
-            throw new Error(domain.error_message);
-          }
-
-          if (domain.status !== 'ready') {
-            domainsAreReady = false;
-            break;
-          }
+        if (domain.status === "error") {
+          throw new Error(domain.error_message);
         }
-        if (!domainsAreReady) {
-          return new Promise((resolve) => {
-            setTimeout(() => resolve(this.waitDomainsAreDeployedFunction(functionId)), 5000);
-          });
+
+        if (domain.status !== "ready") {
+          domainsAreReady = false;
+          break;
         }
-        return domains;
-      });
+      }
+      if (!domainsAreReady) {
+        return new Promise((resolve) => {
+          setTimeout(
+            () => resolve(this.waitDomainsAreDeployedFunction(functionId)),
+            5000
+          );
+        });
+      }
+      return domains;
+    });
   },
 };

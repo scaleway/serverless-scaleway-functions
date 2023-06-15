@@ -1,14 +1,14 @@
-'use strict';
+"use strict";
 
-const BbPromise = require('bluebird');
-const fs = require('fs');
-const path = require('path');
+const BbPromise = require("bluebird");
+const fs = require("fs");
+const path = require("path");
 
 // COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes
 // that are considered as "compiled runtimes".
 // If you fill this array with "go" it will match all runtimes that starts with "go".
 // For example "golang", "go113" matches this filter.
-const COMPILED_RUNTIMES_PREFIXES = ['go', 'rust'];
+const COMPILED_RUNTIMES_PREFIXES = ["go", "rust"];
 
 // RUNTIMES_EXTENSIONS serves two purposes :
 // - the struct key is used to list different runtimes families (go, python etc...)
@@ -16,14 +16,14 @@ const COMPILED_RUNTIMES_PREFIXES = ['go', 'rust'];
 // required on non-compiled runtimes.
 const RUNTIMES_EXTENSIONS = {
   // tester .ts in node runtime
-  node: ['ts', 'js'],
-  python: ['py'],
-  php: ['php'],
+  node: ["ts", "js"],
+  python: ["py"],
+  php: ["php"],
   go: [],
   rust: [],
 };
 
-const REGION_LIST = ['fr-par', 'nl-ams', 'pl-waw'];
+const REGION_LIST = ["fr-par", "nl-ams", "pl-waw"];
 
 const cronScheduleRegex = new RegExp(
   /^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/
@@ -32,7 +32,9 @@ const cronScheduleRegex = new RegExp(
 const TRIGGERS_VALIDATION = {
   schedule: (trigger) => {
     if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
-      throw new Error(`Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`);
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`
+      );
     }
   },
 };
@@ -50,25 +52,30 @@ module.exports = {
 
   validateServicePath() {
     if (!this.serverless.config.servicePath) {
-      throw new Error('This command can only be run inside a service directory');
+      throw new Error(
+        "This command can only be run inside a service directory"
+      );
     }
 
     return BbPromise.resolve();
   },
 
   validateCredentials() {
-    if (this.provider.scwToken.length !== 36 || this.provider.getScwProject().length !== 36) {
+    if (
+      this.provider.scwToken.length !== 36 ||
+      this.provider.getScwProject().length !== 36
+    ) {
       const errorMessage = [
         'Either "scwToken" or "scwProject" is invalid.',
-        ' Credentials to deploy on your Scaleway Account are required, please read the documentation.',
-      ].join('');
+        " Credentials to deploy on your Scaleway Account are required, please read the documentation.",
+      ].join("");
       throw new Error(errorMessage);
     }
   },
 
   validateRegion() {
     if (!REGION_LIST.includes(this.provider.scwRegion)) {
-      throw new Error('unknown region');
+      throw new Error("unknown region");
     }
   },
 
@@ -117,9 +124,10 @@ module.exports = {
         }
       }
 
-
       if (!defaultRTexists) {
-        functionErrors.push(`Runtime ${this.runtime} is not supported, please check documentation for available runtimes`);
+        functionErrors.push(
+          `Runtime ${this.runtime} is not supported, please check documentation for available runtimes`
+        );
       }
 
       functionNames.forEach((functionName) => {
@@ -151,7 +159,7 @@ module.exports = {
 
           if (!RTexists) {
             functionErrors.push(
-              `Runtime ${func.runtime} is not supported, please check documentation for available runtimes`,
+              `Runtime ${func.runtime} is not supported, please check documentation for available runtimes`
             );
           }
         }
@@ -159,9 +167,11 @@ module.exports = {
         // Check if function handler exists
         try {
           // get handler file => path/to/file.handler => split ['path/to/file', 'handler']
-          const splitHandlerPath = func.handler.split('.');
+          const splitHandlerPath = func.handler.split(".");
           if (splitHandlerPath.length !== 2) {
-            throw new Error(`Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`);
+            throw new Error(
+              `Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`
+            );
           }
 
           const handlerPath = splitHandlerPath[0];
@@ -173,7 +183,7 @@ module.exports = {
           for (let i = 0; i < extensions.length; i += 1) {
             const handler = `${handlerPath}.${extensions[i]}`;
 
-            if (fs.existsSync(path.resolve('./', handler))) {
+            if (fs.existsSync(path.resolve("./", handler))) {
               handlerFileExists = true;
               break;
             }
@@ -181,7 +191,7 @@ module.exports = {
 
           // If Handler file does not exist, throw an error
           if (!handlerFileExists) {
-            throw new Error('File does not exists');
+            throw new Error("File does not exists");
           }
         } catch (error) {
           const message = `Handler file defined for function ${functionName} does not exist (${func.handler}, err : ${error} ).`;
@@ -190,7 +200,10 @@ module.exports = {
 
         // Check that triggers are valid
         func.events = func.events || [];
-        functionErrors = [...functionErrors, ...this.validateTriggers(func.events)];
+        functionErrors = [
+          ...functionErrors,
+          ...this.validateTriggers(func.events),
+        ];
       });
     }
 
@@ -205,12 +218,17 @@ module.exports = {
       containerNames.forEach((containerName) => {
         const container = containers[containerName];
         container.events = container.events || [];
-        functionErrors = [...functionErrors, ...this.validateTriggers(container.events)];
+        functionErrors = [
+          ...functionErrors,
+          ...this.validateTriggers(container.events),
+        ];
       });
     }
 
     if (!functionNames.length && !containerNames.length) {
-      functionErrors.push('You must define at least one function or container to deploy under the functions or custom key.');
+      functionErrors.push(
+        "You must define at least one function or container to deploy under the functions or custom key."
+      );
     }
 
     return BbPromise.resolve(currentErrors.concat(functionErrors));
@@ -221,7 +239,8 @@ module.exports = {
     return triggers.reduce((accumulator, trigger) => {
       const triggerKeys = Object.keys(trigger);
       if (triggerKeys.length !== 1) {
-        const errorMessage = 'Trigger is invalid, it should contain at least one event type configuration (example: schedule).';
+        const errorMessage =
+          "Trigger is invalid, it should contain at least one event type configuration (example: schedule).";
         return [...accumulator, errorMessage];
       }
 
@@ -230,7 +249,9 @@ module.exports = {
 
       const authorizedTriggers = Object.keys(TRIGGERS_VALIDATION);
       if (!authorizedTriggers.includes(triggerName)) {
-        const errorMessage = `Trigger Type ${triggerName} is not currently supported by Scaleway's Serverless platform, supported types are the following: ${authorizedTriggers.join(', ')}`;
+        const errorMessage = `Trigger Type ${triggerName} is not currently supported by Scaleway's Serverless platform, supported types are the following: ${authorizedTriggers.join(
+          ", "
+        )}`;
         return [...accumulator, errorMessage];
       }
 
@@ -249,14 +270,16 @@ module.exports = {
     const errors = [];
 
     if (!variables) return errors;
-    if (typeof variables !== 'object') {
-      throw new Error('Environment variables should be a map of strings under the form: key - value');
+    if (typeof variables !== "object") {
+      throw new Error(
+        "Environment variables should be a map of strings under the form: key - value"
+      );
     }
 
     const variableNames = Object.keys(variables);
     variableNames.forEach((variableName) => {
       const variable = variables[variableName];
-      if (typeof variable !== 'string') {
+      if (typeof variable !== "string") {
         const error = `Variable ${variableName}: variable is invalid, environment variables may only be strings`;
         errors.push(error);
       }
@@ -268,13 +291,15 @@ module.exports = {
   isDefinedContainer(containerName) {
     // Check if given name is listed as a container
     let res = false;
-    if(this.provider.serverless.service.custom
-      && this.provider.serverless.service.custom.containers) {
+    if (
+      this.provider.serverless.service.custom &&
+      this.provider.serverless.service.custom.containers
+    ) {
+      let foundKey = Object.keys(
+        this.provider.serverless.service.custom.containers
+      ).find((k) => k == containerName);
 
-      let foundKey = Object.keys(this.provider.serverless.service.custom.containers)
-        .find((k) => k == containerName);
-
-      if(foundKey) {
+      if (foundKey) {
         res = true;
       }
     }
@@ -285,11 +310,12 @@ module.exports = {
   isDefinedFunction(functionName) {
     // Check if given name is listed as a function
     let res = false;
-    if(this.provider.serverless.service.functions) {
-      let foundKey = Object.keys(this.provider.serverless.service.functions)
-        .find((k) => k == functionName);
+    if (this.provider.serverless.service.functions) {
+      let foundKey = Object.keys(
+        this.provider.serverless.service.functions
+      ).find((k) => k == functionName);
 
-      if(foundKey) {
+      if (foundKey) {
         res = true;
       }
     }

@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 
-const { manageError } = require('./utils');
+const { manageError } = require("./utils");
 
 module.exports = {
   listTriggersForApplication(applicationId, isFunction) {
@@ -8,8 +8,9 @@ module.exports = {
     if (!isFunction) {
       triggersUrl = `crons?container_id=${applicationId}`;
     }
-    return this.apiManager.get(triggersUrl)
-      .then(response => response.data.crons)
+    return this.apiManager
+      .get(triggersUrl)
+      .then((response) => response.data.crons)
       .catch(manageError);
   },
 
@@ -25,21 +26,24 @@ module.exports = {
         container_id: applicationId,
       };
     }
-    return this.apiManager.post('crons', payload)
-      .then(response => response.data)
+    return this.apiManager
+      .post("crons", payload)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
   updateTrigger(triggerId, params) {
     const updateUrl = `crons/${triggerId}`;
-    return this.apiManager.patch(updateUrl, params)
-      .then(response => response.data)
+    return this.apiManager
+      .patch(updateUrl, params)
+      .then((response) => response.data)
       .catch(manageError);
   },
 
   deleteTrigger(triggerId) {
-    return this.apiManager.delete(`crons/${triggerId}`)
-      .then(response => response.data)
+    return this.apiManager
+      .delete(`crons/${triggerId}`)
+      .then((response) => response.data)
       .catch(manageError);
   },
 };

@@ -1,22 +1,21 @@
-const { expect } = require('chai');
+const { execSync, execCaptureOutput } = require("../../shared/child-process");
+const { describe, it, expect } = require("@jest/globals");
 
-const { execSync, execCaptureOutput } = require('../../shared/child-process');
-
-describe('Synchronous command execution test', () => {
-  it('should execute a command synchronously', () => {
-    execSync('ls');
+describe("Synchronous command execution test", () => {
+  it("should execute a command synchronously", () => {
+    execSync("ls");
   });
 
-  it('should throw an error for an invalid command', () => {
+  it("should throw an error for an invalid command", () => {
     expect(() => {
-      execSync('blah');
-    }).to.throw();
+      execSync("blah");
+    }).toThrow();
   });
 });
 
-describe('Synchronous output capture of command test', () => {
-  it('should capture the output of a command', () => {
-    let output = execCaptureOutput('echo', ['foo bar']);
-    expect(output).to.equal('foo bar\n');
+describe("Synchronous output capture of command test", () => {
+  it("should capture the output of a command", () => {
+    let output = execCaptureOutput("echo", ["foo bar"]);
+    expect(output).toEqual("foo bar\n");
   });
 });

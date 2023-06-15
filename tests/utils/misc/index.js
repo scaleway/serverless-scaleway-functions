@@ -1,21 +1,25 @@
-'use strict';
+"use strict";
 
-const path = require('path');
+const path = require("path");
 
-const { execSync } = require('../../../shared/child-process');
-const { readYamlFile, writeYamlFile } = require('../fs');
+const { execSync } = require("../../../shared/child-process");
+const { readYamlFile, writeYamlFile } = require("../fs");
+const crypto = require("crypto");
+const { AccountApi } = require("../../../shared/api");
+const { ACCOUNT_API_URL } = require("../../../shared/constants");
 
 const logger = console;
 
-const testServiceIdentifier = 'scwtestsls';
+const testServiceIdentifier = "scwtestsls";
 
-const serverlessExec = 'serverless';
+const serverlessExec = "serverless";
 
 const project = process.env.SCW_DEFAULT_PROJECT_ID || process.env.SCW_PROJECT;
+const organizationId = process.env.SCW_ORGANIZATION_ID;
 const secretKey = process.env.SCW_SECRET_KEY || process.env.SCW_TOKEN;
 const region = process.env.SCW_REGION;
 
-function getServiceName(identifier = '') {
+function getServiceName(identifier = "") {
   const hrtime = process.hrtime();
   return `${testServiceIdentifier}-${identifier}${hrtime[1]}`;
 }
@@ -48,6 +52,14 @@ function serverlessDeploy(options) {
   return execSync(`${serverlessExec} deploy`, options);
 }
 
+function serverlessInvoke(options) {
+  options = mergeOptionsWithEnv(options);
+  return execSync(
+    `${serverlessExec} invoke --function ${options.serviceName}`,
+    options
+  );
+}
+
 function serverlessRemove(options) {
   options = mergeOptionsWithEnv(options);
   return execSync(`${serverlessExec} remove`, options);
@@ -57,28 +69,30 @@ function createTestService(
   tmpDir,
   repoDir,
   options = {
-    devModuleDir: '',
-    templateName: 'nodejs10', // Name of the template inside example directory to use for test service
+    devModuleDir: "",
+    templateName: "nodejs10", // Name of the template inside example directory to use for test service
     serviceName: null,
     serverlessConfigHook: null, // Eventual hook that allows to customize serverless config
     runCurrentVersion: false,
-  },
+  }
 ) {
   const serviceName = options.serviceName || getServiceName();
 
   if (!options.templateName) {
-    throw new Error('Template Name must be provided to create a test service');
+    throw new Error("Template Name must be provided to create a test service");
   }
 
   // create a new Serverless service
-  execSync(`${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`);
+  execSync(
+    `${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`
+  );
   process.chdir(tmpDir);
 
   // Install our local version of this repo
   // If this is not the first time this has been run, or the repo is already linked for development, this requires --force
   execSync(`npm link --force ${repoDir}`);
 
-  const serverlessFilePath = path.join(tmpDir, 'serverless.yml');
+  const serverlessFilePath = path.join(tmpDir, "serverless.yml");
   let serverlessConfig = readYamlFile(serverlessFilePath);
   // Ensure unique service name
   serverlessConfig.service = serviceName;
@@ -94,13 +108,23 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function createProject() {
+  const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey);
+  return accountApi.createProject({
+    name: `test-slsframework-${crypto.randomBytes(6).toString("hex")}`,
+    organization_id: organizationId,
+  });
+}
+
 module.exports = {
   logger,
   testServiceIdentifier,
   serverlessExec,
   getServiceName,
   serverlessDeploy,
+  serverlessInvoke,
   serverlessRemove,
   createTestService,
   sleep,
+  createProject,
 };

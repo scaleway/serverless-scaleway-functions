@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 module.exports = {
   getElementsToDelete(singleSourceParam, existingServicesOnApi, servicesNames) {
@@ -6,9 +6,9 @@ module.exports = {
     const elementsIdsToRemove = [];
 
     if (
-      singleSourceParam !== undefined
-      && singleSourceParam !== null
-      && singleSourceParam === true
+      singleSourceParam !== undefined &&
+      singleSourceParam !== null &&
+      singleSourceParam === true
     ) {
       // If a container is available in the API but not in the serverlss.yml file, remove it
       for (let i = 0; i < existingServicesOnApi.length; i++) {

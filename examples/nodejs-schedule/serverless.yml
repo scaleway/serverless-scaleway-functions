@@ -9,16 +9,15 @@ plugins:
 
 package:
   patterns:
-    - '!node-modules/**'
-    - '!.gitignore'
-    - '!.git/**'
+    - "!.gitignore"
+    - "!.git/**"
 
 functions:
   first:
     handler: handler.handle
     events:
       - schedule:
-          rate: '0,5,10,15,20,25,30,35,40,45,50,55 * * * *'
+          rate: "1 * * * *"
           input:
             foo: "some-string"
             bar: 1234

@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const YAML = require('js-yaml');
+const os = require("os");
+const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
+const YAML = require("js-yaml");
 
 const tmpDirCommonPath = path.join(
   os.tmpdir(),
-  'tmpdirs-serverless',
-  crypto.randomBytes(2).toString('hex'),
+  "tmpdirs-serverless",
+  crypto.randomBytes(2).toString("hex")
 );
 
 function getTmpDirPath() {
-  return path.join(tmpDirCommonPath, crypto.randomBytes(8).toString('hex'));
+  return path.join(tmpDirCommonPath, crypto.randomBytes(8).toString("hex"));
 }
 
 function createTmpDir() {
@@ -28,7 +28,7 @@ function replaceTextInFile(filePath, subString, newSubString) {
 }
 
 function readYamlFile(filePath) {
-  const content = fs.readFileSync(filePath, 'utf8');
+  const content = fs.readFileSync(filePath, "utf8");
   return YAML.load(content);
 }
 

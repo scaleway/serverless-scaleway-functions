@@ -9,9 +9,9 @@ plugins:
 
 package:
   patterns:
-    - '!node-modules/**'
-    - '!.gitignore'
-    - '!.git/**'
+    - "!node_modules/**"
+    - "!.gitignore"
+    - "!.git/**"
 
 custom:
   containers:
@@ -19,7 +19,7 @@ custom:
       directory: container
       events:
         - schedule:
-            rate: '0,5,10,15,20,25,30,35,40,45,50,55 * * * *'
+            rate: "1 * * * *"
             input:
               field-a: "some value"
               field-b: 1234
