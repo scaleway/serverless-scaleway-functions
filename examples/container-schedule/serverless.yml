@@ -1,10 +1,8 @@
-service: scaleway-container
+service: container-event-example
 configValidationMode: off
+
 provider:
   name: scaleway
-  # Global Environment variables - used in every functions
-  env:
-    test: test
 
 plugins:
   - serverless-scaleway-functions
@@ -18,21 +16,10 @@ package:
 custom:
   containers:
     first:
-      directory: my-container
+      directory: container
       events:
         - schedule:
             rate: "1 * * * *"
             input:
-              myInput: myValue
-              mySecondInput: 1
-      # description: ""
-      # minScale: 1
-      # memoryLimit: 256
-      # cpuLimit: 140
-      # maxScale: 2
-      # maxConcurrency: 50
-      # timeout: "20s"
-      # httpOption: redirected
-      # Local environment variables - used only in given function
-      env:
-        local: local
+              field-a: "some value"
+              field-b: 1234

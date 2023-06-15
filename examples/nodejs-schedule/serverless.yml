@@ -1,11 +1,8 @@
-service: scaleway-node16
+service: node-event-example
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: node16 # Available node runtimes are listed in documentation
-  # Global Environment variables - used in every functions
-  env:
-    test: test
+  runtime: node20
 
 plugins:
   - serverless-scaleway-functions
@@ -18,13 +15,9 @@ package:
 functions:
   first:
     handler: handler.handle
-    # description: ""
     events:
       - schedule:
           rate: "1 * * * *"
           input:
-            myInput: myValue
-            mySecondInput: 1
-    # Local environment variables - used only in given function
-    env:
-      local: local
+            foo: "some-string"
+            bar: 1234

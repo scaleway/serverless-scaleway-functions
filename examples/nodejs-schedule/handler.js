@@ -1,15 +1,18 @@
 module.exports.handle = (event, context, callback) => {
-  const result = {
-    message: "Hello from Serverless Framework and Scaleway Functions :D",
-  };
+  // The scheduled event data is held in a JSON string in the body field
+  var eventBody = JSON.parse(event.body)
 
+  // Log the event data
+  console.log("foo = " + eventBody.foo)
+  console.log("bar = " + eventBody.bar)
+
+  // Return a success response
   const response = {
     statusCode: 200,
     headers: { "Content-Type": ["application/json"] },
-    body: JSON.stringify(result),
+    body: JSON.stringify({message: "Hello from scaleway functions"}),
   };
 
-  // either return cb(undefined, response) or return response
   return response;
 };
 
