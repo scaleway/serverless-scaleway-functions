@@ -2,10 +2,10 @@
 
 Plugin for using Scaleway [Serverless Functions](https://www.scaleway.com/en/serverless-functions/) and [Serverless Containers](https://www.scaleway.com/en/serverless-containers/) with [Serverless Framework](https://serverless.com/).
 
-**Requirements**:
+## Requirements
 
-- You have installed the [Serverless Framework](https://serverless.com) CLI on your local computer (to do so, run `npm install serverless -g` in a terminal).
-- You have set up the [Scaleway CLI](https://www.scaleway.com/en/cli/)
+- [Serverless Framework CLI](https://serverless.com) installed on your local computer (e.g. run `npm install serverless -g`)
+- [Scaleway CLI](https://www.scaleway.com/en/cli/) installed on your local computer
 
 If you are using [Scaleway IAM](/identity-and-access-management/iam/how-to/activate-iam), you need to be the [Owner](/identity-and-access-management/iam/concepts/#owner) of the Scaleway [Organization](/identity-and-access-management/iam/concepts/#organization) in which the actions will be carried out, or you are an IAM user of the Organization, with a [policy](/identity-and-access-management/iam/concepts/#policy) granting you the necessary [permission sets](/identity-and-access-management/iam/reference-content/permission-sets/).
 
@@ -47,15 +47,26 @@ If you are using [Scaleway IAM](/identity-and-access-management/iam/how-to/activ
 - [Quickstart](#quickstart)
 - [Configuration](#configuration)
 - [Supported commands](#supported-commands)
-- [Security and secret management](#security-and-secret-management)
-- [Deployment methods](#deployment-methods)
-- [Local testing](#local-testing)
-- [Managing containers](#managing-containers)
-- [Logs](#logs)
-- [Info](#info)
-- [Documentation and useful links](#documentation-and-useful-links)
+- [Unsupported commands](#unsupported-commands)
+- [Useful links](#useful-links)
 - [Contributing](#contributing)
 - [License](#license)
+
+More detailed documentation can be found in the [`docs`](docs/) folder, including:
+
+- [Managing containers](docs/containers.md)
+- [Configuring custom domains](docs/custom-domains.md)
+- [Handling events (e.g. CRONs)](docs/events.md)
+- [Security and secret management](docs/secrets.md)
+- [Troubleshooting](docs/troubleshooting.md)
+
+There are also language-specific notes for Serverless Functions:
+
+- [Golang functions](docs/golang.md)
+- [Javascript functions](docs/javascript.md)
+- [PHP functions](docs/php.md)
+- [Python functions](docs/python.md)
+- [Rust functions](docs/rust.md)
 
 ## Configuration
 
@@ -211,23 +222,15 @@ custom:
               key-b: "value-b"
 ```
 
-## Auto-deletion
+## Supported commands
 
-By default, `serverless deploy` applies the configuration located in your `serverless.yml` and removes functions in that namespace that are not in the file.
+### `serverless deploy`
+
+Note that by default `serverless deploy` applies the configuration located in your `serverless.yml` and removes functions in that namespace that are not in the file.
 
 This can be switched off by setting the `singleSource` option to `false`.
 
-### Local testing
-
-`serverless invoke local` is **not supported** directly but instead we provide additional packages to install close to your handler.
-
-Documentation is available through runtimes frameworks for:
-
-- [Go](https://github.com/scaleway/serverless-functions-go)
-- [Python](https://github.com/scaleway/serverless-functions-python)
-- [Node](https://github.com/scaleway/serverless-functions-node)
-
-## Logs
+### `serverless logs`
 
 The `serverless logs` command lets you watch the logs of a specific function or container.
 
@@ -237,11 +240,23 @@ You can fetch the logs of a specific function for with the `--function` option. 
 serverless logs --function <function_or_container_name>
 ```
 
-## Info
+### `serverless info`
 
 The `serverless info` command gives you information about your functions' or containers' current deployement state in JSON format.
 
-## Documentation and useful links
+## Unsupported commands
+
+### `serverless invoke local`
+
+`serverless invoke local` is **not supported** directly but instead we provide additional packages to install close to your handler.
+
+Documentation is available through runtimes frameworks for:
+
+- [Go](https://github.com/scaleway/serverless-functions-go)
+- [Python](https://github.com/scaleway/serverless-functions-python)
+- [Node](https://github.com/scaleway/serverless-functions-node)
+
+## Useful links
 
 - [Scaleway Serverless Functions Documentation](https://www.scaleway.com/en/docs/compute/functions/api-cli/fun-uploading-with-serverless-framework/)
 - [Scaleway Serverless Containers Documentation](https://www.scaleway.com/en/docs/compute/containers/api-cli/cont-uploading-with-serverless-framework/)
@@ -252,7 +267,7 @@ The `serverless info` command gives you information about your functions' or con
 
 This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/): #serverless-containers and #serverless-functions.
 
-If you are looking for a way to contribute please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md).
+If you are looking for a way to contribute please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md). You can also look at the [development documentation](docs/development.md).
 
 For general information about developing Serverless Framework, refer to the Serverless Framework [plugins documentation](https://www.serverless.com/framework/docs/guides/plugins/creating-plugins).
 
