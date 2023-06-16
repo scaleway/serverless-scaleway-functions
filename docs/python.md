@@ -9,7 +9,9 @@ Path to handler file `src/testing/handler.py`:
     - secondHandler.py => def my_second_handler
 - serverless.yml
 ```
+
 In serverless.yml:
+
 ```yml
 provider:
   # ...

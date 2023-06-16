@@ -19,7 +19,8 @@ functions:
     # "events" is a list of triggers, the first key being the type of trigger.
     - schedule:
         # CRON Job Schedule (UNIX Format)
-        rate: '1 * * * *'
+        rate: "1 * * * *"
+
         # Input variable are passed in your function's event during execution
         input:
           key: value
@@ -33,10 +34,11 @@ custom:
   containers:
     mycontainer:
       directory: my-directory
+
       # Events key
       events:
         - schedule:
-            rate: '1 * * * *'
+            rate: "1 * * * *"
             input:
               key: value
               key2: value2

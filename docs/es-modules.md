@@ -9,7 +9,9 @@ Path to your handler file (from `serverless.yml`), omit `./`, `../`, and add the
     - secondHandler.js => module.exports.mySecondHandler = ...
 - serverless.yml
 ```
+
 In serverless.yml:
+
 ```yml
 provider:
   # ...
@@ -42,12 +44,12 @@ According to the official documentation, to use ES modules you can specify the m
 This then enables you to write your code for ES modules:
 
 ```javascript
-export {handle};
+export { handle };
 
 function handle (event, context, cb) {
     return {
         body: process.version,
-        headers: {"Content-Type": ["text/plain"]},
+        headers: { "Content-Type": ["text/plain"] },
         statusCode: 200,
     };
 };
@@ -56,6 +58,7 @@ function handle (event, context, cb) {
 The use of ES modules is encouraged since they are more efficient and make setup and debugging much easier.
 
 Note that using `"type": "module"` or `"type": "commonjs"` in your `package.json` file will enable or disable some features in Node runtime, such as:
+
 - `commonjs` is used as the default value
 - `commonjs` allows you to use `require/module.exports` (synchronous code loading - it basically copies all file contents)
 - `module` allows you to use `import/export` ES6 instructions (asynchronous loading - more optimized as it imports only the pieces of code you need)

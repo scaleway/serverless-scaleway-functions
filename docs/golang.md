@@ -1,6 +1,7 @@
 # Golang
 
 Path to your handler's **package**. For example, if you have the following structure:
+
 ```yml
 - src
   - testing
@@ -10,7 +11,9 @@ Path to your handler's **package**. For example, if you have the following struc
 - serverless.yml
 - handler.go -> package main at the root of project
 ```
+
 Your serverless.yml `functions` should look something like this:
+
 ```yml
 provider:
   # ...
