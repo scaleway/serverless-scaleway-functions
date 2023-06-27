@@ -158,7 +158,7 @@ The configuration includes the following parameters:
 - `provider.env`: environment variables attached to your namespace are injected to all your namespace functions
 - `provider.secret`: secret environment variables attached to your namespace are injected to all your namespace functions, see [this example project](./examples/secrets)
 - `scwToken`: the access key (token) you generated with your API key
-- `scwProject`: the Organization ID of your Scaleway Organization
+- `scwProject`: the Project ID of your Scaleway project. Specifying the Organization ID will create the functions in the Default project.
 - `scwRegion`: the Scaleway region in which the deployment will take place (default: `fr-par`)
 - `package.patterns`: you can leave this parameter at default, or enable it to include/exclude directories to/from the deployment
 - `functions`: configuration of your functions. It is a `.yml` dictionary, and the key is the function name
