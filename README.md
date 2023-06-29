@@ -171,7 +171,7 @@ The configuration includes the following parameters:
   - `maxConcurrency` (Containers only, Optional): Concurrency defines the number of simultaneous requests your container can handle at the same time (default: 50)
   - `memoryLimit`: RAM allocated to the function instances. See the introduction for the list of supported values. For containers, please check valid memory limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
   - `cpuLimit`: (Containers only) CPU allocated to the container instances. Please check valid CPU limits [here](https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/).
-  - `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out (default: 300 seconds)
+  - `timeout`: is the maximum duration in seconds that the request will wait to be served before it times out, value in string format Ex: "300s" (default: 300 seconds)
   - `runtime`: (Optional) runtime of the function, if you need to deploy multiple functions with different runtimes in your Serverless Project. If absent, `provider.runtime` will be used to deploy the function, see [this example project](./examples/multiple).
   - `events` (Optional): List of events to trigger your functions (e.g, trigger a function based on a schedule with `CRONJobs`). See `events` section below
   - `custom_domains` (Optional): List of custom domains, refer to the [how to add a custom domain](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) documentation page
