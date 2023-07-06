@@ -1,6 +1,6 @@
 # Node functions
 
-Path to your handler file (from `serverless.yml`), omit `./`, `../`, and add the exported function to use as a handler:
+The `handler` for Node functions must be the path to your handler file plus the function to invoke. For example, with the following directory structure:
 
 ```yml
 - src
@@ -10,11 +10,10 @@ Path to your handler file (from `serverless.yml`), omit `./`, `../`, and add the
 - serverless.yml
 ```
 
-In serverless.yml:
+Your `serverless.yml` would look like:
 
 ```yml
 provider:
-  # ...
   runtime: node16
 functions:
   first:
@@ -23,8 +22,7 @@ functions:
     handler: src/handlers/secondHandler.mySecondHandler
 ```
 
-Note: if you wish to use Typescript, you can do so by transpiling your code locally before deploying it. An example is
-available [here](examples/typescript).
+**NOTE** if you wish to use Typescript, you can do so by transpiling your code locally before deploying it. An example is available [here](../examples/typescript).
 
 ## ES modules
 

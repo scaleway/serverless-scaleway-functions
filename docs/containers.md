@@ -1,25 +1,19 @@
 # Managing containers
 
->**Requirements:**
-- You have [created a Container Registry namespace](https://www.scaleway.com/en/docs/compute/container-registry/how-to/create-namespace/)
-- You have installed Docker and can build and push your image to your registry.
+To manage your containers, you can define them in the `custom.containers` field in your `serverless.yml` configuration file.
 
-To manage your containers, you must first define them in the `custom.containers` field in your `serverless.yml` configuration file.
-
-Each container must specify the relative path of its application directory (containing the Dockerfile, and all files related to the application to deploy):
+Each container must specify the relative path to its directory, which contains the Dockerfile, and all files related to the application:
 
 ```yml
 custom:
   containers:
     mycontainer:
       directory: my-container-directory
-      # port: 8080
-      # Environment only available in this container
       env:
         MY_VARIABLE: "my-value"
 ```
 
-Below is an example of the files you should have in your application directory. The directory that contains your Dockerfile and scripts is called `my-container-directory`.
+Below is an example of a project structure corresponding to the example above, crucially the `my-container-directory` contains all the files necessary for the container build.
 
 ```
 .
@@ -36,7 +30,6 @@ Below is an example of the files you should have in your application directory. 
 └── serverless.yml
 ```
 
-Scaleway's platform will automatically inject a PORT environment variable on which your server should be listening for incoming traffic. By default, this PORT is 8080. You can change the `port` in the `serverless.yml` file.
+Serverless Containers automatically have a `PORT` environment variable set, which indicates which port the container's webserver should be listening on. By default `PORT` is 8080. You can change this via the `port` variable in your container definition.
 
-You can use the container example provided on this [documentation page](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) to get started.
-
+See the [container example](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) for more information.

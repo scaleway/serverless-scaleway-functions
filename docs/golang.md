@@ -1,6 +1,6 @@
 # Golang
 
-Path to your handler's **package**. For example, if you have the following structure:
+For Go functions, the `handler` parameter must be the path to your handler's **package**. For example, if you have the following structure:
 
 ```yml
 - src
@@ -26,4 +26,3 @@ functions:
   second:
     handler: src/second
 ```
-

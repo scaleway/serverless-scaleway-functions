@@ -1,13 +1,14 @@
 # PHP
 
-Recommended folder structure for `php` runtimes:
+The Recommended folder structure for `php` functions is as follows:
+
 ```yml
 ├── handler.php
 ├── composer.json (not necessary if you do not need dependencies)
 └── serverless.yml
 ```
 
-Your serverless.yml `functions` should look something like this:
+Your `serverless.yml` can then look something like this:
 
 ```yml
 provider:
@@ -17,3 +18,4 @@ functions:
     handler: "handler"
 ```
 
+You can find more PHP examples in the [examples folder](../examples).

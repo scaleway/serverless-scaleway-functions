@@ -1,10 +1,10 @@
 # Rust
 
-Recommended folder structure for `rust` runtimes:
+The recommended folder structure for Rust functions is:
 
 ```yml
 - src
-  - handler.rs (with async handler function)
+  - handler.rs
 - serverless.yml
 ```
 
@@ -18,3 +18,4 @@ functions:
     handler: "handler"
 ```
 
+You can find more Rust examples in the [examples folder](../examples).

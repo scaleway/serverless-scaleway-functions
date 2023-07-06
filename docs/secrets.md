@@ -5,8 +5,6 @@ We do not recommend hard-coding secrets in your `serverless.yml` file. Instead y
 These environment variables can come directly from your deployment environment, or be stored in a `.env` file. A sample configuration looks like:
 
 ```yml
-...
-
 # Enable use of .env file
 useDotenv: true
 

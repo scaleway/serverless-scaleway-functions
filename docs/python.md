@@ -1,6 +1,6 @@
 # Python
 
-Path to handler file `src/testing/handler.py`:
+The `handler` for a Python function should be the path to the file, followed by the function to call. For example with a file structure like:
 
 ```yml
 - src
@@ -10,16 +10,17 @@ Path to handler file `src/testing/handler.py`:
 - serverless.yml
 ```
 
-In serverless.yml:
+Your `serverless.yml` would look like:
 
 ```yml
 provider:
-  # ...
-  runtime: python310 # or python37, python38, python39
+  runtime: python310
 functions:
   first:
     handler: src/handlers/firstHandler.my_first_handler
   second:
     handler: src/handlers/secondHandler.my_second_handler
 ```
+
+You can find more Python examples in the [examples folder](../examples).
 

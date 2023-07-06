@@ -1,30 +1,21 @@
 # Custom domains
 
-Custom domains allow users to use their own domains.
+In addition to the default domain allocated to each function and container, you can also set one or more custom domains.
 
->**Note**:
-Refer to [custom domains on functions](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) or
-[custom domains on containers](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/) for more information about domain configuration.
+You can find more information in the Scaleway docs on how to [add custom domains to functions](https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/) or
+[add custom domains on containers](https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/).
 
-Integration with serverless framework example:
+You can configure custom domains via your `serverless.yml` too, e.g.:
 
 ```yaml
 functions:
   first:
     handler: handler.handle
-    # Local environment variables - used only in given function
-    env:
-      local: local
     custom_domains:
-      - func1.scaleway.com
-      - func2.scaleway.com
+      - my-domain.somehost.com
+      - my-other-domain.somehost.com
 ```
 
-- >**Note**:
-Your domain must have a record pointing to your function hostname. You should deploy your function once to read its hostname. The configuration of custom domains becomes available after the first deploy.
+Note that you must have a `CNAME` record set up in each domain's DNS configuration, which points to the endpoint of your function or container
 
-- >**Note:**
-Serverless Framework considers the configuration file as the source of truth.
-
-- >**Important**:
-If you create a domain with other tools (the Scaleway console, the CLI or APIs) you must refer the created domain into your serverless configuration file. Otherwise it will be deleted as serverless framework will give the priority to its configuration.
+**NOTE**: if you create a domain with other tools (e.g. the Scaleway console, the CLI or APIs) you must also add the created domain to your `serverless.yml`. If not, it will be deleted by your Serverless Framework deployment.
