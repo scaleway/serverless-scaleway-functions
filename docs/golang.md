@@ -5,9 +5,9 @@ For Go functions, the `handler` parameter must be the path to your handler's **p
 ```yml
 - src
   - testing
-    - handler.go -> package main in src/testing subdirectory
+  - handler.go -> package main in src/testing subdirectory
   - second
-    - handler.go -> package main in src/second subdirectory
+  - handler.go -> package main in src/second subdirectory
 - serverless.yml
 - handler.go -> package main at the root of project
 ```

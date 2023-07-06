@@ -5,8 +5,8 @@ The `handler` for a Python function should be the path to the file, followed by 
 ```yml
 - src
   - handlers
-    - firstHandler.py  => def my_first_handler
-    - secondHandler.py => def my_second_handler
+  - firstHandler.py  => def my_first_handler
+  - secondHandler.py => def my_second_handler
 - serverless.yml
 ```
 
@@ -23,4 +23,3 @@ functions:
 ```
 
 You can find more Python examples in the [examples folder](../examples).
-

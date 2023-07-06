@@ -13,36 +13,36 @@ If you are using [Scaleway IAM](https://www.scaleway.com/en/iam/), you need to b
 
 1. Export the template you wish to use (see the list [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples)). We will use `python3`:
 
-  ```shell
-  export TEMPLATE=python3
-  ```
+```shell
+export TEMPLATE=python3
+```
 
 2. Create a function from this template:
 
-  ```shell
-  serverless create \
-    --path ${TEMPLATE}-func \
-    --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
-  ```
+```shell
+serverless create \
+  --path ${TEMPLATE}-func \
+  --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
+```
 
 3. Install dependencies:
 
-  ```shell
-  cd ${TEMPLATE}-func
-  npm i
-  ```
+```shell
+cd ${TEMPLATE}-func
+npm i
+```
 
 4. Deploy the function:
 
-  ```shell
-  serverless deploy
-  ```
+```shell
+serverless deploy
+```
 
 5. Invoke the function (note that `first` is the function name in this example):
 
-  ```shell
-  serverless invoke --function first
-  ```
+```shell
+serverless invoke --function first
+```
 
 ## Contents
 
@@ -118,9 +118,9 @@ provider:
 # Include/exclude directories
 package:
   patterns:
-    - '!node_modules/**'
-    - '!.gitignore'
-    - '!.git/**'
+    - "!node_modules/**"
+    - "!.gitignore"
+    - "!.git/**"
 
 # Define functions - cannot be used with custom.containers
 functions:
@@ -165,7 +165,7 @@ functions:
     # List of events to trigger the function
     events:
       - schedule:
-          rate: '1 * * * *'
+          rate: "1 * * * *"
           # Data passed as input in the request
           input:
             key-a: "value-a"
@@ -222,7 +222,7 @@ custom:
       # List of events to trigger the container
       events:
         - schedule:
-            rate: '1 * * * *'
+            rate: "1 * * * *"
             # Data passed as input in the request
             input:
               key-a: "value-a"

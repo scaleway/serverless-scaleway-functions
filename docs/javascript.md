@@ -5,8 +5,8 @@ The `handler` for Node functions must be the path to your handler file plus the 
 ```yml
 - src
   - handlers
-    - firstHandler.js  => module.exports.myFirstHandler = ...
-    - secondHandler.js => module.exports.mySecondHandler = ...
+  - firstHandler.js  => module.exports.myFirstHandler = ...
+  - secondHandler.js => module.exports.mySecondHandler = ...
 - serverless.yml
 ```
 
@@ -44,13 +44,13 @@ This then enables you to write your code for ES modules:
 ```javascript
 export { handle };
 
-function handle (event, context, cb) {
-    return {
-        body: process.version,
-        headers: { "Content-Type": ["text/plain"] },
-        statusCode: 200,
-    };
-};
+function handle(event, context, cb) {
+  return {
+    body: process.version,
+    headers: { "Content-Type": ["text/plain"] },
+    statusCode: 200,
+  };
+}
 ```
 
 The use of ES modules is encouraged since they are more efficient and make setup and debugging much easier.
@@ -61,6 +61,5 @@ Note that using `"type": "module"` or `"type": "commonjs"` in your `package.json
 - `commonjs` allows you to use `require/module.exports` (synchronous code loading - it basically copies all file contents)
 - `module` allows you to use `import/export` ES6 instructions (asynchronous loading - more optimized as it imports only the pieces of code you need)
 
->**Tip**:
-For a comprehensive list of differences, please refer to the [Node.js official documentation](https://nodejs.org/api/esm.html).
-
+> **Tip**:
+> For a comprehensive list of differences, please refer to the [Node.js official documentation](https://nodejs.org/api/esm.html).

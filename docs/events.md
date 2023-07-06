@@ -37,4 +37,3 @@ For more information, see the following examples:
 
 - [NodeJS with schedule trigger](../examples/nodejs-schedule)
 - [Container with Schedule Trigger](../examples/container-schedule)
-
