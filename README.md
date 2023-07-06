@@ -7,9 +7,9 @@ Plugin for using Scaleway [Serverless Functions](https://www.scaleway.com/en/ser
 - [Serverless Framework CLI](https://serverless.com) installed on your local computer (e.g. run `npm install serverless -g`)
 - [Scaleway CLI](https://www.scaleway.com/en/cli/) installed on your local computer
 
-If you are using [Scaleway IAM](/identity-and-access-management/iam/how-to/activate-iam), you need to be the [Owner](/identity-and-access-management/iam/concepts/#owner) of the Scaleway [Organization](/identity-and-access-management/iam/concepts/#organization) in which the actions will be carried out, or you are an IAM user of the Organization, with a [policy](/identity-and-access-management/iam/concepts/#policy) granting you the necessary [permission sets](/identity-and-access-management/iam/reference-content/permission-sets/).
+If you are using [Scaleway IAM](https://www.scaleway.com/en/iam/), you need to be the Owner of the Scaleway Organization in which the deployment will take place, or be an IAM user of the Organization with a policy granting you the necessary Permission Sets. See the [IAM Overview](https://www.scaleway.com/en/docs/identity-and-access-management/iam/reference-content/overview/) for more information.
 
-## Quickstart
+## Quick start
 
 1. Export the template you wish to use (see the list [here](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples)). We will use `python3`:
 
@@ -20,7 +20,9 @@ If you are using [Scaleway IAM](/identity-and-access-management/iam/how-to/activ
 2. Create a function from this template:
 
   ```shell
-  serverless create --path ${TEMPLATE}-func --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
+  serverless create \
+    --path ${TEMPLATE}-func \
+    --template-url https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/${TEMPLATE}
   ```
 
 3. Install dependencies:
@@ -30,7 +32,7 @@ If you are using [Scaleway IAM](/identity-and-access-management/iam/how-to/activ
   npm i
   ```
 
-4. Deploy the function. The URL is returned:
+4. Deploy the function:
 
   ```shell
   serverless deploy
@@ -44,7 +46,7 @@ If you are using [Scaleway IAM](/identity-and-access-management/iam/how-to/activ
 
 ## Contents
 
-- [Quickstart](#quickstart)
+- [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Supported commands](#supported-commands)
 - [Unsupported commands](#unsupported-commands)

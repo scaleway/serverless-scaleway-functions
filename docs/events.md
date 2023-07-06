@@ -1,4 +1,4 @@
-### Events
+# Events
 
 With events, you can link your functions with CRON Schedule (time-based) triggers.
 
