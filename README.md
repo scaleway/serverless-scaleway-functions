@@ -191,7 +191,8 @@ custom:
       cpuLimit: 1000
 
       # Maximum duration a request will wait to be served before it times out (in seconds)
-      timeout: 300
+      # Value in string format ex: "300s" (default: 300 seconds)
+      timeout: 300s
 
       # Whether to permit HTTP or HTTPS-only. Options: enabled, disabled, or redirected
       httpOption: enabled
