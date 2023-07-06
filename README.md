@@ -134,6 +134,10 @@ functions:
     # Limits: https://www.scaleway.com/en/docs/serverless/functions/reference-content/functions-limitations/
     memoryLimit: 1024
 
+    # Maximum duration a request will wait to be served before it times out (in seconds)
+    # Value in string format ex: "300s" (default: 300 seconds)
+    timeout: 300s
+
     # Runtime for this function, allows overriding provider.runtime
     runtime: node20
 
