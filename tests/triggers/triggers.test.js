@@ -57,7 +57,7 @@ describe("test triggers", () => {
     // should create service in tmp directory
     const tmpDir = getTmpDirPath();
     const serviceName = getServiceName(runtime.name);
-    createTestService(tmpDir, oldCwd, {
+    const config = createTestService(tmpDir, oldCwd, {
       devModuleDir,
       templateName: path.resolve(examplesDir, runtime.name),
       serviceName: serviceName,
@@ -89,18 +89,22 @@ describe("test triggers", () => {
 
     // should create cronjob for function
     let deployedApplication;
+    let triggerInputs;
     if (runtime.isFunction) {
       deployedApplication = namespace.functions[0];
+      triggerInputs = config.functions.first.events[0].schedule.input;
     } else {
       deployedApplication = namespace.containers[0];
+      triggerInputs = config.custom.containers.first.events[0].schedule.input;
     }
     const deployedTriggers = await api
       .listTriggersForApplication(deployedApplication.id, runtime.isFunction)
       .catch((err) => console.error(err));
 
     expect(deployedTriggers.length).toEqual(1);
-    expect(deployedTriggers[0].args.myInput).toEqual("myValue");
-    expect(deployedTriggers[0].args.mySecondInput).toEqual(1);
+    for (const key in triggerInputs) {
+      expect(deployedTriggers[0].args[key]).toEqual(triggerInputs[key]);
+    }
     expect(deployedTriggers[0].schedule).toEqual("1 * * * *");
 
     // should remove services from scaleway
