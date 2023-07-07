@@ -72,15 +72,17 @@ There are also language-specific notes for Serverless Functions:
 
 ## Configuration
 
-Your functions are defined in the `serverless.yml` file.
+With Serverless Framework, your functions and containers are defined in a `serverless.yml` file.
 
 Each `serverless.yml` file corresponds to one function _or_ container namespace.
 
-The file format is described below:
+### Shared configuration
 
-```yml
+The following configuration is common to both functions and containers:
+
+```yaml
 # The name of your namespace
-service: scaleway-python3
+service: my-namespace
 
 # Read environment variables from a .env file
 useDotenv: false
@@ -94,16 +96,16 @@ provider:
   # Must not change
   name: scaleway
 
-  # Function runtime
+  # Runtime used for functions (unless overridden)
   # List: https://www.scaleway.com/en/docs/serverless/functions/reference-content/functions-lifecycle/#available-runtimes
   runtime: python310
 
-  # Global environment variables, used in every function
+  # Global environment variables, used in every function/container in this namespace
   env:
     MY_VAR: "some var"
     MY_OTHER_VAR: "some other var"
 
-  # Global secrets, used in every function
+  # Global secrets, used in every function/container in this namespace
   secret:
     MY_SECRET: "some secret"
     MY_OTHER_SECRET: "some other secret"
@@ -121,18 +123,22 @@ package:
     - "!node_modules/**"
     - "!.gitignore"
     - "!.git/**"
+```
+### Functions
 
-# Define functions - cannot be used with custom.containers
+To define functions, you can include a `functions` block:
+
+```yaml
 functions:
   my-func:
     # Handler entrypoint
     handler: handler.py
 
-    # Minimum and maximum number of instances of the function
+    # Minimum and maximum number of instances
     minScale: 0
     maxScale: 10
 
-    # Memory limit for the function (in MiB)
+    # Memory limit (in MiB)
     # Limits: https://www.scaleway.com/en/docs/serverless/functions/reference-content/functions-limitations/
     memoryLimit: 1024
 
@@ -143,10 +149,10 @@ functions:
     # Runtime for this function, allows overriding provider.runtime
     runtime: node20
 
-    # Whether to permit HTTP or HTTPS-only. Options: enabled, disabled, or redirected
+    # How to handle HTTP. Options: enabled (allow HTTP), disabled (block HTTP), or redirected (redirect HTTP -> HTTPS)
     httpOption: enabled
 
-    # Whether the container is public (no authentication), or private (uses token-based authentication)
+    # Controls privacy of the function. Options: public (no authentication), private (token-based authentication)
     privacy: public
 
     # Local environment variables, used only in this function
@@ -170,8 +176,13 @@ functions:
           input:
             key-a: "value-a"
             key-b: "value-b"
+```
 
-# Define containers, cannot be used with functions
+### Containers
+
+To define containers, you can include a `custom.containers` block (note that you can only have `functions` _or_ `custom.containers`).
+
+```yaml
 custom:
   containers:
     my-container:
@@ -181,14 +192,14 @@ custom:
       # Name of the registry image, cannot be used with directory
       registryImage: nginx:latest
 
-      # Minimum and maximum number of instances of the container
+      # Minimum and maximum number of instances
       minScale: 0
       maxScale: 10
 
       # Number of simultaneous requests to handle simultaneously
       maxConcurrency: 20
 
-      # Memory limit for the container, in MiB
+      # Memory limit (in MiB)
       # Limits: https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/
       memoryLimit: 1024
 
@@ -200,10 +211,10 @@ custom:
       # Value in string format ex: "300s" (default: 300 seconds)
       timeout: 300s
 
-      # Whether to permit HTTP or HTTPS-only. Options: enabled, disabled, or redirected
+      # How to handle HTTP. Options: enabled (allow HTTP), disabled (block HTTP), or redirected (redirect HTTP -> HTTPS)
       httpOption: enabled
 
-      # Whether the container is public (no authentication), or private (uses token-based authentication)
+      # Controls privacy of the container. Options: public (no authentication), private (token-based authentication)
       privacy: public
 
       # Local environment variables, used only in this container
