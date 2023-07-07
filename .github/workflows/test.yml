@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - run: npx prettier --check .
+      - run: npx prettier@2.8.8 --check .
 
   test:
     needs: lint

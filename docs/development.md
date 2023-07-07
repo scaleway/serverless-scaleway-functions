@@ -1,4 +1,22 @@
-# Integration tests
+# Development
+
+To run Serverless Framework with a local checkout of this plugin, you can modify the `serverless.yml` for one or more functions as follows:
+
+```yaml
+...
+
+# Change this
+plugins:
+  - serverless-scaleway-functions
+
+# To this
+plugins:
+  - <path to checkout of this project>
+```
+
+Then you can run commands as normal.
+
+## Integration tests
 
 This repository contains multiple test suites, each with its own purpose:
 
@@ -6,7 +24,7 @@ This repository contains multiple test suites, each with its own purpose:
 - [Containers](): tests that container lifecycle (`serverless deploy` and `serverless remove`) works properly.
 - [Runtimes](): tests that our runtimes work properly by using the [examples]() we provide to use our platform.
 
-## Requirements
+### Requirements
 
 To run your tests locally, you have to make sure of the following:
 
@@ -15,9 +33,9 @@ To run your tests locally, you have to make sure of the following:
 - You have access to Scaleway Function's Product and Scaleway Container Registry (and still have quotas available).
 - You have a Scaleway Account
 
-## How to run tests
+### How to run tests
 
-### Configuration
+#### Configuration
 
 In order to run tests locally, you have to configure your test suite (for `authentication`).
 
@@ -36,7 +54,7 @@ Optionally, you may change the URL of our `functions` API endpoint (if you need 
 export SCW_URL=<url-to-functions-api>
 ```
 
-### Run Tests
+#### Run Tests
 
 We provided multiple test suites, as described above, with the following `npm` scripts:
 
