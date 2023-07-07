@@ -76,7 +76,7 @@ With Serverless Framework, your functions and containers are defined in a `serve
 
 Each `serverless.yml` file corresponds to one function _or_ container namespace.
 
-### Shared configuration
+### General configuration
 
 The following configuration is common to both functions and containers:
 
@@ -124,7 +124,7 @@ package:
     - "!.gitignore"
     - "!.git/**"
 ```
-### Functions
+### Function-specific configuration
 
 To define functions, you can include a `functions` block:
 
@@ -178,7 +178,7 @@ functions:
             key-b: "value-b"
 ```
 
-### Containers
+### Container-specific configuration
 
 To define containers, you can include a `custom.containers` block (note that you can only have `functions` _or_ `custom.containers`).
 
