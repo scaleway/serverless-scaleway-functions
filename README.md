@@ -124,6 +124,7 @@ package:
     - "!.gitignore"
     - "!.git/**"
 ```
+
 ### Function-specific configuration
 
 To define functions, you can include a `functions` block:
