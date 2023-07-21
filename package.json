@@ -50,7 +50,7 @@
     "verbose": true
   },
   "dependencies": {
-    "@serverless/utils": "^6.11.1",
+    "@serverless/utils": "^6.13.1",
     "argon2": "^0.30.3",
     "axios": "^1.4.0",
     "bluebird": "^3.7.2",
@@ -59,12 +59,12 @@
     "tar-fs": "^2.1.1"
   },
   "devDependencies": {
-    "@jest/globals": "^29.5.0",
-    "eslint": "^8.42.0",
+    "@jest/globals": "^29.6.1",
+    "eslint": "^8.45.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.27.5",
     "fs-extra": "^11.1.1",
-    "jest": "^29.5.0",
+    "jest": "^29.6.1",
     "rewire": "^6.0.0"
   }
 }
