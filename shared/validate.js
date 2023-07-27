@@ -7,7 +7,7 @@ const path = require("path");
 // COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes
 // that are considered as "compiled runtimes".
 // If you fill this array with "go" it will match all runtimes that starts with "go".
-// For example "golang", "go113" matches this filter.
+// For example "golang", "go118" matches this filter.
 const COMPILED_RUNTIMES_PREFIXES = ["go", "rust"];
 
 // RUNTIMES_EXTENSIONS serves two purposes :
