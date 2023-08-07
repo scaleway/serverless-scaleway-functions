@@ -12,7 +12,7 @@
   "devDependencies": {
     "@types/node": "^18.15.11",
     "@scaleway/serverless-functions": ">=1.0.2",
-    "serverless-scaleway-functions": ">=0.4.7",
+    "serverless-scaleway-functions": ">=0.4.8",
     "typescript": "^5.0.2"
   }
 }

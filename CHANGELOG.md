@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.8
+
+### Fixed
+
+- Error undefined directory field when creating a container from a registry image
+
 ## 0.4.7
 
 ### Added
