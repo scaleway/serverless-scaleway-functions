@@ -68,8 +68,8 @@ module.exports = {
     const containerNames = Object.keys(this.containers);
     const promises = containerNames.map((containerName) => {
       const container = this.containers[containerName];
-      if (container['directory'] == undefined) {
-        return
+      if (container["directory"] == undefined) {
+        return;
       }
       const tarStream = tar.pack(`./${container.directory}`);
       const imageName = `${this.namespace.registry_endpoint}/${container.name}:latest`;
@@ -77,7 +77,7 @@ module.exports = {
       this.serverless.cli.log(
         `Building and pushing container ${container.name} to: ${imageName} ...`
       );
-      
+
       return new Promise(async (resolve, reject) => {
         const buildStream = await docker.buildImage(tarStream, {
           t: imageName,
