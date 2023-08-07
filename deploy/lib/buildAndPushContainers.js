@@ -68,7 +68,7 @@ module.exports = {
     const containerNames = Object.keys(this.containers);
     const promises = containerNames.map((containerName) => {
       const container = this.containers[containerName];
-      if (container["directory"] == undefined) {
+      if (container["directory"] === undefined) {
         return;
       }
       const tarStream = tar.pack(`./${container.directory}`);
