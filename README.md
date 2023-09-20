@@ -208,6 +208,9 @@ custom:
       # Limits and tiers: https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/
       cpuLimit: 1000
 
+      # The port the container will listen on (default: 8080). The HTTP server inside the container needs to listen on the same port
+      port: 80
+
       # Maximum duration a request will wait to be served before it times out (in seconds)
       # Value in string format ex: "300s" (default: 300 seconds)
       timeout: 300s
