@@ -43,17 +43,21 @@ module.exports = {
 
     // run create or update promises sequentially (concurrency: 1)
     // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
-    return BbPromise.map(deleteData.serviceNamesRet, (functionName) => {
-      const func = Object.assign(functions[functionName], {
-        name: functionName,
-      });
+    return BbPromise.map(
+      deleteData.serviceNamesRet,
+      (functionName) => {
+        const func = Object.assign(functions[functionName], {
+          name: functionName,
+        });
 
-      const foundFunc = foundFunctions.find((f) => f.name === func.name);
+        const foundFunc = foundFunctions.find((f) => f.name === func.name);
 
-      return foundFunc
-        ? this.updateSingleFunction(func, foundFunc)
-        : this.createSingleFunction(func);
-    }, {concurrency: 1}).then((updatedFunctions) => {
+        return foundFunc
+          ? this.updateSingleFunction(func, foundFunc)
+          : this.createSingleFunction(func);
+      },
+      { concurrency: 1 }
+    ).then((updatedFunctions) => {
       this.functions = updatedFunctions;
     });
   },
