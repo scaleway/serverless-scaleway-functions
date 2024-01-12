@@ -6,7 +6,7 @@ const { execSync } = require("../../../shared/child-process");
 const { readYamlFile, writeYamlFile } = require("../fs");
 const crypto = require("crypto");
 const { AccountApi } = require("../../../shared/api");
-const { ACCOUNT_API_URL } = require("../../../shared/constants");
+const { ACCOUNT_V3_API_URL } = require("../../../shared/constants");
 
 const logger = console;
 
@@ -109,7 +109,7 @@ function sleep(ms) {
 }
 
 async function createProject() {
-  const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey);
+  const accountApi = new AccountApi(ACCOUNT_V3_API_URL, secretKey);
   return accountApi.createProject({
     name: `test-slsframework-${crypto.randomBytes(6).toString("hex")}`,
     organization_id: organizationId,
