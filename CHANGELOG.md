@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.9
+
+### Fixed
+
+- Rate limit error when creating many functions at the same time #210
+
 ## 0.4.8
 
 ### Fixed
