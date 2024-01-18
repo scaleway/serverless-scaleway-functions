@@ -1,6 +1,7 @@
 "use strict";
 
 const BbPromise = require("bluebird");
+const DEPLOY_FUNCTIONS_CONCURRENCY = 5; // max number of functions deployed at a time
 
 module.exports = {
   deployFunctions() {
@@ -21,7 +22,7 @@ module.exports = {
           .then((func) => this.printFunctionInformationAfterDeployment(func))
           .then((func) => this.waitForDomainsDeployment(func));
       },
-      { concurrency: 5 }
+      { concurrency: DEPLOY_FUNCTIONS_CONCURRENCY }
     );
   },
 
