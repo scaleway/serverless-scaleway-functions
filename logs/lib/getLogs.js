@@ -37,7 +37,7 @@ module.exports = {
   printLines(logs) {
     this.serverless.cli.log(
       '----\n⚠️ WARNING: "serverless logs" command is deprecated and will be removed on March 12, 2024. ' +
-        "Please use cockpit as soon as possible to continue browsing your logs. " +
+        "Please use Cockpit as soon as possible to continue browsing your logs. " +
         "Refer to our documentation here: https://www.scaleway.com/en/developers/api/serverless-containers/#logs.\n----"
     );
     for (let i = logs.length - 1; i >= 0; i -= 1) {
