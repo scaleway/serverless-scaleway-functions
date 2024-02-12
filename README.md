@@ -251,6 +251,10 @@ This can be switched off by setting the `singleSource` option to `false`.
 
 ### `serverless logs`
 
+> [!WARNING]
+> This command is deprecated and will be removed on March 12, 2024. Please refer to the documentation (for [functions](https://www.scaleway.com/en/developers/api/serverless-functions/#logs) and [containers](https://www.scaleway.com/en/developers/api/serverless-functions/#logs)) to continue getting your logs.
+> TL;DR: You can still access function and container logs conveniently via the [Cockpit](https://www.scaleway.com/en/docs/observability/cockpit/how-to/access-grafana-and-managed-dashboards/) interface. Dedicated dashboards called "Serverless Functions Logs" and "Serverless Containers Logs" are accessible there.
+
 The `serverless logs` command lets you watch the logs of a specific function or container.
 
 You can fetch the logs of a specific function for with the `--function` option. You must specify the name of your function in the command.
