@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.10
+
+### Changed
+
+- Display a deprecation warning when running `serverless logs` command #212
+
 ## 0.4.9
 
 ### Fixed
