@@ -4,7 +4,7 @@ Plugin for using Scaleway [Serverless Functions](https://www.scaleway.com/en/ser
 
 ## Requirements
 
-- [Serverless Framework CLI](https://serverless.com) installed on your local computer (e.g. run `npm install serverless -g`)
+- [Serverless Framework v3 CLI](https://serverless.com) installed on your local computer (e.g. run `npm install serverless@3.39.0 -g`). V4 is not supported.
 - [Scaleway CLI](https://www.scaleway.com/en/cli/) installed on your local computer
 
 If you are using [Scaleway IAM](https://www.scaleway.com/en/iam/), you need to be the Owner of the Scaleway Organization in which the deployment will take place, or be an IAM user of the Organization with a policy granting you the necessary Permission Sets. See the [IAM Overview](https://www.scaleway.com/en/docs/identity-and-access-management/iam/reference-content/overview/) for more information.
