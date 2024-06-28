@@ -1,8 +1,9 @@
-use hyper::{
-    Body, Request, Response, StatusCode,
+use axum::{
+    body::Body, extract::Request, response::Response,
 };
+use http::StatusCode;
 
-pub async fn MyHandler(_req: Request<Body>) -> Response<Body> {
+pub async fn my_handler(_req: Request<Body>) -> Response<Body> {
     Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "text/plain")

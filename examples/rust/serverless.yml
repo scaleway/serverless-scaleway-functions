@@ -2,7 +2,7 @@ service: scaleway-rust
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: rust165 # Available go runtimes are listed in documentation
+  runtime: rust179 # Available rust runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
@@ -19,7 +19,7 @@ package:
 functions:
   first:
     # handler is just the name of the exported handler function
-    handler: MyHandler
+    handler: my_handler
     # description: ""
     # Local environment variables - used only in given function
     env:
