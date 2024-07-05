@@ -153,6 +153,9 @@ functions:
     # How to handle HTTP. Options: enabled (allow HTTP), disabled (block HTTP), or redirected (redirect HTTP -> HTTPS)
     httpOption: enabled
 
+    # Execution environment to use when running the function. Options: v1 (legacy), v2 (recommended, with improved cold starts)
+    sandbox: v2
+
     # Controls privacy of the function. Options: public (no authentication), private (token-based authentication)
     privacy: public
 
@@ -214,6 +217,9 @@ custom:
 
       # How to handle HTTP. Options: enabled (allow HTTP), disabled (block HTTP), or redirected (redirect HTTP -> HTTPS)
       httpOption: enabled
+
+      # Execution environment to use when running the container. Options: v1 (legacy), v2 (recommended, with improved cold starts)
+      sandbox: v2
 
       # Controls privacy of the container. Options: public (no authentication), private (token-based authentication)
       privacy: public

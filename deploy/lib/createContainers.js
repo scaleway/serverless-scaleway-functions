@@ -103,13 +103,14 @@ module.exports = {
       privacy: container.privacy,
       port: container.port,
       http_option: container.httpOption,
+      sandbox: container.sandbox,
     };
 
     // checking if there is custom_domains set on container creation.
     if (container.custom_domains && container.custom_domains.length > 0) {
       this.serverless.cli.log(
         "WARNING: custom_domains are available on container update only. " +
-          "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/"
+        "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/"
       );
     }
 

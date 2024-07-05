@@ -20,6 +20,7 @@ functions:
   first:
     handler: handler.handle
     httpOption: redirected
+    sandbox: v2
     # description: ""
     # Local environment variables - used only in given function
     env:
