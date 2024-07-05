@@ -75,7 +75,7 @@ jobs:
           node-version: 20.x
           cache: "npm"
 
-      - name: Install serverless framework
+      - name: Install Serverless Framework
         run: npm install -g serverless@3.39.0
 
       - name: Install dependencies
