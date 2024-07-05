@@ -2,7 +2,7 @@ service: scaleway-golang
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: go118 # Available go runtimes are listed in documentation
+  runtime: go122 # Available go runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
