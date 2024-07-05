@@ -3,8 +3,8 @@ configValidationMode: off
 singleSource: false
 provider:
   name: scaleway
-  runtime: node16 # Available node runtimes are listed in documentation
-  # Global Environment variables - used in every functions
+  runtime: node22 # Available node runtimes are listed in documentation
+  # Global Environment variables - used in every function
   env:
     test: test
 
@@ -21,6 +21,7 @@ functions:
     handler: handler.handle
     httpOption: redirected
     sandbox: v2
+    memoryLimit: 1024
     # description: ""
     # Local environment variables - used only in given function
     env:
