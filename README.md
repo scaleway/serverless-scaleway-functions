@@ -150,7 +150,7 @@ functions:
     # Runtime for this function, allows overriding provider.runtime
     runtime: node20
 
-    # How to handle HTTP. Options: enabled (allow HTTP), disabled (block HTTP), or redirected (redirect HTTP -> HTTPS)
+    # How to handle HTTP. Options: enabled (allow HTTP), or redirected (redirect HTTP -> HTTPS)
     httpOption: enabled
 
     # Controls privacy of the function. Options: public (no authentication), private (token-based authentication)
