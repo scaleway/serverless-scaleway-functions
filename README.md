@@ -212,7 +212,7 @@ custom:
       # Value in string format ex: "300s" (default: 300 seconds)
       timeout: 300s
 
-      # How to handle HTTP. Options: enabled (allow HTTP), disabled (block HTTP), or redirected (redirect HTTP -> HTTPS)
+      # How to handle HTTP. Options: enabled (allow HTTP), or redirected (redirect HTTP -> HTTPS)
       httpOption: enabled
 
       # Controls privacy of the container. Options: public (no authentication), private (token-based authentication)
