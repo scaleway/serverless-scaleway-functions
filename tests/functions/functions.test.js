@@ -244,7 +244,7 @@ module.exports.handle = (event, context, cb) => {
 
   it("should deploy function with another available runtime", async () => {
     // example: python310
-    replaceTextInFile(serverlessFile, "node16", "python310");
+    replaceTextInFile(serverlessFile, "node22", "python310");
     const pythonHandler = `
 def handle(event, context):
   """handle a request to the function
@@ -297,7 +297,7 @@ def handle(event, context):
     } catch (err) {
       // if not try catch, test would fail
     }
-    replaceTextInFile(serverlessFile, "doesnotexist", "node16");
+    replaceTextInFile(serverlessFile, "doesnotexist", "node22");
   });
 
   // TODO: throw error if http_option is incorrect

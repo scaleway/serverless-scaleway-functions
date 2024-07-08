@@ -17,7 +17,7 @@ Your serverless.yml `functions` should look something like this:
 ```yml
 provider:
   # ...
-  runtime: go118
+  runtime: go122
 functions:
   main:
     handler: "."
