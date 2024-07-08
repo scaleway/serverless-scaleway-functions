@@ -181,6 +181,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       privacy: func.privacy,
       domain_name: func.domain_name,
       http_option: func.httpOption,
+      sandbox: func.sandbox,
     };
 
     const availableRuntimes = await this.listRuntimes();

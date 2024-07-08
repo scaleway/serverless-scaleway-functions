@@ -103,6 +103,7 @@ module.exports = {
       privacy: container.privacy,
       port: container.port,
       http_option: container.httpOption,
+      sandbox: container.sandbox,
     };
 
     // checking if there is custom_domains set on container creation.
