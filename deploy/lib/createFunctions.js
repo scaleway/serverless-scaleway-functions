@@ -195,7 +195,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     if (func.custom_domains && func.custom_domains.length > 0) {
       this.serverless.cli.log(
         "WARNING: custom_domains are available on function update only. " +
-        "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/"
+          "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/"
       );
     }
 

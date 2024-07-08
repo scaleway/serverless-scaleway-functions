@@ -110,7 +110,7 @@ module.exports = {
     if (container.custom_domains && container.custom_domains.length > 0) {
       this.serverless.cli.log(
         "WARNING: custom_domains are available on container update only. " +
-        "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/"
+          "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/"
       );
     }
 
