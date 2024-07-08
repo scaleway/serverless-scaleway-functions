@@ -3,7 +3,7 @@ configValidationMode: off
 singleSource: false
 provider:
   name: scaleway
-  runtime: node16 # Available node runtimes are listed in documentation
+  runtime: node22 # Available node runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test
