@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.11
+
+### Fixed
+
+- Clarified documentation on currently supported Serverless Framework versions #213
+
+### Added
+
+- Added option to configure `sandbox` for functions and containers #224
+
 ## 0.4.10
 
 ### Changed
