@@ -14,10 +14,13 @@ const runtimesApi = require("./runtimes");
 // Registry
 const RegistryApi = require("./registry");
 
+const version = "0.4.13";
+
 function getApiManager(apiUrl, token) {
   return axios.create({
     baseURL: apiUrl,
     headers: {
+      "User-Agent": `serverless-scaleway-functions/${version}`,
       "X-Auth-Token": token,
     },
     httpsAgent: new https.Agent({
