@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.13
+
+### Changed
+
+- HTTP calls to `api.scaleway.com` are now made with a custom user agent #245
+
 ## 0.4.12
 
 ### Fixed
