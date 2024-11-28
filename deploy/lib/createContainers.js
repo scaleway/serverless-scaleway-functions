@@ -143,6 +143,7 @@ module.exports = {
       privacy: container.privacy,
       port: container.port,
       http_option: container.httpOption,
+      sandbox: container.sandbox,
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
