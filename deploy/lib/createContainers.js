@@ -5,6 +5,9 @@ const singleSource = require("../../shared/singleSource");
 const secrets = require("../../shared/secrets");
 const domainUtils = require("../../shared/domains");
 
+const maxConcurrencyDeprecationWarning = `WARNING: maxConcurrency is deprecated and has been replaced by scalingOption of type: concurrentRequests.
+Please update your serverless.yml file.`;
+
 function adaptHealthCheckToAPI(healthCheck) {
   if (!healthCheck) {
     return null;
@@ -22,6 +25,31 @@ function adaptHealthCheckToAPI(healthCheck) {
     interval: healthCheck.interval,
     ...(type === "http" && { http: { path: healthCheck.httpPath || "/" } }),
     ...(type === "tcp" && { tcp: {} }),
+  };
+}
+
+const scalingOptionToAPIProperty = {
+  concurrentRequests: "concurrent_requests_threshold",
+  cpuUsage: "cpu_usage_threshold",
+  memoryUsage: "memory_usage_threshold",
+};
+
+function adaptScalingOptionToAPI(scalingOption) {
+  if (!scalingOption || !scalingOption.type) {
+    return null;
+  }
+
+  const property = scalingOptionToAPIProperty[scalingOption.type];
+  if (!property) {
+    throw new Error(
+      `scalingOption.type must be one of: ${Object.keys(
+        scalingOptionToAPIProperty
+      ).join(", ")}`
+    );
+  }
+
+  return {
+    [property]: scalingOption.threshold,
   };
 }
 
@@ -125,6 +153,7 @@ module.exports = {
       http_option: container.httpOption,
       sandbox: container.sandbox,
       health_check: adaptHealthCheckToAPI(container.healthCheck),
+      scaling_option: adaptScalingOptionToAPI(container.scalingOption),
     };
 
     // checking if there is custom_domains set on container creation.
@@ -133,6 +162,11 @@ module.exports = {
         "WARNING: custom_domains are available on container update only. " +
           "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/"
       );
+    }
+
+    // note about maxConcurrency deprecation
+    if (container.maxConcurrency) {
+      this.serverless.cli.log(maxConcurrencyDeprecationWarning);
     }
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
@@ -165,7 +199,13 @@ module.exports = {
       port: container.port,
       http_option: container.httpOption,
       health_check: adaptHealthCheckToAPI(container.healthCheck),
+      scaling_option: adaptScalingOptionToAPI(container.scalingOption),
     };
+
+    // note about maxConcurrency deprecation
+    if (container.maxConcurrency) {
+      this.serverless.cli.log(maxConcurrencyDeprecationWarning);
+    }
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
 

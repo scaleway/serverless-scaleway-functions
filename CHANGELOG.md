@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.14
+
+### Added
+
+- Added `healthCheck` to define a health check for containers
+- Added `scalingOption` to allow scaling on concurrent requests, cpu usage or memory usage
+
+### Fixed
+
+- Updating an existing function or container `sandbox` option was not working
+
+### Changed
+
+- Following the introduction of `scalingOption`, the `maxConcurrency` parameter is now deprecated. It will continue to work but we invite you to use `scalingOption` of type `concurrentRequests` instead.
+
 ## 0.4.13
 
 ### Changed
