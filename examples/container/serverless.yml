@@ -32,3 +32,7 @@ custom:
       # Local environment variables - used only in given function
       env:
         local: local
+      healthCheck:
+        httpPath: /health
+        interval: 10s
+        failureThreshold: 3

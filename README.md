@@ -237,6 +237,13 @@ custom:
       custom_domains:
         - my-container.some.domain.com
 
+      # Health check configuration
+      healthCheck:
+        type: http # Or tcp if you only want to check that the port is open
+        httpPath: /health
+        interval: 10s
+        failureThreshold: 3
+
       # List of events to trigger the container
       events:
         - schedule:

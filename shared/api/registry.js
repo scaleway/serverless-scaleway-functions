@@ -1,6 +1,6 @@
 "use strict";
 
-const { getApiManager } = require("./index");
+const { getApiManager } = require("./utils");
 const { manageError } = require("./utils");
 
 class RegistryApi {

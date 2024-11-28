@@ -1,3 +1,23 @@
+const axios = require("axios");
+const https = require("https");
+
+const version = "0.4.13";
+
+const invalidArgumentsType = "invalid_arguments";
+
+function getApiManager(apiUrl, token) {
+  return axios.create({
+    baseURL: apiUrl,
+    headers: {
+      "User-Agent": `serverless-scaleway-functions/${version}`,
+      "X-Auth-Token": token,
+    },
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false,
+    }),
+  });
+}
+
 /**
  * Custom Error class, to print an error message, and pass the Response if applicable
  */
@@ -20,13 +40,25 @@ function manageError(err) {
     throw new Error(err);
   }
   if (err.response.data.message) {
-    throw new CustomError(err.response.data.message, err.response);
+    let message = err.response.data.message;
+    
+    // In case the error is an InvalidArgumentsError, provide some extra information
+    if (err.response.data.type === invalidArgumentsType) {
+      for (const details of err.response.data.details) {
+        const argumentName = details.argument_name;
+        const helpMessage = details.help_message;
+        message += `\n${argumentName}: ${helpMessage}`;
+      }
+    }
+
+    throw new CustomError(message, err.response);
   } else if (err.response.data.error_message) {
     throw new CustomError(err.response.data.error_message, err.response);
   }
 }
 
 module.exports = {
+  getApiManager,
   manageError,
   CustomError,
 };
