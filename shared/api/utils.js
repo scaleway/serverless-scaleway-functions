@@ -41,7 +41,7 @@ function manageError(err) {
   }
   if (err.response.data.message) {
     let message = err.response.data.message;
-    
+
     // In case the error is an InvalidArgumentsError, provide some extra information
     if (err.response.data.type === invalidArgumentsType) {
       for (const details of err.response.data.details) {
