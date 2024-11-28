@@ -262,7 +262,7 @@ custom:
               key-a: "value-a"
               key-b: "value-b"
 
-      # Deprecated: number of simultaneous requests to handle simultaneously
+      # Deprecated: number of simultaneous requests to handle
       # Please use scalingOption of type concurrentRequests instead
       maxConcurrency: 20
 ```
