@@ -1,20 +1,11 @@
 "use strict";
 
-const axios = require("axios");
-const https = require("https");
+const { getApiManager } = require("./index");
 const { manageError } = require("./utils");
 
 class RegistryApi {
   constructor(registryApiUrl, token) {
-    this.apiManager = axios.create({
-      baseURL: registryApiUrl,
-      headers: {
-        "X-Auth-Token": token,
-      },
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-      }),
-    });
+    this.apiManager = getApiManager(registryApiUrl, token);
   }
 
   listRegistryNamespace(projectId) {
