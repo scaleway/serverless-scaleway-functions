@@ -1,6 +1,4 @@
-const https = require("https");
-const axios = require("axios");
-
+const { getApiManager } = require("./utils");
 const accountApi = require("./account");
 const domainApi = require("./domain");
 const namespacesApi = require("./namespaces");
@@ -13,21 +11,6 @@ const runtimesApi = require("./runtimes");
 
 // Registry
 const RegistryApi = require("./registry");
-
-const version = "0.4.13";
-
-function getApiManager(apiUrl, token) {
-  return axios.create({
-    baseURL: apiUrl,
-    headers: {
-      "User-Agent": `serverless-scaleway-functions/${version}`,
-      "X-Auth-Token": token,
-    },
-    httpsAgent: new https.Agent({
-      rejectUnauthorized: false,
-    }),
-  });
-}
 
 class AccountApi {
   constructor(apiUrl, token) {

@@ -5,6 +5,26 @@ const singleSource = require("../../shared/singleSource");
 const secrets = require("../../shared/secrets");
 const domainUtils = require("../../shared/domains");
 
+function adaptHealthCheckToAPI(healthCheck) {
+  if (!healthCheck) {
+    return null;
+  }
+
+  // We need to find the type of the health check (tcp, http, ...)
+  // If httpPath is provided, we default to http, otherwise we default to tcp
+  let type = healthCheck.httpPath ? "http" : "tcp";
+  if (healthCheck.type) {
+    type = healthCheck.type;
+  }
+
+  return {
+    failure_threshold: healthCheck.failureThreshold,
+    interval: healthCheck.interval,
+    ...(type === "http" && { http: { path: healthCheck.httpPath || "/" } }),
+    ...(type === "tcp" && { tcp: {} }),
+  };
+}
+
 module.exports = {
   createContainers() {
     return BbPromise.bind(this)
@@ -104,6 +124,7 @@ module.exports = {
       port: container.port,
       http_option: container.httpOption,
       sandbox: container.sandbox,
+      health_check: adaptHealthCheckToAPI(container.healthCheck),
     };
 
     // checking if there is custom_domains set on container creation.
@@ -144,6 +165,7 @@ module.exports = {
       port: container.port,
       http_option: container.httpOption,
       sandbox: container.sandbox,
+      health_check: adaptHealthCheckToAPI(container.healthCheck),
     };
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
