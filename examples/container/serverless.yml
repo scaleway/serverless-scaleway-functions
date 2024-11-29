@@ -26,7 +26,9 @@ custom:
       # memoryLimit: 256
       # cpuLimit: 140
       # maxScale: 2
-      # maxConcurrency: 50
+      # scalingOption:
+      #   type: concurrentRequests
+      #   threshold: 50
       # timeout: "20s"
       # httpOption: redirected
       # Local environment variables - used only in given function
