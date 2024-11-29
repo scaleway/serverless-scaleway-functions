@@ -164,6 +164,7 @@ module.exports = {
       privacy: container.privacy,
       port: container.port,
       http_option: container.httpOption,
+      sandbox: container.sandbox,
       health_check: adaptHealthCheckToAPI(container.healthCheck),
     };
 
