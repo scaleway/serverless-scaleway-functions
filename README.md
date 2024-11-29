@@ -264,7 +264,7 @@ custom:
 
       # Deprecated: number of simultaneous requests to handle
       # Please use scalingOption of type concurrentRequests instead
-      maxConcurrency: 20
+      # maxConcurrency: 20
 ```
 
 ## Supported commands
