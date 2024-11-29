@@ -200,8 +200,17 @@ custom:
       minScale: 0
       maxScale: 10
 
-      # Number of simultaneous requests to handle simultaneously
-      maxConcurrency: 20
+      # Configuration used to decide when to scale the container up or down
+      scalingOption:
+        # Can be one of: concurrentRequests, cpuUsage, memoryUsage
+        type: concurrentRequests
+        # Value to trigger scaling up
+        # It's expressed in:
+        # - concurrentRequests: number of requests
+        # - cpuUsage: percentage of CPU usage
+        # - memoryUsage: percentage of memory usage
+        # Note that cpu and memory scaling are only available for minScale >= 1 containers
+        threshold: 50
 
       # Memory limit (in MiB)
       # Limits: https://www.scaleway.com/en/docs/serverless/containers/reference-content/containers-limitations/
@@ -252,6 +261,10 @@ custom:
             input:
               key-a: "value-a"
               key-b: "value-b"
+
+      # Deprecated: number of simultaneous requests to handle
+      # Please use scalingOption of type concurrentRequests instead
+      # maxConcurrency: 20
 ```
 
 ## Supported commands
