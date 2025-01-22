@@ -29,6 +29,22 @@ const cronScheduleRegex = new RegExp(
   /^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/
 );
 
+const triggerNameRegex = new RegExp(
+  /^([a-zA-Z0-9-]){2,100}$/
+)
+
+const triggerNatsAccountIdRegex = new RegExp(
+  /^([A-Z0-9]){56}$/
+)
+
+const triggerNatsProjectIdRegex = new RegExp(
+  /^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}$/
+)
+
+const triggerNatsSubjectRegex = new RegExp(
+  /^([a-z\*>.]){1,100}$/
+)
+
 const TRIGGERS_VALIDATION = {
   schedule: (trigger) => {
     if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
@@ -37,6 +53,38 @@ const TRIGGERS_VALIDATION = {
       );
     }
   },
+  nats: (trigger) => {
+    if (!trigger.name || !triggerNameRegex.test(trigger.name)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, name is invalid, should match regex: ${triggerNameRegex.toString()}`
+      );
+    }
+    if (!trigger.scw_nats_config) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config is missing`
+      );
+    }
+    if (!trigger.scw_nats_config.subject ||!triggerNatsSubjectRegex.test(trigger.scw_nats_config.subject)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.subject is invalid, should match regex: ${triggerNatsSubjectRegex.toString()}`
+      );
+    }
+    if (!trigger.scw_nats_config.mnq_nats_account_id ||!triggerNatsAccountIdRegex.test(trigger.scw_nats_config.mnq_nats_account_id)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.mnq_nats_account_id is invalid, should match regex: ${triggerNatsAccountIdRegex.toString()}`
+      );
+    }
+    if (!trigger.scw_nats_config.mnq_project_id ||!triggerNatsProjectIdRegex.test(trigger.scw_nats_config.mnq_project_id)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.mnq_project_id is invalid, should match regex: ${triggerNatsProjectIdRegex.toString()}`
+      );
+    }
+    if (!trigger.scw_nats_config.mnq_region ||!REGION_LIST.includes(trigger.scw_nats_config.mnq_region)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.region is unknown}`
+      );
+    }
+  }
 };
 
 module.exports = {
