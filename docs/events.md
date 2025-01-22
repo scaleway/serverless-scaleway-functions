@@ -1,6 +1,6 @@
 # Events
 
-With events, you can link your functions with CRON Schedule (time-based) triggers.
+With events, you can link your functions with CRON Schedule (time-based) or NATS (message-based) triggers.
 
 To do this you can add an `events` key in your function or container as follows:
 
@@ -17,6 +17,13 @@ functions:
         input:
           key: value
           key2: value2
+    - nats:
+        name: my-nats-event
+        scw_nats_config:
+          subject: ">"
+          mnq_nats_account_id: "nats account id"
+          mnq_project_id: "project id"
+          mnq_region: "fr-par"
 
 # Container
 custom:
