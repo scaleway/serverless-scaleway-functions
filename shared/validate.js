@@ -42,7 +42,7 @@ const triggerNatsProjectIdRegex = new RegExp(
 )
 
 const triggerNatsSubjectRegex = new RegExp(
-  /^([a-z\*>.]){1,100}$/
+  /^(\$?[a-zA-Z0-9_*>][a-zA-Z0-9_*>.]*){1,200}$/
 )
 
 const TRIGGERS_VALIDATION = {
