@@ -18,10 +18,7 @@ module.exports = {
       .then((response) => response.data.triggers)
       .catch(manageError);
 
-    return [
-      ...cronTriggers,
-      ...messageTriggers
-    ]
+    return [...cronTriggers, ...messageTriggers];
   },
 
   createCronTrigger(applicationId, isFunction, params) {
