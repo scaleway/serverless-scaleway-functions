@@ -1,11 +1,10 @@
 # Scaleway plugin for Serverless Framework
 
-Plugin for using Scaleway [Serverless Functions](https://www.scaleway.com/en/serverless-functions/) and [Serverless Containers](https://www.scaleway.com/en/serverless-containers/) with [Serverless Framework](https://serverless.com/).
+Plugin for using Scaleway [Serverless Functions](https://www.scaleway.com/en/serverless-functions/) and [Serverless Containers](https://www.scaleway.com/en/serverless-containers/) with [Serverless Framework](https://github.com/oss-serverless/serverless).
 
 ## Requirements
 
-- [Serverless Framework v3 CLI](https://serverless.com) installed on your local computer (e.g. run `npm install serverless@3.39.0 -g`). V4 is not supported.
-- [Scaleway CLI](https://www.scaleway.com/en/cli/) installed on your local computer
+- [Serverless Framework v3 compatible CLI](https://github.com/oss-serverless/serverless) installed on your local computer (e.g. run `npm install -g osls`).
 
 If you are using [Scaleway IAM](https://www.scaleway.com/en/iam/), you need to be the Owner of the Scaleway Organization in which the deployment will take place, or be an IAM user of the Organization with a policy granting you the necessary Permission Sets. See the [IAM Overview](https://www.scaleway.com/en/docs/identity-and-access-management/iam/reference-content/overview/) for more information.
 
@@ -309,7 +308,7 @@ Documentation is available through runtimes frameworks for:
 
 - [Scaleway Serverless Functions Documentation](https://www.scaleway.com/en/docs/compute/functions/api-cli/fun-uploading-with-serverless-framework/)
 - [Scaleway Serverless Containers Documentation](https://www.scaleway.com/en/docs/compute/containers/api-cli/cont-uploading-with-serverless-framework/)
-- [Serverless Framework documentation](https://serverless.com)
+- [Serverless Framework documentation](https://github.com/oss-serverless/serverless)
 - [Scaleway Serverless example projects](https://github.com/scaleway/serverless-examples)
 
 ## Contributing
@@ -317,8 +316,6 @@ Documentation is available through runtimes frameworks for:
 This plugin is developed and maintained by the `Scaleway Serverless Team`, but we welcome pull requests and issues, and are available to chat on our [Community Slack Channels](https://scaleway-community.slack.com/): #serverless-containers and #serverless-functions.
 
 If you are looking for a way to contribute please read [CONTRIBUTING.md](./.github/CONTRIBUTING.md). You can also look at the [development documentation](docs/development.md).
-
-For general information about developing Serverless Framework, refer to the Serverless Framework [plugins documentation](https://www.serverless.com/framework/docs/guides/plugins/creating-plugins).
 
 ## Help & support
 
