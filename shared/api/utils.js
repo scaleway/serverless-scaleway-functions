@@ -34,7 +34,6 @@ class CustomError extends Error {
  * @param {Error} err - Error thrown
  */
 function manageError(err) {
-  // eslint-disable-next-line no-param-reassign
   err.response = err.response || {};
   if (!err.response || !err.response.data) {
     throw new Error(err);

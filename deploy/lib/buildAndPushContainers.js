@@ -31,7 +31,7 @@ function findErrorInBuildOutput(buildOutput) {
       let errorDetail;
       try {
         errorDetail = JSON.parse(buildStepLog)["errorDetail"];
-      } catch (err) {
+      } catch {
         return "";
       }
 
@@ -78,6 +78,7 @@ module.exports = {
         `Building and pushing container ${container.name} to: ${imageName} ...`
       );
 
+      // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
         const buildStream = await docker.buildImage(tarStream, {
           t: imageName,

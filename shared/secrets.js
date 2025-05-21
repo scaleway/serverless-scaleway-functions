@@ -5,7 +5,7 @@ module.exports = {
   // to an array of secrets expected by the API :
   // [{"key": "a", "value": "b"}, {"key": "c", "value": "d"}]
   convertObjectToModelSecretsArray(obj) {
-    if (obj === {} || obj === null || obj === undefined) {
+    if (obj === null || obj === undefined) {
       return [];
     }
     return Object.keys(obj).map((k) => ({

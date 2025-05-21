@@ -9,7 +9,7 @@
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
-    "serverless-scaleway-functions": ">=0.4.14"
+    "serverless-scaleway-functions": "file:../.."
   },
   "description": ""
 }

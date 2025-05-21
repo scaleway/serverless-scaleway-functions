@@ -274,7 +274,6 @@ module.exports = {
     }
 
     if (this.serverless.service.custom) {
-      // eslint-disable-next-line prefer-destructuring
       containers = this.serverless.service.custom.containers;
     }
     if (containers && Object.keys(containers).length !== 0) {
