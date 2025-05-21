@@ -1,7 +1,7 @@
 {
   "name": "serverless-scaleway-functions",
   "version": "0.4.14",
-  "description": "Provider plugin for the Serverless Framework v1.x which adds support for Scaleway Functions.",
+  "description": "Provider plugin for the Serverless Framework v3.x which adds support for Scaleway Functions.",
   "main": "index.js",
   "author": "scaleway.com",
   "license": "MIT",
@@ -35,7 +35,7 @@
     "scaleway",
     "iot",
     "internet of things",
-    "serverless.com"
+    "osls"
   ],
   "jest": {
     "testEnvironment": "node",
