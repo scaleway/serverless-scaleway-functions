@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.15
+
+### Added
+
+- Added support for `nats` event source
+
 ## 0.4.14
 
 ### Added

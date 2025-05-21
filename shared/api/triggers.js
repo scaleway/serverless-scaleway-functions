@@ -8,13 +8,19 @@ module.exports = {
     if (!isFunction) {
       cronTriggersUrl = `crons?container_id=${applicationId}`;
     }
+
     const cronTriggers = await this.apiManager
       .get(cronTriggersUrl)
       .then((response) => response.data.crons)
       .catch(manageError);
 
+    let messageTriggersUrl = `triggers?function_id=${applicationId}`;
+    if (!isFunction) {
+      messageTriggersUrl = `triggers?container_id=${applicationId}`;
+    }
+
     const messageTriggers = await this.apiManager
-      .get(`triggers?function_id=${applicationId}`)
+      .get(messageTriggersUrl)
       .then((response) => response.data.triggers)
       .catch(manageError);
 

@@ -137,7 +137,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
 
           return currentRuntime;
 
-        default:
+        default: {
           let warnMessage = `WARNING: Runtime ${currentRuntime} is in status ${runtime.status}`;
           if (
             runtime.statusMessage !== null &&
@@ -149,6 +149,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
           logger.log(warnMessage);
 
           return currentRuntime;
+        }
       }
     }
 

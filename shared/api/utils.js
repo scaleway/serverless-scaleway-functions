@@ -1,7 +1,7 @@
 const axios = require("axios");
 const https = require("https");
 
-const version = "0.4.14";
+const version = "0.4.15";
 
 const invalidArgumentsType = "invalid_arguments";
 
@@ -34,7 +34,6 @@ class CustomError extends Error {
  * @param {Error} err - Error thrown
  */
 function manageError(err) {
-  // eslint-disable-next-line no-param-reassign
   err.response = err.response || {};
   if (!err.response || !err.response.data) {
     throw new Error(err);
