@@ -58,7 +58,7 @@
     "bluebird": "^3.7.2",
     "dockerode": "^4.0.6",
     "js-yaml": "^4.1.0",
-    "tar-fs": "^2.1.1"
+    "tar-fs": "^3.0.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
