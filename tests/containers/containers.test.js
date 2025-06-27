@@ -112,10 +112,16 @@ describe("Service Lifecyle Integration Test", () => {
 
     await docker.checkAuth(registryAuth);
 
-    await docker.buildImage({context: path.join(tmpDir, "my-container"), src: ["Dockerfile", "server.py", "requirements.txt"]}, {
-      t: imageName,
-      registryconfig: registryAuth,
-    });
+    await docker.buildImage(
+      {
+        context: path.join(tmpDir, "my-container"),
+        src: ["Dockerfile", "server.py", "requirements.txt"],
+      },
+      {
+        t: imageName,
+        registryconfig: registryAuth,
+      }
+    );
     const image = docker.getImage(imageName);
     await image.push(auth);
 
