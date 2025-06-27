@@ -3,7 +3,6 @@
 const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
-const tar = require("tar-fs");
 
 const { afterAll, beforeAll, describe, it, expect } = require("@jest/globals");
 
@@ -113,9 +112,7 @@ describe("Service Lifecyle Integration Test", () => {
 
     await docker.checkAuth(registryAuth);
 
-    const tarStream = tar.pack(path.join(tmpDir, "my-container"));
-
-    await docker.buildImage(tarStream, {
+    await docker.buildImage({context: path.join(tmpDir, "my-container"), src: ["Dockerfile", "server.py", "requirements.txt"]}, {
       t: imageName,
       registryconfig: registryAuth,
     });

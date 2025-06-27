@@ -1,7 +1,8 @@
 "use strict";
 
 const Docker = require("dockerode");
-const tar = require("tar-fs");
+const path = require('path');
+const fs = require('fs');
 
 const docker = new Docker();
 
@@ -44,6 +45,33 @@ function findErrorInBuildOutput(buildOutput) {
   }
 }
 
+function getFilesInBuildContextDirectory(directory) {
+    let files = [];
+
+    try {
+      const dirents = fs.readdirSync(directory, { withFileTypes: true });
+
+      dirents.forEach(dirent => {
+        const absolutePath = path.join(directory, dirent.name);
+          if (dirent.isDirectory()) {
+            const subFiles = getFilesInBuildContextDirectory(absolutePath);
+
+            // Prepend the current directory name to each subfile path
+            const relativeSubFiles = subFiles.map(subFile => path.join(dirent.name, subFile));
+            files = files.concat(relativeSubFiles);
+          } else if (dirent.isFile() && dirent.name !== '.dockerignore') {
+            // Don't include .dockerignore file in result
+            files.push(dirent.name);
+          }
+        }
+      );
+    } catch (err) {
+      console.error(`Error reading directory ${directory}:`, err);
+    }
+
+    return files;
+}
+
 module.exports = {
   async buildAndPushContainers() {
     // used for pushing
@@ -71,7 +99,6 @@ module.exports = {
       if (container["directory"] === undefined) {
         return;
       }
-      const tarStream = tar.pack(`./${container.directory}`);
       const imageName = `${this.namespace.registry_endpoint}/${container.name}:latest`;
 
       this.serverless.cli.log(
@@ -80,7 +107,9 @@ module.exports = {
 
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
-        const buildStream = await docker.buildImage(tarStream, {
+        let files = getFilesInBuildContextDirectory(container.directory);
+
+        const buildStream = await docker.buildImage({context: container.directory, src: files}, {
           t: imageName,
           registryconfig: registryAuth,
         });
