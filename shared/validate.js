@@ -41,6 +41,9 @@ const triggerNatsSubjectRegex = new RegExp(
   /^(\$?[a-zA-Z0-9_*>][a-zA-Z0-9_*>.]*){1,200}$/
 );
 
+const triggerSqsQueueRegex = new RegExp(/^([a-zA-Z0-9-_.]){2,80}$/);
+const triggerSqsProjectIdRegex = triggerNatsProjectIdRegex;
+
 const TRIGGERS_VALIDATION = {
   schedule: (trigger) => {
     if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
@@ -99,10 +102,32 @@ const TRIGGERS_VALIDATION = {
       !REGION_LIST.includes(trigger.scw_nats_config.mnq_region)
     ) {
       throw new Error(
-        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.region is unknown}`
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.region is unknown`
       );
     }
   },
+  sqs: (trigger) => {
+      if (!trigger.name || !triggerNameRegex.test(trigger.name)) {
+          throw new Error(
+              `Invalid trigger "${trigger.name}": name is invalid, should match regex "${triggerNameRegex.toString()}"`
+          );
+      }
+      if (!trigger.queue || !triggerSqsQueueRegex.test(trigger.queue)) {
+          throw new Error(
+              `Invalid trigger "${trigger.name}": queue is invalid, should match regex "${triggerSqsQueueRegex.toString()}"`
+          );
+      }
+      if (trigger.projectId && !triggerSqsProjectIdRegex.test(trigger.projectId)) {
+          throw new Error(
+              `Invalid trigger "${trigger.name}": projectId is invalid, should match regex "${triggerSqsProjectIdRegex.toString()}"`
+          );
+      }
+      if (trigger.region && !REGION_LIST.includes(trigger.region)) {
+          throw new Error(
+              `Invalid trigger "${trigger.name}": region is unknown`
+          );
+      }
+  }
 };
 
 module.exports = {

@@ -84,6 +84,16 @@ module.exports = {
           scw_nats_config: event.nats.scw_nats_config,
         });
       }
+      if ("sqs" in event) {
+        this.createMessageTrigger(application.id, {
+          name: event.sqs.name,
+          scw_sqs_config: {
+            queue: event.sqs.queue,
+            mnq_project_id: event.sqs.projectId || this.provider.getScwProject(),
+            mnq_region: event.sqs.region || this.provider.getScwRegion()
+          }
+        });
+      }
     });
 
     return Promise.all(createTriggersPromises);

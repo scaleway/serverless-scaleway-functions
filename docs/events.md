@@ -24,6 +24,11 @@ functions:
           mnq_nats_account_id: "nats account id"
           mnq_project_id: "project id"
           mnq_region: "fr-par"
+    - sqs:
+        name: my-sqs-trigger
+        queue: "name"
+        projectId: "project-id"  # Optional
+        region: "fr-par"  # Optional
 
 # Container
 custom:
