@@ -35,6 +35,10 @@ class ScalewayProvider {
     return this.scwProject;
   }
 
+  getScwRegion() {
+    return this.scwRegion;
+  }
+
   getFunctionCredentials() {
     return {
       apiUrl: this.apiFunctionUrl,
