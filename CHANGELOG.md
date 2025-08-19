@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.16
+
+### Fixed
+
+- Honor `.dockerignore` when building a container #277
+
 ## 0.4.15
 
 ### Added
