@@ -134,7 +134,7 @@ const TRIGGERS_VALIDATION = {
     if (trigger.region && !REGION_LIST.includes(trigger.region)) {
       throw new Error(`Invalid trigger "${trigger.name}": region is unknown`);
     }
-  }
+  },
 };
 
 module.exports = {

@@ -67,7 +67,9 @@ describe("Configuration validation test", () => {
         region: "fr-par",
       };
 
-      expect(() => this.validateTriggers([{ sqs: validTrigger }])).not.toThrow();
+      expect(() =>
+        this.validateTriggers([{ sqs: validTrigger }])
+      ).not.toThrow();
     });
 
     it("Should validate SQS trigger without optional fields", () => {
@@ -76,7 +78,9 @@ describe("Configuration validation test", () => {
         queue: "my-queue-name",
       };
 
-      expect(() => this.validateTriggers([{ sqs: validTrigger }])).not.toThrow();
+      expect(() =>
+        this.validateTriggers([{ sqs: validTrigger }])
+      ).not.toThrow();
     });
 
     it("Should reject SQS trigger with invalid name", () => {
@@ -98,7 +102,9 @@ describe("Configuration validation test", () => {
 
       const errors = this.validateTriggers([{ sqs: invalidTrigger }]);
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain('Invalid trigger "my-sqs-trigger": queue is invalid');
+      expect(errors[0]).toContain(
+        'Invalid trigger "my-sqs-trigger": queue is invalid'
+      );
     });
 
     it("Should reject SQS trigger with invalid projectId", () => {
@@ -110,7 +116,9 @@ describe("Configuration validation test", () => {
 
       const errors = this.validateTriggers([{ sqs: invalidTrigger }]);
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain('Invalid trigger "my-sqs-trigger": projectId is invalid');
+      expect(errors[0]).toContain(
+        'Invalid trigger "my-sqs-trigger": projectId is invalid'
+      );
     });
 
     it("Should reject SQS trigger with invalid region", () => {
@@ -122,7 +130,9 @@ describe("Configuration validation test", () => {
 
       const errors = this.validateTriggers([{ sqs: invalidTrigger }]);
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain('Invalid trigger "my-sqs-trigger": region is unknown');
+      expect(errors[0]).toContain(
+        'Invalid trigger "my-sqs-trigger": region is unknown'
+      );
     });
 
     it("Should reject SQS trigger without name", () => {
@@ -132,7 +142,7 @@ describe("Configuration validation test", () => {
 
       const errors = this.validateTriggers([{ sqs: invalidTrigger }]);
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain(': name is invalid');
+      expect(errors[0]).toContain(": name is invalid");
     });
 
     it("Should reject SQS trigger without queue", () => {
@@ -142,7 +152,9 @@ describe("Configuration validation test", () => {
 
       const errors = this.validateTriggers([{ sqs: invalidTrigger }]);
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain('Invalid trigger "my-sqs-trigger": queue is invalid');
+      expect(errors[0]).toContain(
+        'Invalid trigger "my-sqs-trigger": queue is invalid'
+      );
     });
   });
 });
