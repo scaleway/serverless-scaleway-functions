@@ -89,9 +89,10 @@ module.exports = {
           name: event.sqs.name,
           scw_sqs_config: {
             queue: event.sqs.queue,
-            mnq_project_id: event.sqs.projectId || this.provider.getScwProject(),
-            mnq_region: event.sqs.region || this.provider.getScwRegion()
-          }
+            mnq_project_id:
+              event.sqs.projectId || this.provider.getScwProject(),
+            mnq_region: event.sqs.region || this.provider.getScwRegion(),
+          },
         });
       }
     });

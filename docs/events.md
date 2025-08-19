@@ -27,8 +27,8 @@ functions:
     - sqs:
         name: my-sqs-trigger
         queue: "name"
-        projectId: "project-id"  # Optional
-        region: "fr-par"  # Optional
+        projectId: "project-id" # Optional
+        region: "fr-par" # Optional
 
 # Container
 custom:

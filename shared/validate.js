@@ -107,26 +107,33 @@ const TRIGGERS_VALIDATION = {
     }
   },
   sqs: (trigger) => {
-      if (!trigger.name || !triggerNameRegex.test(trigger.name)) {
-          throw new Error(
-              `Invalid trigger "${trigger.name}": name is invalid, should match regex "${triggerNameRegex.toString()}"`
-          );
-      }
-      if (!trigger.queue || !triggerSqsQueueRegex.test(trigger.queue)) {
-          throw new Error(
-              `Invalid trigger "${trigger.name}": queue is invalid, should match regex "${triggerSqsQueueRegex.toString()}"`
-          );
-      }
-      if (trigger.projectId && !triggerSqsProjectIdRegex.test(trigger.projectId)) {
-          throw new Error(
-              `Invalid trigger "${trigger.name}": projectId is invalid, should match regex "${triggerSqsProjectIdRegex.toString()}"`
-          );
-      }
-      if (trigger.region && !REGION_LIST.includes(trigger.region)) {
-          throw new Error(
-              `Invalid trigger "${trigger.name}": region is unknown`
-          );
-      }
+    if (!trigger.name || !triggerNameRegex.test(trigger.name)) {
+      throw new Error(
+        `Invalid trigger "${
+          trigger.name
+        }": name is invalid, should match regex "${triggerNameRegex.toString()}"`
+      );
+    }
+    if (!trigger.queue || !triggerSqsQueueRegex.test(trigger.queue)) {
+      throw new Error(
+        `Invalid trigger "${
+          trigger.name
+        }": queue is invalid, should match regex "${triggerSqsQueueRegex.toString()}"`
+      );
+    }
+    if (
+      trigger.projectId &&
+      !triggerSqsProjectIdRegex.test(trigger.projectId)
+    ) {
+      throw new Error(
+        `Invalid trigger "${
+          trigger.name
+        }": projectId is invalid, should match regex "${triggerSqsProjectIdRegex.toString()}"`
+      );
+    }
+    if (trigger.region && !REGION_LIST.includes(trigger.region)) {
+      throw new Error(`Invalid trigger "${trigger.name}": region is unknown`);
+    }
   }
 };
 
