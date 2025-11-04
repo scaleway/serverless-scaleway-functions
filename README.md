@@ -179,6 +179,9 @@ functions:
           input:
             key-a: "value-a"
             key-b: "value-b"
+    
+    # ID of the private network to attach the function to
+    privateNetworkId: "3fd741d4-f686-4afc-bcea-d720c695748f"
 ```
 
 ### Container-specific configuration
@@ -264,6 +267,9 @@ custom:
       # Deprecated: number of simultaneous requests to handle
       # Please use scalingOption of type concurrentRequests instead
       # maxConcurrency: 20
+
+      # ID of the private network to attach the container to
+      privateNetworkId: "3fd741d4-f686-4afc-bcea-d720c695748f"
 ```
 
 ## Supported commands
