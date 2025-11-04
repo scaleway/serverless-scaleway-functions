@@ -154,6 +154,7 @@ module.exports = {
       sandbox: container.sandbox,
       health_check: adaptHealthCheckToAPI(container.healthCheck),
       scaling_option: adaptScalingOptionToAPI(container.scalingOption),
+      private_network_id: container.privateNetworkId,
     };
 
     // checking if there is custom_domains set on container creation.
@@ -177,6 +178,13 @@ module.exports = {
   },
 
   async updateSingleContainer(container, foundContainer) {
+    let privateNetworkId = container.privateNetworkId;
+    const hasToDeletePrivateNetwork =
+      foundContainer.private_network_id && !container.privateNetworkId;
+    if (hasToDeletePrivateNetwork) {
+      privateNetworkId = "";
+    }
+
     const params = {
       redeploy: false,
       environment_variables: container.env,
@@ -201,6 +209,7 @@ module.exports = {
       sandbox: container.sandbox,
       health_check: adaptHealthCheckToAPI(container.healthCheck),
       scaling_option: adaptScalingOptionToAPI(container.scalingOption),
+      private_network_id: privateNetworkId,
     };
 
     // note about maxConcurrency deprecation

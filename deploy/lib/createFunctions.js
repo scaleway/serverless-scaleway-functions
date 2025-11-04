@@ -183,6 +183,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       domain_name: func.domain_name,
       http_option: func.httpOption,
       sandbox: func.sandbox,
+      private_network_id: func.privateNetworkId,
     };
 
     const availableRuntimes = await this.listRuntimes();
@@ -208,6 +209,13 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
   },
 
   async updateSingleFunction(func, foundFunc) {
+    let privateNetworkId = func.privateNetworkId;
+    const hasToDeletePrivateNetwork =
+      foundFunc.private_network_id && !func.privateNetworkId;
+    if (hasToDeletePrivateNetwork) {
+      privateNetworkId = "";
+    }
+
     const params = {
       redeploy: false,
       environment_variables: func.env,
@@ -226,6 +234,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       domain_name: func.domain_name,
       http_option: func.httpOption,
       sandbox: func.sandbox,
+      private_network_id: privateNetworkId,
     };
 
     const availableRuntimes = await this.listRuntimes();
