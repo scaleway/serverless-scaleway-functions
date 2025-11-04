@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.17
+
+### Added
+
+- Added support for `private_network_id` #303
+
 ## 0.4.16
 
 ### Fixed
