@@ -179,7 +179,7 @@ functions:
           input:
             key-a: "value-a"
             key-b: "value-b"
-    
+
     # ID of the private network to attach the function to
     privateNetworkId: "3fd741d4-f686-4afc-bcea-d720c695748f"
 ```

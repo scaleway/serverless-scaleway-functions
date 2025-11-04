@@ -179,7 +179,8 @@ module.exports = {
 
   async updateSingleContainer(container, foundContainer) {
     let privateNetworkId = container.privateNetworkId;
-    const hasToDeletePrivateNetwork = foundContainer.private_network_id && !container.privateNetworkId;
+    const hasToDeletePrivateNetwork =
+      foundContainer.private_network_id && !container.privateNetworkId;
     if (hasToDeletePrivateNetwork) {
       privateNetworkId = "";
     }

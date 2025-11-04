@@ -210,7 +210,8 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
 
   async updateSingleFunction(func, foundFunc) {
     let privateNetworkId = func.privateNetworkId;
-    const hasToDeletePrivateNetwork = foundFunc.private_network_id && !func.privateNetworkId;
+    const hasToDeletePrivateNetwork =
+      foundFunc.private_network_id && !func.privateNetworkId;
     if (hasToDeletePrivateNetwork) {
       privateNetworkId = "";
     }
