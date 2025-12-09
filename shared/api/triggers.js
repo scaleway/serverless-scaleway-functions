@@ -45,12 +45,18 @@ module.exports = {
       .catch(manageError);
   },
 
-  createMessageTrigger(applicationId, params) {
+  createMessageTrigger(applicationId, isFunction, params) {
     let payload = {
       ...params,
       function_id: applicationId,
     };
 
+    if (!isFunction) {
+      payload = {
+        ...params,
+        container_id: applicationId,
+      };
+    }
     return this.apiManager
       .post("triggers", payload)
       .then((response) => response.data)
