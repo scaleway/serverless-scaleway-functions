@@ -79,13 +79,13 @@ module.exports = {
         });
       }
       if ("nats" in event) {
-        this.createMessageTrigger(application.id, {
+        this.createMessageTrigger(application.id, isFunction, {
           name: event.nats.name,
           scw_nats_config: event.nats.scw_nats_config,
         });
       }
       if ("sqs" in event) {
-        this.createMessageTrigger(application.id, {
+        this.createMessageTrigger(application.id, isFunction, {
           name: event.sqs.name,
           scw_sqs_config: {
             queue: event.sqs.queue,
