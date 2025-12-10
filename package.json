@@ -6,7 +6,8 @@
   "author": "scaleway.com",
   "license": "MIT",
   "repository": {
-    "git": "https://github.com/scaleway/serverless-scaleway-functions"
+    "type": "git",
+    "url": "https://github.com/scaleway/serverless-scaleway-functions.git"
   },
   "scripts": {
     "clean-up": "node tests/teardown.js",
