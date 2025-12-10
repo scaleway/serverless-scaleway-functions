@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.18
+
+### Fixed
+
+- Messaging (NATS/SQS) triggers now properly work with Serverless Containers #311
+
 ## 0.4.17
 
 ### Added
