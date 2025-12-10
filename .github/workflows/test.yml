@@ -11,27 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  check_npm_version_ubuntu_24:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node 20.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-      - name: Check npm version
-        run: npm --version
-  check_npm_version_ubuntu_22:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node 20.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-      - name: Check npm version
-        run: npm --version
-
   lint:
     runs-on: ubuntu-24.04
     steps:
