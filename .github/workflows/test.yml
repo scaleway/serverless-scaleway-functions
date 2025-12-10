@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - run: npx prettier@2.8.8 --check .
@@ -37,7 +37,7 @@ jobs:
           ]
         node-version: ["18.x", "20.x"]
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -64,7 +64,7 @@ jobs:
   clean-up:
     if: ${{ always() }}
     needs: test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
