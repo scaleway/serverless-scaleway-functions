@@ -19,6 +19,8 @@ custom:
   containers:
     first:
       directory: my-container
+      buildArgs:
+        VERSION: "1.0"
       # registryImage: ""
       # port: 8080
       # description: ""

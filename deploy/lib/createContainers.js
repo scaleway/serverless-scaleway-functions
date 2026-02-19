@@ -53,6 +53,18 @@ function adaptScalingOptionToAPI(scalingOption) {
   };
 }
 
+function enrichReturnedContainerWithBuildInfo(
+  containerResponse,
+  containerConfig
+) {
+  // We need to enrich the container object returned by the API with the build information (directory and buildArgs) provided in the serverless.yml file, for the buildAndPush step.
+  // This is because the API does not return those information, but they are needed for building the container.
+  return Object.assign(containerResponse, {
+    directory: containerConfig.directory,
+    buildArgs: containerConfig.buildArgs,
+  });
+}
+
 module.exports = {
   createContainers() {
     return BbPromise.bind(this)
@@ -173,7 +185,7 @@ module.exports = {
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
     return this.createContainer(params).then((response) =>
-      Object.assign(response, { directory: container.directory })
+      enrichReturnedContainerWithBuildInfo(response, container)
     );
   },
 
@@ -223,7 +235,7 @@ module.exports = {
     this.applyDomainsContainer(foundContainer.id, container.custom_domains);
 
     return this.updateContainer(foundContainer.id, params).then((response) =>
-      Object.assign(response, { directory: container.directory })
+      enrichReturnedContainerWithBuildInfo(response, container)
     );
   },
 };

@@ -9,6 +9,8 @@ custom:
   containers:
     mycontainer:
       directory: my-container-directory
+      buildArgs:
+        MY_BUILD_ARG: "my-value"
       env:
         MY_VARIABLE: "my-value"
 ```
