@@ -195,6 +195,10 @@ custom:
       # Subdirectory holding the Dockerfile, cannot be used with registryImage
       directory: container/
 
+      # Build arguments to pass when building the container image
+      buildArgs:
+        MY_BUILD_ARG: "my-value"
+
       # Name of the registry image, cannot be used with directory
       registryImage: nginx:latest
 

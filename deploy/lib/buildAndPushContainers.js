@@ -75,18 +75,13 @@ function getFilesInBuildContextDirectory(directory) {
 
 module.exports = {
   async buildAndPushContainers() {
-    // used for pushing
     const auth = {
       username: "any",
       password: this.provider.scwToken,
     };
 
-    // used for building: see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
-    const registryAuth = {};
-    registryAuth["rg." + this.provider.scwRegion + ".scw.cloud"] = {
-      username: "any",
-      password: this.provider.scwToken,
-    };
+    // Used for building: see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
+    const registryAuth = { [`rg.${this.provider.region}.scw.cloud`]: auth };
 
     try {
       await docker.checkAuth(registryAuth);
@@ -100,22 +95,47 @@ module.exports = {
       if (container["directory"] === undefined) {
         return;
       }
+
+      if (
+        container["buildArgs"] !== undefined &&
+        typeof container["buildArgs"] !== "object"
+      ) {
+        throw new Error(
+          `Build arguments for container ${containerName} should be an object.
+
+          Example:
+          containers:
+            ${containerName}:
+              directory: my-container-directory
+              buildArgs:
+                MY_BUILD_ARG: "my-value"
+          `
+        );
+      }
+
       const imageName = `${this.namespace.registry_endpoint}/${container.name}:latest`;
 
       this.serverless.cli.log(
         `Building and pushing container ${container.name} to: ${imageName} ...`
       );
 
+      let buildOptions = {
+        t: imageName,
+        registryconfig: registryAuth,
+      };
+
+      if (container.buildArgs !== undefined) {
+        buildOptions.buildargs = container.buildArgs;
+      }
+
       // eslint-disable-next-line no-async-promise-executor
       return new Promise(async (resolve, reject) => {
-        let files = getFilesInBuildContextDirectory(container.directory);
-
         const buildStream = await docker.buildImage(
-          { context: container.directory, src: files },
           {
-            t: imageName,
-            registryconfig: registryAuth,
-          }
+            context: container.directory,
+            src: getFilesInBuildContextDirectory(container.directory),
+          },
+          buildOptions
         );
         const buildStreamEvents = await extractStreamContents(
           buildStream,
@@ -157,7 +177,7 @@ module.exports = {
           return;
         }
 
-        const pushStream = await image.push(auth);
+        const pushStream = await image.push({ authconfig: auth });
         await extractStreamContents(pushStream, this.provider.options.verbose);
 
         resolve();

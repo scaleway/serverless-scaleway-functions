@@ -4,6 +4,10 @@ import os
 DEFAULT_PORT = "8080"
 MESSAGE = "Hello, World from Scaleway Container !"
 
+VERSION = os.getenv("VERSION", "unspecified")
+# Scaleway's system will inject a PORT environment variable on which your application should start the server.
+PORT = os.getenv("PORT", DEFAULT_PORT)
+
 app = Flask(__name__)
 
 @app.route("/")
@@ -16,10 +20,10 @@ def root():
 def health():
   # You could add more complex logic here, for example checking the health of a database...
   return jsonify({
-    "status": "UP"
+    "status": "UP",
+    "version": VERSION
   })
 
 if __name__ == "__main__":
-  # Scaleway's system will inject a PORT environment variable on which your application should start the server.
-  port = os.getenv("PORT", DEFAULT_PORT)
-  app.run(host="0.0.0.0", port=int(port))
+  print(f"Starting server on port {PORT} with version: {VERSION}")
+  app.run(host="0.0.0.0", port=int(PORT))
