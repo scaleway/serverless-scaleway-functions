@@ -1,25 +1,9 @@
 "use strict";
 
-const BbPromise = require("bluebird");
-
 module.exports = {
   deployContainers() {
     this.serverless.cli.log("Deploying Containers...");
-    return BbPromise.bind(this)
-      .then(this.deployEachContainer)
-      .then(() =>
-        this.serverless.cli.log(
-          "Waiting for container deployments, this may take multiple minutes..."
-        )
-      )
-      .then(this.printContainerEndpointsAfterDeployment);
-  },
-
-  deployEachContainer() {
-    const promises = this.containers.map((container) =>
-      this.deployContainer(container.id)
-    );
-    return Promise.all(promises);
+    return this.printContainerEndpointsAfterDeployment();
   },
 
   printContainerEndpointsAfterDeployment() {
