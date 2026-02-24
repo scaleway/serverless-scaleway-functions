@@ -186,6 +186,12 @@ module.exports = {
   },
 
   async updateSingleContainer(container, foundContainer) {
+    // Assign domains to the container before updating it, as it's not possible to manage domains
+    // while the container is updating or pending, and we already wait for the container 
+    // to be in a final status before updating it.
+    // => This order of operation is simpler and does not require performing two separate waits.
+    this.applyDomainsContainer(foundContainer.id, container.custom_domains);
+
     let privateNetworkId = container.privateNetworkId;
     const hasToDeletePrivateNetwork =
       foundContainer.private_network_id && !container.privateNetworkId;
@@ -226,9 +232,6 @@ module.exports = {
     }
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
-
-    // assign domains
-    this.applyDomainsContainer(foundContainer.id, container.custom_domains);
 
     return this.updateContainer(foundContainer.id, params).then(
       (updatedContainer) => {
