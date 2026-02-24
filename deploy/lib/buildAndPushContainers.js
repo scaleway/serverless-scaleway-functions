@@ -178,20 +178,27 @@ module.exports = {
 
     const { containers } = this.provider.serverless.service.custom;
 
-    const buildPromises = Object.keys(containers).map((containerName) => {
-      const containerConfig = Object.assign(containers[containerName], {
-        name: containerName,
+    const buildPromises = Object.keys(containers)
+      .map((containerName) => {
+        const containerConfig = {
+          ...containers[containerName],
+          name: containerName,
+        };
+        return containerConfig;
+      })
+      // If directory is not specified, the container does not need to be built,
+      // we can directly create it from the registry image.
+      .filter((containerConfig) => containerConfig.directory !== undefined)
+      .map((containerConfig) => {
+        validateContainerConfigBeforeBuild(containerConfig);
+
+        return buildAndPushContainer.call(
+          this,
+          registryAuth,
+          auth,
+          containerConfig
+        );
       });
-
-      validateContainerConfigBeforeBuild(containerConfig);
-
-      return buildAndPushContainer.call(
-        this,
-        registryAuth,
-        auth,
-        containerConfig
-      );
-    });
 
     await Promise.all(buildPromises);
   },

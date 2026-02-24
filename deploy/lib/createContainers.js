@@ -180,7 +180,9 @@ module.exports = {
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
-    return this.createContainer(params);
+    return this.createContainer(params).then((createdContainer) => {
+      return this.deployContainer(createdContainer.id);
+    });
   },
 
   async updateSingleContainer(container, foundContainer) {
@@ -228,6 +230,22 @@ module.exports = {
     // assign domains
     this.applyDomainsContainer(foundContainer.id, container.custom_domains);
 
-    return this.updateContainer(foundContainer.id, params);
+    return this.updateContainer(foundContainer.id, params).then(
+      (updatedContainer) => {
+        // If the container is updating, no need to do anything, a redeploy is already in progress.
+        if (
+          updatedContainer.status === "pending" ||
+          updatedContainer.status === "updating"
+        ) {
+          return updatedContainer;
+        }
+
+        this.serverless.cli.log(
+          `Redeploying container ${container.name} to apply changes...`
+        );
+
+        return this.deployContainer(updatedContainer.id);
+      }
+    );
   },
 };
