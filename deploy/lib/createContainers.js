@@ -53,18 +53,6 @@ function adaptScalingOptionToAPI(scalingOption) {
   };
 }
 
-function enrichReturnedContainerWithBuildInfo(
-  containerResponse,
-  containerConfig
-) {
-  // We need to enrich the container object returned by the API with the build information (directory and buildArgs) provided in the serverless.yml file, for the buildAndPush step.
-  // This is because the API does not return those information, but they are needed for building the container.
-  return Object.assign(containerResponse, {
-    directory: containerConfig.directory,
-    buildArgs: containerConfig.buildArgs,
-  });
-}
-
 module.exports = {
   createContainers() {
     return BbPromise.bind(this)
@@ -78,9 +66,9 @@ module.exports = {
         this.serverless.cli.log(
           `Container ${res.name} removed from config file, deleting it...`
         );
-        this.waitForContainerStatus(containerIdToDelete, "deleted").then(
-          this.serverless.cli.log(`Container ${res.name} deleted`)
-        );
+        this.waitForContainer(containerIdToDelete).then(() => {
+          this.serverless.cli.log(`Container ${res.name} deleted`);
+        });
       });
     });
   },
@@ -134,9 +122,15 @@ module.exports = {
         (c) => c.name === container.name
       );
 
-      return foundContainer
-        ? this.updateSingleContainer(container, foundContainer)
-        : this.createSingleContainer(container);
+      if (foundContainer) {
+        // If the container is not in a final status, we need to wait
+        // for it to be reconciled before updating it, otherwise the update will fail.
+        return this.waitForContainer(foundContainer.id).then(() => {
+          return this.updateSingleContainer(container, foundContainer);
+        });
+      }
+
+      return this.createSingleContainer(container);
     });
 
     return Promise.all(promises).then((updatedContainers) => {
@@ -157,7 +151,9 @@ module.exports = {
       cpu_limit: container.cpuLimit,
       min_scale: container.minScale,
       max_scale: container.maxScale,
-      registry_image: container.registryImage,
+      registry_image: container.registryImage
+        ? container.registryImage
+        : `${this.namespace.registry_endpoint}/${container.name}:latest`,
       max_concurrency: container.maxConcurrency,
       timeout: container.timeout,
       privacy: container.privacy,
@@ -169,7 +165,7 @@ module.exports = {
       private_network_id: container.privateNetworkId,
     };
 
-    // checking if there is custom_domains set on container creation.
+    // Checking if there is custom_domains set on container creation.
     if (container.custom_domains && container.custom_domains.length > 0) {
       this.serverless.cli.log(
         "WARNING: custom_domains are available on container update only. " +
@@ -184,9 +180,7 @@ module.exports = {
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
-    return this.createContainer(params).then((response) =>
-      enrichReturnedContainerWithBuildInfo(response, container)
-    );
+    return this.createContainer(params);
   },
 
   async updateSingleContainer(container, foundContainer) {
@@ -234,8 +228,6 @@ module.exports = {
     // assign domains
     this.applyDomainsContainer(foundContainer.id, container.custom_domains);
 
-    return this.updateContainer(foundContainer.id, params).then((response) =>
-      enrichReturnedContainerWithBuildInfo(response, container)
-    );
+    return this.updateContainer(foundContainer.id, params);
   },
 };
