@@ -2,6 +2,8 @@
 
 const { manageError } = require("./utils");
 
+const CONTAINERS_FINAL_STATUSES = ["ready", "error", "locked"];
+
 module.exports = {
   listContainers(namespaceId) {
     const containersUrl = `namespaces/${namespaceId}/containers`;
@@ -89,34 +91,35 @@ module.exports = {
   /**
    *
    * @param {UUID} containerId id of the container to check
-   * @param {String} wantedStatus wanted function status before leaving the wait status.
    * @returns
    */
-  waitForContainerStatus(containerId, wantedStatus) {
+  waitForContainer(containerId) {
     return this.getContainer(containerId)
-      .then((func) => {
-        if (func.status === "error") {
-          throw new Error(func.error_message);
+      .then((container) => {
+        if (container.status === "error") {
+          throw new Error(container.error_message);
         }
 
-        if (func.status !== wantedStatus) {
+        const isContainerInFinalStatus = CONTAINERS_FINAL_STATUSES.includes(
+          container.status
+        );
+
+        if (!isContainerInFinalStatus) {
           return new Promise((resolve) => {
-            setTimeout(
-              () =>
-                resolve(this.waitForContainerStatus(containerId, wantedStatus)),
-              5000
-            );
+            setTimeout(() => resolve(this.waitForContainer(containerId)), 5000);
           });
         }
 
-        return func;
+        return container;
       })
       .catch((err) => {
-        // toleration on 4XX errors because on some status, for exemple deleting the API
-        // will return a 404 err code if item has been deleted.
-        if (err.response.status >= 500) {
-          throw new Error(err);
+        // There's no "deleted" status for container,
+        // so if the container is not found we consider it as deleted and return null
+        if (err.response.status === 404) {
+          return null;
         }
+
+        throw new Error(err);
       });
   },
 

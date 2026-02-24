@@ -44,10 +44,11 @@ class ScalewayDeploy {
         Object.keys(this.provider.serverless.service.custom.containers)
           .length !== 0
       ) {
-        return this.createContainers()
-          .then(this.buildAndPushContainers)
-          .then(this.deployContainers);
+        return this.buildAndPushContainers()
+          .then(() => this.createContainers())
+          .then(() => this.deployContainers());
       }
+
       return undefined;
     }
 
