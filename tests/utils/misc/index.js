@@ -117,13 +117,15 @@ async function createProject() {
     name: `test-slsframework-${crypto.randomBytes(6).toString("hex")}`,
     organization_id: organizationId,
   });
-  
-  console.log(`Project ${project.name} created, waiting for it to be available...`);
-  
+
+  console.log(
+    `Project ${project.name} created, waiting for it to be available...`
+  );
+
   await sleep(60000);
 
   console.log(`Project ${project.name} is now available.`);
- 
+
   return project;
 }
 
