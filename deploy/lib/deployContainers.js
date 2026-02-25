@@ -18,7 +18,7 @@ module.exports = {
 
           this.waitDomainsAreDeployedContainer(container.id).then((domains) => {
             domains.forEach((domain) => {
-              this.serverless.cli.log(`Domain ready : ${domain.hostname}`);
+              this.serverless.cli.log(`Domain ready: ${domain.hostname}`);
             });
           });
         });
