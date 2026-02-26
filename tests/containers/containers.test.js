@@ -128,7 +128,7 @@ describe("Service Lifecyle Integration Test", () => {
     // registry lag
     await sleep(60000);
 
-    const params = {registry_image: imageName};
+    const params = { registry_image: imageName };
     await api
       .updateContainer(namespace.containers[0].id, params)
       .catch((err) => console.error(err));
