@@ -200,7 +200,6 @@ module.exports = {
     }
 
     const params = {
-      redeploy: false,
       environment_variables: container.env,
       secret_environment_variables: await secrets.mergeSecretEnvVars(
         foundContainer.secret_environment_variables,

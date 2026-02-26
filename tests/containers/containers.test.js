@@ -123,15 +123,12 @@ describe("Service Lifecyle Integration Test", () => {
       }
     );
     const image = docker.getImage(imageName);
-    await image.push(auth);
+    await image.push({ authconfig: auth });
 
     // registry lag
     await sleep(60000);
 
-    const params = {
-      redeploy: false,
-      registry_image: imageName,
-    };
+    const params = {registry_image: imageName};
     await api
       .updateContainer(namespace.containers[0].id, params)
       .catch((err) => console.error(err));

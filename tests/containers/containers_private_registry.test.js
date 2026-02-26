@@ -96,8 +96,10 @@ describe("Build and deploy on container with a base image private", () => {
     );
     await privateRegistryImage.push({
       stream: false,
-      username: "nologin",
-      password: scwToken,
+      authconfig: {
+        username: "nologin",
+        password: scwToken,
+      },
     });
     await privateRegistryImage.remove();
   });
