@@ -90,11 +90,7 @@ function validateContainerConfigBeforeBuild(containerConfig) {
   }
 }
 
-async function buildAndPushContainer(
-  registryAuth,
-  authConfig,
-  containerConfig
-) {
+async function buildAndPushContainer(authConfig, containerConfig) {
   const { name, directory, buildArgs } = containerConfig;
   const imageName = `${this.namespace.registry_endpoint}/${name}:latest`;
 
@@ -104,7 +100,7 @@ async function buildAndPushContainer(
 
   let buildOptions = {
     t: imageName,
-    registryconfig: registryAuth,
+    authconfig: auth,
   };
 
   if (buildArgs !== undefined) {
@@ -165,13 +161,12 @@ module.exports = {
     const auth = {
       username: "any",
       password: this.provider.scwToken,
+      serveraddress: `rg.${this.provider.region}.scw.cloud`,
     };
 
-    // Used for building: see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
-    const registryAuth = { [`rg.${this.provider.region}.scw.cloud`]: auth };
-
     try {
-      await docker.checkAuth(registryAuth);
+      // validate the simple auth object (including serveraddress), not the map
+      await docker.checkAuth(auth);
     } catch (err) {
       throw new Error(`Docker error : ${err}`);
     }
@@ -192,12 +187,7 @@ module.exports = {
       .map((containerConfig) => {
         validateContainerConfigBeforeBuild(containerConfig);
 
-        return buildAndPushContainer.call(
-          this,
-          registryAuth,
-          auth,
-          containerConfig
-        );
+        return buildAndPushContainer.call(this, auth, containerConfig);
       });
 
     await Promise.all(buildPromises);

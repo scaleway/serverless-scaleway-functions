@@ -106,22 +106,15 @@ describe("Service Lifecyle Integration Test", () => {
       password: scwToken,
     };
 
-    const regEndpoint = `rg.${scwRegion}.scw.cloud`;
-    const registryAuth = {};
-    registryAuth[regEndpoint] = auth;
-
-    await docker.checkAuth(auth);
-
     // Build image and wait for completion
-    // TODO: we can be rate-limited by DockerHub here, and
-    // there's not much we can do about it :/
     await new Promise((resolve, reject) => {
       docker.buildImage(
         {
           context: path.join(tmpDir, "my-container"),
           src: ["Dockerfile", "server.py", "requirements.txt"],
         },
-        { t: imageName },
+        // Ensure no credentials are sent to Docker Hub.
+        { t: imageName, authconfig: {} },
         (err, stream) => {
           if (err) return reject(err);
           docker.modem.followProgress(stream, (err, res) =>
