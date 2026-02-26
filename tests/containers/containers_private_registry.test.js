@@ -101,7 +101,7 @@ describe("Build and deploy on container with a base image private", () => {
     };
 
     await new Promise((resolve, reject) => {
-      image.push({ authconfig: auth }, (err, stream) => {
+      privateRegistryImage.push({ authconfig: auth }, (err, stream) => {
         if (err) return reject(err);
         docker.modem.followProgress(stream, (err, res) =>
           err ? reject(err) : resolve(res)
