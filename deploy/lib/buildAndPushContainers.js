@@ -100,7 +100,7 @@ async function buildAndPushContainer(authConfig, containerConfig) {
 
   let buildOptions = {
     t: imageName,
-    authconfig: auth,
+    authconfig: authConfig,
   };
 
   if (buildArgs !== undefined) {
