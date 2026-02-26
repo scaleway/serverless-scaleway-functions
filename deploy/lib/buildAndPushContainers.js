@@ -171,7 +171,7 @@ module.exports = {
     const registryAuth = { [`rg.${this.provider.scwRegion}.scw.cloud`]: auth };
 
     try {
-      await docker.checkAuth(auth);
+      await docker.checkAuth(registryAuth);
     } catch (err) {
       throw new Error(`Docker error : ${err}`);
     }
