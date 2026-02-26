@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- Implement `buildArgs` parameter for container build
+
+### Changed
+
+- Handle deprecation of `redeploy: false` parameter in `UpdateContainer`
+
+### Fixed
+
+- When pushing a built to the remote registry, use the correct credentials instead of relying on the local docker configuration.
+
 ## 0.4.18
 
 ### Fixed

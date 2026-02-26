@@ -167,8 +167,8 @@ module.exports = {
       password: this.provider.scwToken,
     };
 
-    // Used for building: see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
-    const registryAuth = { [`rg.${this.provider.region}.scw.cloud`]: auth };
+    // Used for building, see https://docs.docker.com/engine/api/v1.37/#tag/Image/operation/ImageBuild
+    const registryAuth = { [`rg.${this.provider.scwRegion}.scw.cloud`]: auth };
 
     try {
       await docker.checkAuth(registryAuth);
@@ -178,20 +178,27 @@ module.exports = {
 
     const { containers } = this.provider.serverless.service.custom;
 
-    const buildPromises = Object.keys(containers).map((containerName) => {
-      const containerConfig = Object.assign(containers[containerName], {
-        name: containerName,
+    const buildPromises = Object.keys(containers)
+      .map((containerName) => {
+        const containerConfig = {
+          ...containers[containerName],
+          name: containerName,
+        };
+        return containerConfig;
+      })
+      // If directory is not specified, the container does not need to be built,
+      // we can directly create it from the registry image.
+      .filter((containerConfig) => containerConfig.directory !== undefined)
+      .map((containerConfig) => {
+        validateContainerConfigBeforeBuild(containerConfig);
+
+        return buildAndPushContainer.call(
+          this,
+          registryAuth,
+          auth,
+          containerConfig
+        );
       });
-
-      validateContainerConfigBeforeBuild(containerConfig);
-
-      return buildAndPushContainer.call(
-        this,
-        registryAuth,
-        auth,
-        containerConfig
-      );
-    });
 
     await Promise.all(buildPromises);
   },

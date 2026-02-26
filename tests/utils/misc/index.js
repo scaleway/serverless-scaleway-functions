@@ -110,10 +110,23 @@ function sleep(ms) {
 
 async function createProject() {
   const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey);
-  return accountApi.createProject({
+
+  // Unfortunately, there's a small delay between the creation of a project and its availability for API calls.
+  // We wait 1 minute to ensure there's no issue with IAM cache.
+  const project = await accountApi.createProject({
     name: `test-slsframework-${crypto.randomBytes(6).toString("hex")}`,
     organization_id: organizationId,
   });
+
+  console.log(
+    `Project ${project.name} created, waiting for it to be available...`
+  );
+
+  await sleep(60000);
+
+  console.log(`Project ${project.name} is now available.`);
+
+  return project;
 }
 
 module.exports = {

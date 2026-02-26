@@ -106,32 +106,40 @@ describe("Service Lifecyle Integration Test", () => {
       password: scwToken,
     };
 
-    const regEndpoint = `rg.${scwRegion}.scw.cloud`;
-    const registryAuth = {};
-    registryAuth[regEndpoint] = auth;
+    // Build image and wait for completion
+    await new Promise((resolve, reject) => {
+      docker.buildImage(
+        {
+          context: path.join(tmpDir, "my-container"),
+          src: ["Dockerfile", "server.py", "requirements.txt"],
+        },
+        // Ensure no credentials are sent to Docker Hub.
+        { t: imageName, authconfig: {} },
+        (err, stream) => {
+          if (err) return reject(err);
+          docker.modem.followProgress(stream, (err, res) =>
+            err ? reject(err) : resolve(res)
+          );
+        }
+      );
+    });
 
-    await docker.checkAuth(registryAuth);
-
-    await docker.buildImage(
-      {
-        context: path.join(tmpDir, "my-container"),
-        src: ["Dockerfile", "server.py", "requirements.txt"],
-      },
-      {
-        t: imageName,
-        registryconfig: registryAuth,
-      }
-    );
     const image = docker.getImage(imageName);
-    await image.push(auth);
+
+    // Push image and wait for completion
+    await new Promise((resolve, reject) => {
+      image.push({ authconfig: auth }, (err, stream) => {
+        if (err) return reject(err);
+        docker.modem.followProgress(stream, (err, res) =>
+          err ? reject(err) : resolve(res)
+        );
+      });
+    });
 
     // registry lag
     await sleep(60000);
 
-    const params = {
-      redeploy: false,
-      registry_image: imageName,
-    };
+    const params = { registry_image: imageName };
     await api
       .updateContainer(namespace.containers[0].id, params)
       .catch((err) => console.error(err));
@@ -178,12 +186,20 @@ describe("Service Lifecyle Integration Test", () => {
   });
 
   it("should deploy with registry image specified", () => {
+    // Instead of building the container from the directory, we specify a registry image.
+    replaceTextInFile(
+      "serverless.yml",
+      "directory: my-container",
+      "# directory: my-container"
+    );
     replaceTextInFile(
       "serverless.yml",
       '# registryImage: ""',
       "registryImage: docker.io/library/nginx:latest"
     );
     replaceTextInFile("serverless.yml", "# port: 8080", "port: 80");
+    // Need to change the probe path to / since Nginx doesn't have /health endpoint
+    replaceTextInFile("serverless.yml", "httpPath: /health", "httpPath: /");
     serverlessDeploy(options);
   });
 
