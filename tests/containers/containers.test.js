@@ -113,6 +113,8 @@ describe("Service Lifecyle Integration Test", () => {
     await docker.checkAuth(auth);
 
     // Build image and wait for completion
+    // TODO: we can be rate-limited by DockerHub here, and
+    // there's not much we can do about it :/
     await new Promise((resolve, reject) => {
       docker.buildImage(
         {
@@ -203,6 +205,8 @@ describe("Service Lifecyle Integration Test", () => {
       "registryImage: docker.io/library/nginx:latest"
     );
     replaceTextInFile("serverless.yml", "# port: 8080", "port: 80");
+    // Need to change the probe path to / since Nginx doesn't have /health endpoint
+    replaceTextInFile("serverless.yml", "httpPath: /health", "httpPath: /");
     serverlessDeploy(options);
   });
 

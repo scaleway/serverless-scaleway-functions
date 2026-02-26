@@ -85,22 +85,30 @@ describe("Build and deploy on container with a base image private", () => {
     const pullStream = await docker
       .pull(`${originalImageRepo}:${imageTag}`)
       .then();
+
     // Wait for pull to finish
     await new Promise((res) => docker.modem.followProgress(pullStream, res));
-    const originalImage = await docker.getImage(
-      `${originalImageRepo}:${imageTag}`
-    );
+    const originalImage = docker.getImage(`${originalImageRepo}:${imageTag}`);
     await originalImage.tag({ repo: privateRegistryImageRepo, tag: imageTag });
+
     const privateRegistryImage = docker.getImage(
       `${privateRegistryImageRepo}:${imageTag}`
     );
-    await privateRegistryImage.push({
-      stream: false,
-      authconfig: {
-        username: "nologin",
-        password: scwToken,
-      },
+
+    const auth = {
+      username: "nologin",
+      password: scwToken,
+    };
+
+    await new Promise((resolve, reject) => {
+      image.push({ authconfig: auth }, (err, stream) => {
+        if (err) return reject(err);
+        docker.modem.followProgress(stream, (err, res) =>
+          err ? reject(err) : resolve(res)
+        );
+      });
     });
+
     await privateRegistryImage.remove();
   });
 
