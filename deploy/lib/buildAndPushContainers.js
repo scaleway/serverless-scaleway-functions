@@ -161,7 +161,7 @@ module.exports = {
     const auth = {
       username: "any",
       password: this.provider.scwToken,
-      serveraddress: `rg.${this.provider.region}.scw.cloud`,
+      serveraddress: `rg.${this.namespace.region}.scw.cloud`,
     };
 
     try {
