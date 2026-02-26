@@ -90,11 +90,7 @@ function validateContainerConfigBeforeBuild(containerConfig) {
   }
 }
 
-async function buildAndPushContainer(
-  registryAuth,
-  authConfig,
-  containerConfig
-) {
+async function buildAndPushContainer(authConfig, containerConfig) {
   const { name, directory, buildArgs } = containerConfig;
   const imageName = `${this.namespace.registry_endpoint}/${name}:latest`;
 
@@ -104,7 +100,7 @@ async function buildAndPushContainer(
 
   let buildOptions = {
     t: imageName,
-    registryconfig: registryAuth,
+    authconfig: authConfig,
   };
 
   if (buildArgs !== undefined) {
@@ -192,12 +188,7 @@ module.exports = {
       .map((containerConfig) => {
         validateContainerConfigBeforeBuild(containerConfig);
 
-        return buildAndPushContainer.call(
-          this,
-          registryAuth,
-          auth,
-          containerConfig
-        );
+        return buildAndPushContainer.call(this, auth, containerConfig);
       });
 
     await Promise.all(buildPromises);
