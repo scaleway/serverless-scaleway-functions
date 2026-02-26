@@ -122,7 +122,9 @@ describe("Service Lifecyle Integration Test", () => {
         { t: imageName },
         (err, stream) => {
           if (err) return reject(err);
-          docker.modem.followProgress(stream, (err, res) => (err ? reject(err) : resolve(res)));
+          docker.modem.followProgress(stream, (err, res) =>
+            err ? reject(err) : resolve(res)
+          );
         }
       );
     });
@@ -131,13 +133,12 @@ describe("Service Lifecyle Integration Test", () => {
 
     // Push image and wait for completion
     await new Promise((resolve, reject) => {
-      image.push(
-        { authconfig: auth },
-        (err, stream) => {
-          if (err) return reject(err);
-          docker.modem.followProgress(stream, (err, res) => (err ? reject(err) : resolve(res)));
-        }
-      );
+      image.push({ authconfig: auth }, (err, stream) => {
+        if (err) return reject(err);
+        docker.modem.followProgress(stream, (err, res) =>
+          err ? reject(err) : resolve(res)
+        );
+      });
     });
 
     // registry lag
