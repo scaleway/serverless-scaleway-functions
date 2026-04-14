@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+### Fixed
+
+- Deploying triggers no longer lead to an HTTP 409 "transient state" error
+- Do not run into an `undefined` error if the container ends up in a failed state after a deployment
+
 ## 0.5.0
 
 ### Added
