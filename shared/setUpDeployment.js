@@ -3,8 +3,8 @@ module.exports = {
     const { service } = this.provider.serverless;
     const { provider } = service;
     this.namespaceName = service.service;
-    this.namespaceVariables = provider.env || {};
-    this.namespaceSecretVariables = provider.secret || {};
+    this.namespaceVariables = provider.env;
+    this.namespaceSecretVariables = provider.secret;
     this.runtime = provider.runtime;
 
     const defaultTokenExpirationDate = new Date();
