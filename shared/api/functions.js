@@ -115,7 +115,7 @@ module.exports = {
         return func;
       })
       .catch((err) => {
-        // toleration on 4XX errors because on some status, for exemple deleting the API
+        // toleration on 4XX errors because on some status, for example deleting the API
         // will return a 404 err code if item has been deleted.
         if (err.response === undefined) {
           // if we have a raw Error

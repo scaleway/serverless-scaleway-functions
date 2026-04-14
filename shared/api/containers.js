@@ -113,13 +113,15 @@ module.exports = {
         return container;
       })
       .catch((err) => {
-        // There's no "deleted" status for container,
-        // so if the container is not found we consider it as deleted and return null
-        if (err.response.status === 404) {
-          return null;
+        // toleration on 4XX errors because on some status, for example deleting the API
+        // will return a 404 err code if item has been deleted.
+        if (err.response === undefined) {
+          // if we have a raw Error
+          throw err;
+        } else if (err.response.status >= 500) {
+          // if we have a CustomError, we can check the status
+          throw new Error(err);
         }
-
-        throw new Error(err);
       });
   },
 
