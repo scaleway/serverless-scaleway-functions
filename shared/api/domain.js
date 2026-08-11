@@ -32,24 +32,20 @@ module.exports = {
       .catch(manageError);
   },
 
-  createDomainAndLog(createDomainParams) {
-    this.createDomain(createDomainParams)
-      .then((res) => {
-        this.serverless.cli.log(`Creating domain ${res.hostname}`);
-      })
-      .then(
-        () => {},
-        (reason) => {
-          this.serverless.cli.log(
-            `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`
-          );
-
-          if (reason.message.includes("could not validate")) {
-            this.serverless.cli.log(
-              "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
-            );
-          }
-        }
+  async createDomainAndLog(createDomainParams) {
+    try {
+      const res = await this.createDomain(createDomainParams);
+      this.serverless.cli.log(`Creating domain ${res.hostname}`);
+    } catch (reason) {
+      this.serverless.cli.log(
+        `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`
       );
+
+      if (reason.message.includes("could not validate")) {
+        this.serverless.cli.log(
+          "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
+        );
+      }
+    }
   },
 };
