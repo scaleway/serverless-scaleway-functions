@@ -17,8 +17,8 @@ module.exports = {
         for (let ii = 0; ii < serviceNamesRet.length; ii++) {
           const serviceName = serviceNamesRet[ii];
 
-          if (apiService === serviceName) {
-            serviceNamesRet.slice(ii, 1);
+          if (apiService.name === serviceName) {
+            serviceNamesRet.splice(ii, 1);
             break;
           }
         }
