@@ -62,32 +62,34 @@ module.exports = {
     });
   },
 
-  applyDomainsFunc(funcId, customDomains) {
+  async applyDomainsFunc(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
 
-    this.listDomainsFunction(funcId).then((domains) => {
-      const existingDomains = domainUtils.formatDomainsStructure(domains);
-      const domainsToCreate = domainUtils.getDomainsToCreate(
-        customDomains,
-        existingDomains
-      );
-      const domainsIdToDelete = domainUtils.getDomainsToDelete(
-        customDomains,
-        existingDomains
-      );
+    const domains = await this.listDomainsFunction(funcId);
+    const existingDomains = domainUtils.formatDomainsStructure(domains);
+    const domainsToCreate = domainUtils.getDomainsToCreate(
+      customDomains,
+      existingDomains
+    );
+    const domainsIdToDelete = domainUtils.getDomainsToDelete(
+      customDomains,
+      existingDomains
+    );
 
-      domainsToCreate.forEach((newDomain) => {
+    await Promise.all(
+      domainsToCreate.map((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
 
-        this.createDomainAndLog(createDomainParams);
-      });
+        return this.createDomainAndLog(createDomainParams);
+      })
+    );
 
-      domainsIdToDelete.forEach((domainId) => {
-        this.deleteDomain(domainId).then((res) => {
-          this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        });
-      });
-    });
+    await Promise.all(
+      domainsIdToDelete.map(async (domainId) => {
+        const res = await this.deleteDomain(domainId);
+        this.serverless.cli.log(`Deleting domain ${res.hostname}`);
+      })
+    );
   },
 
   validateRuntime(func, existingRuntimes, logger) {

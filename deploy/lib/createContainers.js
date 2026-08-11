@@ -60,49 +60,51 @@ module.exports = {
       .then(this.createOrUpdateContainers);
   },
 
-  deleteContainersByIds(containersIdsToDelete) {
-    containersIdsToDelete.forEach((containerIdToDelete) => {
-      this.deleteContainer(containerIdToDelete).then((res) => {
+  async deleteContainersByIds(containersIdsToDelete) {
+    await Promise.all(
+      containersIdsToDelete.map(async (containerIdToDelete) => {
+        const res = await this.deleteContainer(containerIdToDelete);
         this.serverless.cli.log(
           `Container ${res.name} removed from config file, deleting it...`
         );
-        this.waitForContainer(containerIdToDelete).then(() => {
-          this.serverless.cli.log(`Container ${res.name} deleted`);
-        });
-      });
-    });
+        await this.waitForContainer(containerIdToDelete);
+        this.serverless.cli.log(`Container ${res.name} deleted`);
+      })
+    );
   },
 
-  applyDomainsContainer(containerId, customDomains) {
-    this.listDomainsContainer(containerId).then((domains) => {
-      const existingDomains = domainUtils.formatDomainsStructure(domains);
-      const domainsToCreate = domainUtils.getDomainsToCreate(
-        customDomains,
-        existingDomains
-      );
-      const domainsIdToDelete = domainUtils.getDomainsToDelete(
-        customDomains,
-        existingDomains
-      );
+  async applyDomainsContainer(containerId, customDomains) {
+    const domains = await this.listDomainsContainer(containerId);
+    const existingDomains = domainUtils.formatDomainsStructure(domains);
+    const domainsToCreate = domainUtils.getDomainsToCreate(
+      customDomains,
+      existingDomains
+    );
+    const domainsIdToDelete = domainUtils.getDomainsToDelete(
+      customDomains,
+      existingDomains
+    );
 
-      domainsToCreate.forEach((newDomain) => {
+    await Promise.all(
+      domainsToCreate.map((newDomain) => {
         const createDomainParams = {
           container_id: containerId,
           hostname: newDomain,
         };
 
-        this.createDomainAndLog(createDomainParams);
-      });
+        return this.createDomainAndLog(createDomainParams);
+      })
+    );
 
-      domainsIdToDelete.forEach((domainId) => {
-        this.deleteDomain(domainId).then((res) => {
-          this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        });
-      });
-    });
+    await Promise.all(
+      domainsIdToDelete.map(async (domainId) => {
+        const res = await this.deleteDomain(domainId);
+        this.serverless.cli.log(`Deleting domain ${res.hostname}`);
+      })
+    );
   },
 
-  createOrUpdateContainers(foundContainers) {
+  async createOrUpdateContainers(foundContainers) {
     const { containers } = this.provider.serverless.service.custom;
 
     const deleteData = singleSource.getElementsToDelete(
@@ -111,7 +113,7 @@ module.exports = {
       Object.keys(containers)
     );
 
-    this.deleteContainersByIds(deleteData.elementsIdsToRemove);
+    await this.deleteContainersByIds(deleteData.elementsIdsToRemove);
 
     const promises = deleteData.serviceNamesRet.map((containerName) => {
       const container = Object.assign(containers[containerName], {

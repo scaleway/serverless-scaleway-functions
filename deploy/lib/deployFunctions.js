@@ -38,16 +38,15 @@ module.exports = {
     return func;
   },
 
-  waitForDomainsDeployment(func) {
+  async waitForDomainsDeployment(func) {
     this.serverless.cli.log(`Waiting for ${func.name} domains deployment...`);
 
-    this.waitDomainsAreDeployedFunction(func.id).then((domains) => {
-      domains.forEach((domain) => {
-        this.serverless.cli.log(
-          `Domain ready (${func.name}): ${domain.hostname}`
-        );
-      });
-      this.serverless.cli.log(`Domains for ${func.name} have been deployed!`);
+    const domains = await this.waitDomainsAreDeployedFunction(func.id);
+    domains.forEach((domain) => {
+      this.serverless.cli.log(
+        `Domain ready (${func.name}): ${domain.hostname}`
+      );
     });
+    this.serverless.cli.log(`Domains for ${func.name} have been deployed!`);
   },
 };
