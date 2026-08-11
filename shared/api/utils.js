@@ -1,7 +1,7 @@
 const axios = require("axios");
 const https = require("https");
 
-const version = "0.5.1";
+const { version } = require("../../package.json");
 
 const invalidArgumentsType = "invalid_arguments";
 
