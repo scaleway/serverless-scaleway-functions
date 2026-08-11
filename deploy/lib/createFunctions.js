@@ -17,20 +17,20 @@ module.exports = {
       .then(this.createOrUpdateFunctions);
   },
 
-  deleteFunctionsByIds(funcIdsToDelete) {
-    funcIdsToDelete.forEach((funcIdToDelete) => {
-      this.deleteFunction(funcIdToDelete).then((res) => {
+  async deleteFunctionsByIds(funcIdsToDelete) {
+    await Promise.all(
+      funcIdsToDelete.map(async (funcIdToDelete) => {
+        const res = await this.deleteFunction(funcIdToDelete);
         this.serverless.cli.log(
           `Function ${res.name} removed from config file, deleting it...`
         );
-        this.waitForFunctionStatus(funcIdToDelete, "deleted").then(
-          this.serverless.cli.log(`Function ${res.name} deleted`)
-        );
-      });
-    });
+        await this.waitForFunctionStatus(funcIdToDelete, "deleted");
+        this.serverless.cli.log(`Function ${res.name} deleted`);
+      })
+    );
   },
 
-  createOrUpdateFunctions(foundFunctions) {
+  async createOrUpdateFunctions(foundFunctions) {
     const { functions } = this.provider.serverless.service;
 
     const deleteData = singleSource.getElementsToDelete(
@@ -39,7 +39,7 @@ module.exports = {
       Object.keys(functions)
     );
 
-    this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
+    await this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
 
     // run create or update promises sequentially (concurrency: 1)
     // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
