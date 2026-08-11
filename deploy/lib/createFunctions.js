@@ -1,6 +1,5 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const secrets = require("../../shared/secrets");
 const singleSource = require("../../shared/singleSource");
 const domainUtils = require("../../shared/domains");
@@ -11,26 +10,25 @@ const {
 } = require("../../shared/runtimes");
 
 module.exports = {
-  createFunctions() {
-    return BbPromise.bind(this)
-      .then(() => this.listFunctions(this.namespace.id))
-      .then(this.createOrUpdateFunctions);
+  async createFunctions() {
+    const foundFunctions = await this.listFunctions(this.namespace.id);
+    return this.createOrUpdateFunctions(foundFunctions);
   },
 
-  deleteFunctionsByIds(funcIdsToDelete) {
-    funcIdsToDelete.forEach((funcIdToDelete) => {
-      this.deleteFunction(funcIdToDelete).then((res) => {
+  async deleteFunctionsByIds(funcIdsToDelete) {
+    await Promise.all(
+      funcIdsToDelete.map(async (funcIdToDelete) => {
+        const res = await this.deleteFunction(funcIdToDelete);
         this.serverless.cli.log(
           `Function ${res.name} removed from config file, deleting it...`
         );
-        this.waitForFunctionStatus(funcIdToDelete, "deleted").then(
-          this.serverless.cli.log(`Function ${res.name} deleted`)
-        );
-      });
-    });
+        await this.waitForFunctionStatus(funcIdToDelete, "deleted");
+        this.serverless.cli.log(`Function ${res.name} deleted`);
+      })
+    );
   },
 
-  createOrUpdateFunctions(foundFunctions) {
+  async createOrUpdateFunctions(foundFunctions) {
     const { functions } = this.provider.serverless.service;
 
     const deleteData = singleSource.getElementsToDelete(
@@ -39,55 +37,53 @@ module.exports = {
       Object.keys(functions)
     );
 
-    this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
+    await this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
 
     // run create or update promises sequentially (concurrency: 1)
     // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
-    return BbPromise.map(
-      deleteData.serviceNamesRet,
-      (functionName) => {
-        const func = Object.assign(functions[functionName], {
-          name: functionName,
-        });
+    const updatedFunctions = [];
+    for (const functionName of deleteData.serviceNamesRet) {
+      const func = Object.assign(functions[functionName], {
+        name: functionName,
+      });
 
-        const foundFunc = foundFunctions.find((f) => f.name === func.name);
+      const foundFunc = foundFunctions.find((f) => f.name === func.name);
 
-        return foundFunc
-          ? this.updateSingleFunction(func, foundFunc)
-          : this.createSingleFunction(func);
-      },
-      { concurrency: 1 }
-    ).then((updatedFunctions) => {
-      this.functions = updatedFunctions;
-    });
+      const result = foundFunc
+        ? await this.updateSingleFunction(func, foundFunc)
+        : await this.createSingleFunction(func);
+
+      updatedFunctions.push(result);
+    }
+
+    this.functions = updatedFunctions;
   },
 
-  applyDomainsFunc(funcId, customDomains) {
-    // we make a diff to know which domains to add or delete
+  async applyDomainsFunc(funcId, customDomains) {
+    const domains = await this.listDomainsFunction(funcId);
+    const existingDomains = domainUtils.formatDomainsStructure(domains);
+    const domainsToCreate = domainUtils.getDomainsToCreate(
+      customDomains,
+      existingDomains
+    );
+    const domainsIdToDelete = domainUtils.getDomainsToDelete(
+      customDomains,
+      existingDomains
+    );
 
-    this.listDomainsFunction(funcId).then((domains) => {
-      const existingDomains = domainUtils.formatDomainsStructure(domains);
-      const domainsToCreate = domainUtils.getDomainsToCreate(
-        customDomains,
-        existingDomains
-      );
-      const domainsIdToDelete = domainUtils.getDomainsToDelete(
-        customDomains,
-        existingDomains
-      );
-
-      domainsToCreate.forEach((newDomain) => {
+    await Promise.all(
+      domainsToCreate.map((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
+        return this.createDomainAndLog(createDomainParams);
+      })
+    );
 
-        this.createDomainAndLog(createDomainParams);
-      });
-
-      domainsIdToDelete.forEach((domainId) => {
-        this.deleteDomain(domainId).then((res) => {
-          this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        });
-      });
-    });
+    await Promise.all(
+      domainsIdToDelete.map(async (domainId) => {
+        const res = await this.deleteDomain(domainId);
+        this.serverless.cli.log(`Deleting domain ${res.hostname}`);
+      })
+    );
   },
 
   validateRuntime(func, existingRuntimes, logger) {

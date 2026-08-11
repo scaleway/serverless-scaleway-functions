@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const setUpDeployment = require("../shared/setUpDeployment");
 const removeNamespace = require("./lib/removeNamespace");
 const validate = require("../shared/validate");
@@ -17,11 +16,15 @@ class ScalewayDeploy {
 
     this.hooks = {
       // Validate serverless.yml, set up default values, configure deployment...
-      "before:remove:remove": () =>
-        BbPromise.bind(this).then(this.setUpDeployment).then(this.validate),
+      "before:remove:remove": async () => {
+        await this.setUpDeployment();
+        await this.validate();
+      },
       // Every tasks related to space deletion:
       // - Delete given space if it exists
-      "remove:remove": () => BbPromise.bind(this).then(this.removeNamespace),
+      "remove:remove": async () => {
+        await this.removeNamespace();
+      },
     };
   }
 }

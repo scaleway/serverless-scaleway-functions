@@ -1,22 +1,18 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const secrets = require("../../shared/secrets");
 
 module.exports = {
-  createServerlessNamespace() {
-    return BbPromise.bind(this)
-      .then(() =>
-        this.getNamespaceFromList(
-          this.namespaceName,
-          this.provider.getScwProject()
-        )
-      )
-      .then(this.createIfNotExists);
+  async createServerlessNamespace() {
+    const foundNamespace = await this.getNamespaceFromList(
+      this.namespaceName,
+      this.provider.getScwProject()
+    );
+    return this.createIfNotExists(foundNamespace);
   },
 
-  updateServerlessNamespace() {
-    return BbPromise.bind(this).then(() => this.updateNamespaceConfiguration());
+  async updateServerlessNamespace() {
+    return this.updateNamespaceConfiguration();
   },
 
   saveNamespaceToProvider(namespace) {
@@ -32,7 +28,7 @@ module.exports = {
 
     if (foundNamespace && foundNamespace.status === "ready") {
       this.saveNamespaceToProvider(foundNamespace);
-      return BbPromise.resolve();
+      return;
     }
 
     if (foundNamespace && foundNamespace.status !== "ready") {
@@ -75,9 +71,8 @@ module.exports = {
     return undefined;
   },
 
-  waitNamespaceIsReadyAndSave() {
-    return this.waitNamespaceIsReady(this.namespace.id).then((namespace) =>
-      this.saveNamespaceToProvider(namespace)
-    );
+  async waitNamespaceIsReadyAndSave() {
+    const namespace = await this.waitNamespaceIsReady(this.namespace.id);
+    this.saveNamespaceToProvider(namespace);
   },
 };

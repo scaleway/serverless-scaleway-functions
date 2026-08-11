@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const display = require("./lib/display");
 const writeServiceOutputs = require("../shared/write-service-outputs");
 const scalewayApi = require("../shared/api/endpoint");
@@ -27,8 +26,9 @@ class ScalewayInfo {
 
     this.hooks = {
       "info:info": () => this.serverless.pluginManager.spawn("scaleway:info"),
-      "scaleway:info:displayInfo": async () =>
-        BbPromise.bind(this).then(this.displayInfo),
+      "scaleway:info:displayInfo": async () => {
+        await this.displayInfo();
+      },
       finalize: () => {
         if (this.serverless.processedInput.commands.join(" ") !== "info")
           return;

@@ -1,21 +1,15 @@
 "use strict";
 
-const BbPromise = require("bluebird");
-
 module.exports = {
-  getLogs() {
-    return BbPromise.bind(this)
-      .then(() =>
-        this.getNamespaceFromList(
-          this.namespaceName,
-          this.provider.getScwProject()
-        )
-      )
-      .then(this.listApplications)
-      .all()
-      .then(this.getApplicationId)
-      .then(this.getLines)
-      .then(this.printLines);
+  async getLogs() {
+    const namespace = await this.getNamespaceFromList(
+      this.namespaceName,
+      this.provider.getScwProject()
+    );
+    const apps = await this.listApplications(namespace);
+    const app = this.getApplicationId(apps);
+    const logs = await this.getLines(app);
+    this.printLines(logs);
   },
 
   listApplications(namespace) {

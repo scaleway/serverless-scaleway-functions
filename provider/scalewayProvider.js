@@ -5,7 +5,6 @@ const os = require("os");
 const path = require("path");
 const yaml = require("js-yaml");
 
-const BbPromise = require("bluebird");
 const { FUNCTIONS_API_URL } = require("../shared/constants");
 const { CONTAINERS_API_URL } = require("../shared/constants");
 const { REGISTRY_API_URL } = require("../shared/constants");
@@ -149,15 +148,12 @@ class ScalewayProvider {
     this.registryApiUrl = `${REGISTRY_API_URL}/${this.scwRegion}/`;
   }
 
-  initialize(serverless, options) {
+  async initialize(serverless, options) {
     this.serverless = serverless;
     this.options = options;
 
-    return new BbPromise((resolve) => {
-      this.setCredentials(options);
-      this.setApiURL(options);
-      resolve();
-    });
+    this.setCredentials(options);
+    this.setApiURL(options);
   }
 }
 

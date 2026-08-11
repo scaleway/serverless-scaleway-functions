@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const axios = require("axios");
 const { EOL } = require("os");
 
@@ -47,37 +46,35 @@ class ScalewayInvoke {
       }
     }
 
-    function doInvoke(found) {
+    async function doInvoke(found) {
       // Filter on name
       let func = found.find((f) => f.name === this.options.function);
       const url = "https://" + func.domain_name;
 
       // Invoke
-      axios
-        .get(url)
-        .then((res) => {
-          // Make sure we write to stdout here to ensure we can capture output
-          process.stdout.write(JSON.stringify(res.data));
-        })
-        .catch((error) => {
-          process.stderr.write(error.toString() + EOL);
-        });
+      try {
+        const res = await axios.get(url);
+        // Make sure we write to stdout here to ensure we can capture output
+        process.stdout.write(JSON.stringify(res.data));
+      } catch (error) {
+        process.stderr.write(error.toString() + EOL);
+      }
     }
 
     this.hooks = {
-      "before:invoke:invoke": () =>
-        BbPromise.bind(this).then(this.setUpDeployment).then(this.validate),
-      "invoke:invoke": () =>
-        BbPromise.bind(this)
-          .then(validateFunctionOrContainer)
-          .then(() =>
-            this.getNamespaceFromList(
-              this.namespaceName,
-              this.provider.getScwProject()
-            )
-          )
-          .then(lookUpFunctionOrContainer)
-          .then(doInvoke),
+      "before:invoke:invoke": async () => {
+        await this.setUpDeployment();
+        await this.validate();
+      },
+      "invoke:invoke": async () => {
+        validateFunctionOrContainer.call(this);
+        const ns = await this.getNamespaceFromList(
+          this.namespaceName,
+          this.provider.getScwProject()
+        );
+        const found = await lookUpFunctionOrContainer.call(this, ns);
+        await doInvoke.call(this, found);
+      },
     };
   }
 }
