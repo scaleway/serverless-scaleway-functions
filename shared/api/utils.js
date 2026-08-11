@@ -6,15 +6,18 @@ const version = "0.5.1";
 const invalidArgumentsType = "invalid_arguments";
 
 function getApiManager(apiUrl, token) {
+  const httpsAgent =
+    process.env.SCW_INSECURE_TLS === "1"
+      ? new https.Agent({ rejectUnauthorized: false })
+      : undefined;
+
   return axios.create({
     baseURL: apiUrl,
     headers: {
       "User-Agent": `serverless-scaleway-functions/${version}`,
       "X-Auth-Token": token,
     },
-    httpsAgent: new https.Agent({
-      rejectUnauthorized: false,
-    }),
+    ...(httpsAgent && { httpsAgent }),
   });
 }
 
