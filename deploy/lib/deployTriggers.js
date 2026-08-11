@@ -1,16 +1,13 @@
 "use strict";
 
-const BbPromise = require("bluebird");
-
 module.exports = {
-  deployTriggers() {
+  async deployTriggers() {
     this.serverless.cli.log("Deploying triggers...");
-    return BbPromise.bind(this)
-      .then(() => this.manageTriggers(this.functions, true))
-      .then(() => this.manageTriggers(this.containers, false));
+    await this.manageTriggers(this.functions, true);
+    await this.manageTriggers(this.containers, false);
   },
 
-  manageTriggers(applications, isFunction) {
+  async manageTriggers(applications, isFunction) {
     if (!applications || !applications.length) {
       return undefined;
     }

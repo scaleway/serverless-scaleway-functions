@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const setUpDeployment = require("../shared/setUpDeployment");
 const getLogs = require("./lib/getLogs");
 const scalewayApi = require("../shared/api/endpoint");
@@ -14,8 +13,12 @@ class ScalewayLogs {
 
     Object.assign(this, setUpDeployment, getLogs, api);
     this.hooks = {
-      "before:logs:logs": () => BbPromise.bind(this).then(this.setUpDeployment),
-      "logs:logs": () => BbPromise.bind(this).then(this.getLogs),
+      "before:logs:logs": async () => {
+        await this.setUpDeployment();
+      },
+      "logs:logs": async () => {
+        await this.getLogs();
+      },
     };
   }
 }

@@ -1,28 +1,29 @@
 "use strict";
 
-const BbPromise = require("bluebird");
+const { mapWithConcurrency } = require("../../shared/concurrency");
 const DEPLOY_FUNCTIONS_CONCURRENCY = 5; // max number of functions deployed at a time
 
 module.exports = {
-  deployFunctions() {
+  async deployFunctions() {
     this.serverless.cli.log("Deploying Functions...");
-    return BbPromise.bind(this).then(this.deployEachFunction);
+    await this.deployEachFunction();
   },
 
-  deployEachFunction() {
-    return BbPromise.map(
+  async deployEachFunction() {
+    await mapWithConcurrency(
       this.functions,
-      (func) => {
-        return this.deployFunction(func.id, {})
-          .then((func) => {
-            this.serverless.cli.log(`Deploying ${func.name}...`);
-            return func;
-          })
-          .then((func) => this.waitForFunctionStatus(func.id, "ready"))
-          .then((func) => this.printFunctionInformationAfterDeployment(func))
-          .then((func) => this.waitForDomainsDeployment(func));
-      },
-      { concurrency: DEPLOY_FUNCTIONS_CONCURRENCY }
+      DEPLOY_FUNCTIONS_CONCURRENCY,
+      async (func) => {
+        const deployedFunc = await this.deployFunction(func.id, {});
+        this.serverless.cli.log(`Deploying ${deployedFunc.name}...`);
+        const readyFunc = await this.waitForFunctionStatus(
+          deployedFunc.id,
+          "ready"
+        );
+        this.printFunctionInformationAfterDeployment(readyFunc);
+        await this.waitForDomainsDeployment(readyFunc);
+        return readyFunc;
+      }
     );
   },
 
@@ -38,16 +39,16 @@ module.exports = {
     return func;
   },
 
-  waitForDomainsDeployment(func) {
+  async waitForDomainsDeployment(func) {
     this.serverless.cli.log(`Waiting for ${func.name} domains deployment...`);
 
-    this.waitDomainsAreDeployedFunction(func.id).then((domains) => {
-      domains.forEach((domain) => {
-        this.serverless.cli.log(
-          `Domain ready (${func.name}): ${domain.hostname}`
-        );
-      });
-      this.serverless.cli.log(`Domains for ${func.name} have been deployed!`);
+    const domains = await this.waitDomainsAreDeployedFunction(func.id);
+    domains.forEach((domain) => {
+      this.serverless.cli.log(
+        `Domain ready (${func.name}): ${domain.hostname}`
+      );
     });
+    this.serverless.cli.log(`Domains for ${func.name} have been deployed!`);
+    return func;
   },
 };

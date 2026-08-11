@@ -1,6 +1,5 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const fs = require("fs");
 const path = require("path");
 
@@ -138,14 +137,13 @@ const TRIGGERS_VALIDATION = {
 };
 
 module.exports = {
-  validate() {
-    return BbPromise.bind(this)
-      .then(this.validateServicePath)
-      .then(this.validateCredentials)
-      .then(this.validateRegion)
-      .then(this.validateNamespace)
-      .then(this.validateApplications)
-      .then(this.checkErrors);
+  async validate() {
+    await this.validateServicePath();
+    this.validateCredentials();
+    this.validateRegion();
+    const errors = await this.validateNamespace([]);
+    const errors2 = await this.validateApplications(errors);
+    this.checkErrors(errors2);
   },
 
   validateServicePath() {
@@ -154,8 +152,6 @@ module.exports = {
         "This command can only be run inside a service directory"
       );
     }
-
-    return BbPromise.resolve();
   },
 
   validateCredentials() {
@@ -179,23 +175,22 @@ module.exports = {
 
   checkErrors(errors) {
     if (!errors || !errors.length) {
-      return BbPromise.resolve();
+      return;
     }
 
-    // Format error messages for user
-    return BbPromise.reject(errors);
+    throw errors;
   },
 
-  validateNamespace(errors) {
+  async validateNamespace(errors) {
     const currentErrors = Array.isArray(errors) ? errors : [];
     // Check space env vars:
     const namespaceEnvVars = this.serverless.service.provider.env;
     const namespaceErrors = this.validateEnv(namespaceEnvVars);
 
-    return BbPromise.resolve(currentErrors.concat(namespaceErrors));
+    return currentErrors.concat(namespaceErrors);
   },
 
-  validateApplications(errors) {
+  async validateApplications(errors) {
     let functionNames = [];
     let containerNames = [];
 
@@ -328,7 +323,7 @@ module.exports = {
       );
     }
 
-    return BbPromise.resolve(currentErrors.concat(functionErrors));
+    return currentErrors.concat(functionErrors);
   },
 
   validateTriggers(triggers) {

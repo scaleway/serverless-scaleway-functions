@@ -1,35 +1,29 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const { PRIVACY_PRIVATE } = require("../../shared/constants");
 
 module.exports = {
-  getJwt() {
+  async getJwt() {
     if (typeof this.listFunctions === "function") {
-      return BbPromise.bind(this)
-        .then(() =>
-          this.getNamespaceFromList(
-            this.namespaceName,
-            this.provider.getScwProject()
-          )
-        )
-        .then(this.setNamespace)
-        .then(this.getJwtNamespace)
-        .then(() => this.listFunctions(this.namespace.id))
-        .then(this.getJwtFunctions);
+      const namespace = await this.getNamespaceFromList(
+        this.namespaceName,
+        this.provider.getScwProject()
+      );
+      this.setNamespace(namespace);
+      await this.getJwtNamespace();
+      const functions = await this.listFunctions(this.namespace.id);
+      await this.getJwtFunctions(functions);
+      return;
     }
     if (typeof this.listContainers === "function") {
-      return BbPromise.bind(this)
-        .then(() =>
-          this.getNamespaceFromList(
-            this.namespaceName,
-            this.provider.getScwProject()
-          )
-        )
-        .then(this.setNamespace)
-        .then(this.getJwtNamespace)
-        .then(() => this.listContainers(this.namespace.id))
-        .then(this.getJwtContainers);
+      const namespace = await this.getNamespaceFromList(
+        this.namespaceName,
+        this.provider.getScwProject()
+      );
+      this.setNamespace(namespace);
+      await this.getJwtNamespace();
+      const containers = await this.listContainers(this.namespace.id);
+      await this.getJwtContainers(containers);
     }
   },
 
@@ -42,49 +36,46 @@ module.exports = {
     this.namespace = namespace;
   },
 
-  getJwtNamespace() {
-    return this.issueJwtNamespace(this.namespace.id, this.tokenExpirationDate)
-      .then((response) =>
-        Object.assign(this.namespace, { token: response.token })
-      )
-      .then(() =>
-        this.serverless.cli.log(
-          `Namespace <${this.namespace.name}> token (valid until ${this.tokenExpirationDate}):\n${this.namespace.token}\n`
-        )
-      );
+  async getJwtNamespace() {
+    const response = await this.issueJwtNamespace(
+      this.namespace.id,
+      this.tokenExpirationDate
+    );
+    Object.assign(this.namespace, { token: response.token });
+    this.serverless.cli.log(
+      `Namespace <${this.namespace.name}> token (valid until ${this.tokenExpirationDate}):\n${this.namespace.token}\n`
+    );
   },
 
-  getJwtFunctions(functions) {
-    const promises = functions.map((func) => {
+  async getJwtFunctions(functions) {
+    const promises = functions.map(async (func) => {
       if (func.privacy === PRIVACY_PRIVATE) {
-        return this.issueJwtFunction(func.id, this.tokenExpirationDate)
-          .then((response) => Object.assign(func, { token: response.token }))
-          .then(() =>
-            this.serverless.cli.log(
-              `Function <${func.name}> token (valid until ${this.tokenExpirationDate}):\n${func.token}\n`
-            )
-          );
+        const response = await this.issueJwtFunction(
+          func.id,
+          this.tokenExpirationDate
+        );
+        Object.assign(func, { token: response.token });
+        this.serverless.cli.log(
+          `Function <${func.name}> token (valid until ${this.tokenExpirationDate}):\n${func.token}\n`
+        );
       }
-      return undefined;
     });
-    return Promise.all(promises);
+    await Promise.all(promises);
   },
 
-  getJwtContainers(containers) {
-    const promises = containers.map((container) => {
+  async getJwtContainers(containers) {
+    const promises = containers.map(async (container) => {
       if (container.privacy === PRIVACY_PRIVATE) {
-        return this.issueJwtFunction(container.id, this.tokenExpirationDate)
-          .then((response) =>
-            Object.assign(container, { token: response.token })
-          )
-          .then(() =>
-            this.serverless.cli.log(
-              `Container <${container.name}> token (valid until ${this.tokenExpirationDate}):\n${container.token}\n`
-            )
-          );
+        const response = await this.issueJwtFunction(
+          container.id,
+          this.tokenExpirationDate
+        );
+        Object.assign(container, { token: response.token });
+        this.serverless.cli.log(
+          `Container <${container.name}> token (valid until ${this.tokenExpirationDate}):\n${container.token}\n`
+        );
       }
-      return undefined;
     });
-    return Promise.all(promises);
+    await Promise.all(promises);
   },
 };
