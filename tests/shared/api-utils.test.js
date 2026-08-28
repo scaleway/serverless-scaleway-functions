@@ -1,12 +1,6 @@
 "use strict";
 
-const {
-  expect: jestExpect,
-  describe,
-  it,
-  beforeAll,
-  afterAll,
-} = require("@jest/globals");
+const jestExpect = expect;
 const fs = require("fs");
 const https = require("https");
 const path = require("path");

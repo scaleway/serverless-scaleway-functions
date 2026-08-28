@@ -1,5 +1,5 @@
 "use strict";
 
-const { jest: requiredJest } = require("@jest/globals");
+const requiredJest = jest;
 
 requiredJest.setTimeout(5000000);

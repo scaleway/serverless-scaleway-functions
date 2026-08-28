@@ -1,7 +1,5 @@
 "use strict";
 
-const { expect, describe, it } = require("@jest/globals");
-
 const setUpDeployment = require("../../shared/setUpDeployment");
 
 describe("setUpDeployment", () => {

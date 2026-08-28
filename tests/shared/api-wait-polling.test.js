@@ -1,13 +1,5 @@
 "use strict";
 
-const {
-  expect,
-  describe,
-  it,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
-
 const functionsApi = require("../../shared/api/functions");
 const containersApi = require("../../shared/api/containers");
 const namespacesApi = require("../../shared/api/namespaces");

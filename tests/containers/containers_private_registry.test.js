@@ -5,8 +5,6 @@ const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
 
-const { afterAll, beforeAll, describe, it, expect } = require("@jest/globals");
-
 const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {
   getServiceName,

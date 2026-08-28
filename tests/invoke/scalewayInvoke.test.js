@@ -1,12 +1,6 @@
 "use strict";
 
-const {
-  expect: jestExpect,
-  describe,
-  it,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
+const jestExpect = expect;
 const axios = require("axios");
 
 const ScalewayInvoke = require("../../invoke/scalewayInvoke");

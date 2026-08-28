@@ -1,6 +1,6 @@
 "use strict";
 
-const { expect: jestExpect, describe, it } = require("@jest/globals");
+const jestExpect = expect;
 const fs = require("fs");
 
 const uploadCode = require("../../deploy/lib/uploadCode");

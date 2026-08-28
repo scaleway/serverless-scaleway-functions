@@ -4,26 +4,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
-
 const ScalewayProvider = require("../../provider/scalewayProvider");
-
-class MockServerless {
-  constructor(providerConfig) {
-    this.service = { provider: providerConfig || {} };
-    this.cli = { log: () => {} };
-  }
-
-  setProvider(name, prov) {
-    this.service.provider = prov;
-  }
-}
+const { MockServerless } = require("../utils/mockServerless");
 
 // setCredentials() resolves scwToken/scwProject (and, for the config-file
 // branch, scwRegion) from a precedence chain: CLI flags > SCW_SECRET_KEY/

@@ -1,7 +1,5 @@
 "use strict";
 
-const { expect, describe, it } = require("@jest/globals");
-
 const getJwt = require("../../jwt/lib/getJwt");
 
 describe("setNamespace", () => {

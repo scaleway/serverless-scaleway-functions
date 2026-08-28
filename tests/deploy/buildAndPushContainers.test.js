@@ -1,31 +1,14 @@
-const rewire = require("rewire");
 const { Readable } = require("stream");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
 
-const buildAndPushContainers = rewire(
-  "../../deploy/lib/buildAndPushContainers.js",
-);
-const extractStreamContents = buildAndPushContainers.__get__(
-  "extractStreamContents",
-);
-const findErrorInBuildOutput = buildAndPushContainers.__get__(
-  "findErrorInBuildOutput",
-);
-const getFilesInBuildContextDirectory = buildAndPushContainers.__get__(
-  "getFilesInBuildContextDirectory",
-);
-const filterFilesWithDockerignore = buildAndPushContainers.__get__(
-  "filterFilesWithDockerignore",
-);
+const {
+  extractStreamContents,
+  findErrorInBuildOutput,
+  getFilesInBuildContextDirectory,
+  filterFilesWithDockerignore,
+} = require("../../deploy/lib/buildAndPushContainers");
 
 describe("extractStreamContents", () => {
   it("should extract the contents of a stream", async () => {

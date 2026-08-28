@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-This is `serverless-scaleway-functions`, a plugin for the [Serverless Framework v3](https://github.com/oss-serverless/serverless) that adds a `scaleway` provider, letting `serverless.yml` files deploy Scaleway Serverless Functions and Scaleway Serverless Containers. It's a CommonJS Node.js library published to npm, not an application.
+This is `serverless-scaleway-functions`, a plugin for the [Serverless Framework v3](https://github.com/oss-serverless/serverless) that adds a `scaleway` provider, letting `serverless.yml` files deploy Scaleway Serverless Functions and Scaleway Serverless Containers. Published to npm as a CommonJS library, not an application — written in TypeScript, compiled to `dist/` before publish (see `docs/typescript-migration.md`).
 
 ## Commands
 
 ```bash
+npm run typecheck       # tsc --noEmit
+npm run build           # tsc (emits dist/, also runs automatically via `prepare` on npm install)
 npm run lint            # eslint . --cache
 npm run check-format    # prettier --check .
 npm run format          # prettier --write .
@@ -76,7 +78,11 @@ A single `serverless.yml` maps to one namespace, containing either `functions:` 
 
 ## Conventions
 
-- Plain CommonJS (`require`/`module.exports`), no TypeScript, no build step — `main` in `package.json` points straight at `index.js`.
-- Prettier (v2.8.8, default config) is the formatting authority; CI's `lint` job runs `check-format`, not eslint, as the required gate.
+- TypeScript source (`.ts`), compiled by `tsc` to CommonJS in `dist/`; `main` in `package.json` points at `dist/index.js`. `tsconfig.json` uses `allowJs: true` with `checkJs: false`, so any stray `.js` file still compiles/copies through untyped — currently only `shared/api/endpoint.js` remains `.js`, deliberately (see `docs/typescript-migration.md`). `npm ci`/`npm install` rebuilds `dist/` automatically via the `prepare` script.
+- **Export/import style is deliberately split by what a file exports** (learned the hard way while unblocking a Bun migration — verify against real compiler/runtime output before assuming any of this, don't take it on faith):
+  - A file exporting **one class/value that must stay `require()`-able as a bare value** (every top-level plugin class, `index.ts`, `shared/api/registry.ts`, `shared/write-service-outputs.ts`) uses `export = X`. **Never** convert these to `export default` — verified empirically that `export default` compiles to `exports.default = X` (wrapped, `__esModule`-marked), not a bare `module.exports = X`; a plain `require()` consumer — critically including the Serverless Framework's own external plugin loader for `index.ts`'s compiled output, which is not under this repo's control — would break.
+  - A file exporting **an object of several mixin methods** (most of `shared/api/*.ts`, `deploy/lib/*.ts`, etc.) uses plain named exports (`export function foo() {}`) instead of `export = {...}`. Verified: `require()` sees an identical shape either way (an object with the same enumerable properties), so this is a safe, zero-consumer-impact conversion — **except** a file using `Object.defineProperties` to keep some exports intentionally non-enumerable (so `Object.assign(this, ...)` mixin calls skip them); named exports are always enumerable, so those specific files keep `export =` instead.
+  - Inside any file that still uses `export =`, its own `import X from "Y"` / `import { X } from "Y"` statements can't coexist with `export =` under Bun's transpiler (`error: Cannot use import statement with CommonJS-only features` — a real, verified Bun constraint, not this repo's invention). Fix: `import X = require("Y")` for a single binding (compiles to a plain CJS `require()`, so it doesn't trip Bun's check, unlike `import X from "Y"` — and unlike a bare `const X = require("Y")`, it still gives real type inference, since TypeScript only specially types the `import X = require(...)` form). For multiple named values from one module, `import X = require("Y")` only binds one name — import the whole module once, then destructure from that already-typed local (`import ns = require("Y"); const { A, B } = ns;`), since destructuring straight off a bare `require()` call types as `any`. Type-only imports (`import type { X } from "Y"`) are fine either way — they're fully erased at compile time, so they never trip Bun's check regardless of what the importing file exports.
+- Prettier (default config) is the formatting authority; CI's `lint` job runs `check-format`, not eslint, as the required gate. A separate CI job runs `typecheck` + `build` before tests, so a broken compile can't merge silently.
 - PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0) — the merge process squashes commits and uses the PR title as the final commit message (see `.github/CONTRIBUTING.md`).
 - Docs live in `docs/` (per-runtime notes for Go/JS/PHP/Python/Rust, plus `containers.md`, `custom-domains.md`, `events.md`, `secrets.md`, `troubleshooting.md`, `development.md`) — update the relevant file there when changing user-facing behavior, matching the config reference in `README.md`.

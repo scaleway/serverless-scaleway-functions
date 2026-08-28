@@ -1,4 +1,3 @@
-const { describe, it, expect } = require("@jest/globals");
 const domainUtils = require("../../shared/domains");
 
 describe("Domain utils tests ", () => {

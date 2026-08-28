@@ -1,7 +1,5 @@
 "use strict";
 
-const { expect, describe, it, beforeEach } = require("@jest/globals");
-
 jest.mock("@serverless/utils/log", () => ({
   writeText: jest.fn(),
   style: { aside: (text) => text },

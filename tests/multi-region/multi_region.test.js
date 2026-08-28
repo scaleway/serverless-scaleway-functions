@@ -3,8 +3,6 @@
 const fs = require("fs");
 const path = require("path");
 
-const { describe, it, expect } = require("@jest/globals");
-
 const { execSync } = require("../../shared/child-process");
 const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {

@@ -3,14 +3,7 @@
 const path = require("path");
 const fs = require("fs");
 
-const {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect: jestExpect,
-  it,
-} = require("@jest/globals");
+const jestExpect = expect;
 
 const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {

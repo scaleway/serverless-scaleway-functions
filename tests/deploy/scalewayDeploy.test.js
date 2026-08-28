@@ -1,6 +1,6 @@
 "use strict";
 
-const { expect: jestExpect, describe, it } = require("@jest/globals");
+const jestExpect = expect;
 
 const ScalewayDeploy = require("../../deploy/scalewayDeploy");
 const ScalewayProvider = require("../../provider/scalewayProvider");

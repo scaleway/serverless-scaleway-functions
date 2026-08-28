@@ -1,7 +1,5 @@
 "use strict";
 
-const { expect, describe, it } = require("@jest/globals");
-
 const { getApi } = require("../../shared/api/endpoint");
 const { FunctionApi, ContainerApi } = require("../../shared/api");
 

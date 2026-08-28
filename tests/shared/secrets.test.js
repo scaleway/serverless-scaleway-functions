@@ -1,9 +1,4 @@
-const {
-  expect: jestExpect,
-  describe,
-  it,
-  beforeEach,
-} = require("@jest/globals");
+const jestExpect = expect;
 const argon2 = require("argon2");
 const secrets = require("../../shared/secrets");
 

@@ -1,13 +1,9 @@
 "use strict";
 
-const rewire = require("rewire");
-const { expect: jestExpect, describe, it } = require("@jest/globals");
+const jestExpect = expect;
 
-const createContainers = rewire("../../deploy/lib/createContainers.js");
-const adaptHealthCheckToAPI = createContainers.__get__("adaptHealthCheckToAPI");
-const adaptScalingOptionToAPI = createContainers.__get__(
-  "adaptScalingOptionToAPI",
-);
+const createContainers = require("../../deploy/lib/createContainers");
+const { adaptHealthCheckToAPI, adaptScalingOptionToAPI } = createContainers;
 
 describe("adaptHealthCheckToAPI", () => {
   it("returns null when no health check is configured", () => {

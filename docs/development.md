@@ -1,5 +1,7 @@
 # Development
 
+This plugin is written in TypeScript and compiled to `dist/` before publish; `npm install`/`npm ci` rebuilds `dist/` automatically (via the `prepare` script), but if you edit `.ts` source directly and are running the plugin from a local checkout (see below), re-run `npm run build` to pick up your changes — `serverless` loads the compiled `dist/index.js`, not the source.
+
 To run Serverless Framework with a local checkout of this plugin, you can modify the `serverless.yml` for one or more functions as follows:
 
 ```yaml

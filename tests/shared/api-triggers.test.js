@@ -1,7 +1,5 @@
 "use strict";
 
-const { expect, describe, it } = require("@jest/globals");
-
 const triggersApi = require("../../shared/api/triggers");
 
 function apiManagerReturning(responsesByUrl) {

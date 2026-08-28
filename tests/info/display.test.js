@@ -1,13 +1,5 @@
 "use strict";
 
-const {
-  expect,
-  describe,
-  it,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
-
 const display = require("../../info/lib/display");
 
 function flushPromises() {

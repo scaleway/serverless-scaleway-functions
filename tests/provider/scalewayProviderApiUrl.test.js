@@ -5,24 +5,7 @@ const {
   REGISTRY_API_URL,
   DEFAULT_REGION,
 } = require("../../shared/constants");
-const {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-} = require("@jest/globals");
-
-class MockServerless {
-  constructor(providerConfig) {
-    this.service = { provider: providerConfig || {} };
-    this.cli = { log: () => {} };
-  }
-
-  setProvider(name, prov) {
-    this.service.provider = prov;
-  }
-}
+const { MockServerless } = require("../utils/mockServerless");
 
 describe("ScalewayProvider.setApiURL region/URL precedence", () => {
   const originalEnv = { ...process.env };

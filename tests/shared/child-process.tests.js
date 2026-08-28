@@ -1,5 +1,4 @@
 const { execSync, execCaptureOutput } = require("../../shared/child-process");
-const { describe, it, expect } = require("@jest/globals");
 
 describe("Synchronous command execution test", () => {
   it("should execute a command synchronously", () => {

@@ -17,7 +17,6 @@ const {
   FUNCTIONS_API_URL,
   CONTAINERS_API_URL,
 } = require("../../shared/constants");
-const { describe, it, expect } = require("@jest/globals");
 const { removeProjectById } = require("../utils/clean-up");
 
 const scwRegion = process.env.SCW_REGION;
