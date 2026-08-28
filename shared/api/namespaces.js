@@ -54,13 +54,13 @@ module.exports = {
       if (namespace.status !== "ready") {
         if (attempt >= MAX_POLL_ATTEMPTS) {
           throw new Error(
-            `Timed out waiting for namespace ${namespaceId} to become ready`
+            `Timed out waiting for namespace ${namespaceId} to become ready`,
           );
         }
         return new Promise((resolve) => {
           setTimeout(
             () => resolve(this.waitNamespaceIsReady(namespaceId, attempt + 1)),
-            POLL_INTERVAL_MS
+            POLL_INTERVAL_MS,
           );
         });
       }
@@ -94,14 +94,14 @@ module.exports = {
         if (response && response.status === "deleting") {
           if (attempt >= MAX_POLL_ATTEMPTS) {
             throw new Error(
-              `Timed out waiting for namespace ${namespaceId} to be deleted`
+              `Timed out waiting for namespace ${namespaceId} to be deleted`,
             );
           }
           return new Promise((resolve) => {
             setTimeout(
               () =>
                 resolve(this.waitNamespaceIsDeleted(namespaceId, attempt + 1)),
-              POLL_INTERVAL_MS
+              POLL_INTERVAL_MS,
             );
           });
         }
@@ -112,7 +112,7 @@ module.exports = {
           return true;
         }
         throw new Error(
-          `An error occured during namespace deletion: ${err.message}`
+          `An error occured during namespace deletion: ${err.message}`,
         );
       });
   },

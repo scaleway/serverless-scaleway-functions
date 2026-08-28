@@ -72,7 +72,7 @@ A single `serverless.yml` maps to one namespace, containing either `functions:` 
 
 ### Examples as fixtures, not docs-only
 
-`examples/` (one directory per runtime: `python3`, `node20`, `golang`, `rust`, etc.) is used directly by `tests/runtimes` — the runtime test suite builds and deploys these example projects against the live API. Changing an example's `serverless.yml` shape affects CI, not just documentation. `examples/**/*.js` is excluded from eslint.
+`examples/` (one directory per runtime: `python3`, `nodejs`, `golang`, `rust`, etc.) is used directly by `tests/runtimes` — the runtime test suite builds and deploys these example projects against the live API. Changing an example's `serverless.yml` shape affects CI, not just documentation. `examples/**/*.js` is excluded from eslint.
 
 ## Conventions
 

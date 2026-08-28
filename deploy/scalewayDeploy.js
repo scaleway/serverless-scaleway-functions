@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const validate = require("../shared/validate");
 const setUpDeployment = require("../shared/setUpDeployment");
 const createNamespace = require("./lib/createNamespace");
@@ -34,53 +33,55 @@ class ScalewayDeploy {
       deployContainers,
       deployTriggers,
       domainApi,
-      api
+      api,
     );
 
-    function chainContainers() {
+    const chainContainers = async () => {
       if (
         this.provider.serverless.service.custom &&
         this.provider.serverless.service.custom.containers &&
         Object.keys(this.provider.serverless.service.custom.containers)
           .length !== 0
       ) {
-        return this.buildAndPushContainers()
-          .then(() => this.createContainers())
-          .then(() => this.deployContainers());
+        await this.buildAndPushContainers();
+        await this.createContainers();
+        return this.deployContainers();
       }
 
       return undefined;
-    }
+    };
 
-    function chainFunctions() {
+    const chainFunctions = async () => {
       if (
         this.provider.serverless.service.functions &&
         Object.keys(this.provider.serverless.service.functions).length !== 0
       ) {
-        return this.createFunctions()
-          .then(this.uploadCode)
-          .then(this.deployFunctions);
+        await this.createFunctions();
+        await this.uploadCode();
+        return this.deployFunctions();
       }
       return undefined;
-    }
+    };
 
     this.hooks = {
       // Validate serverless.yml, set up default values, configure deployment...
-      "before:deploy:deploy": () =>
-        BbPromise.bind(this).then(this.setUpDeployment).then(this.validate),
+      "before:deploy:deploy": async () => {
+        await this.setUpDeployment();
+        return this.validate();
+      },
       // Every tasks related to functions deployment:
       // - Create a namespace if it does not exist
       // - Create each functions in API if it does not exist
       // - Zip code - zip each function
       // - Get Presigned URL and Push code for each function to S3
       // - Deploy each function / container
-      "deploy:deploy": () =>
-        BbPromise.bind(this)
-          .then(this.createServerlessNamespace)
-          .then(this.updateServerlessNamespace)
-          .then(chainContainers)
-          .then(chainFunctions)
-          .then(this.deployTriggers),
+      "deploy:deploy": async () => {
+        await this.createServerlessNamespace();
+        await this.updateServerlessNamespace();
+        await chainContainers();
+        await chainFunctions();
+        return this.deployTriggers();
+      },
     };
   }
 }

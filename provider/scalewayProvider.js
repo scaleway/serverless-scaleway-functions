@@ -5,7 +5,6 @@ const os = require("os");
 const path = require("path");
 const yaml = require("js-yaml");
 
-const BbPromise = require("bluebird");
 const { FUNCTIONS_API_URL } = require("../shared/constants");
 const { CONTAINERS_API_URL } = require("../shared/constants");
 const { REGISTRY_API_URL } = require("../shared/constants");
@@ -18,7 +17,7 @@ class ScalewayProvider {
     os.homedir(),
     ".config",
     "scw",
-    "config.yaml"
+    "config.yaml",
   );
 
   static getProviderName() {
@@ -68,7 +67,7 @@ class ScalewayProvider {
     if (options["scw-token"] && options["scw-project"]) {
       if (!hideLog) {
         this.serverless.cli.log(
-          "Using credentials from command line parameters"
+          "Using credentials from command line parameters",
         );
       }
 
@@ -88,10 +87,10 @@ class ScalewayProvider {
       if (!hideLog) {
         this.serverless.cli.log("Using credentials from system environment");
         this.serverless.cli.log(
-          "NOTICE: you are using deprecated environment variable notation,"
+          "NOTICE: you are using deprecated environment variable notation,",
         );
         this.serverless.cli.log(
-          "please update to SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID"
+          "please update to SCW_SECRET_KEY and SCW_DEFAULT_PROJECT_ID",
         );
       }
 
@@ -110,7 +109,7 @@ class ScalewayProvider {
     } else if (fs.existsSync(ScalewayProvider.scwConfigFile)) {
       if (!hideLog) {
         this.serverless.cli.log(
-          `Using credentials from ${ScalewayProvider.scwConfigFile}`
+          `Using credentials from ${ScalewayProvider.scwConfigFile}`,
         );
       }
 
@@ -123,7 +122,7 @@ class ScalewayProvider {
     } else {
       if (!hideLog) {
         this.serverless.cli.log(
-          "Unable to locate Scaleway provider credentials"
+          "Unable to locate Scaleway provider credentials",
         );
       }
 
@@ -152,15 +151,12 @@ class ScalewayProvider {
     this.registryApiUrl = `${REGISTRY_API_URL}/${this.scwRegion}/`;
   }
 
-  initialize(serverless, options) {
+  async initialize(serverless, options) {
     this.serverless = serverless;
     this.options = options;
 
-    return new BbPromise((resolve) => {
-      this.setCredentials(options);
-      this.setApiURL(options);
-      resolve();
-    });
+    this.setCredentials(options);
+    this.setApiURL(options);
   }
 }
 

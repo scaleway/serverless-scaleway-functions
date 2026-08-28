@@ -48,13 +48,13 @@ describe("ScalewayProvider.setApiURL region/URL precedence", () => {
 
     expect(provider.getScwRegion()).toEqual(DEFAULT_REGION);
     expect(provider.apiFunctionUrl).toEqual(
-      `${FUNCTIONS_API_URL}/${DEFAULT_REGION}`
+      `${FUNCTIONS_API_URL}/${DEFAULT_REGION}`,
     );
     expect(provider.apiContainerUrl).toEqual(
-      `${CONTAINERS_API_URL}/${DEFAULT_REGION}`
+      `${CONTAINERS_API_URL}/${DEFAULT_REGION}`,
     );
     expect(provider.registryApiUrl).toEqual(
-      `${REGISTRY_API_URL}/${DEFAULT_REGION}/`
+      `${REGISTRY_API_URL}/${DEFAULT_REGION}/`,
     );
   });
 
@@ -126,10 +126,10 @@ describe("ScalewayProvider.setApiURL region/URL precedence", () => {
     provider.setApiURL({ "scw-region": "fr-par" });
 
     expect(provider.apiFunctionUrl).toEqual(
-      "https://custom-functions.example.test"
+      "https://custom-functions.example.test",
     );
     expect(provider.apiContainerUrl).toEqual(
-      "https://custom-containers.example.test"
+      "https://custom-containers.example.test",
     );
     // registryApiUrl has no env override and must still be derived from the region
     expect(provider.registryApiUrl).toEqual(`${REGISTRY_API_URL}/fr-par/`);

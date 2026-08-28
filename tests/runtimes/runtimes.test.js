@@ -98,7 +98,7 @@ describe("test runtimes", () => {
 
       if (runtime === "secrets") {
         expect(output).toEqual(
-          '{"env_vars":["env_notSecret1","env_notSecretA","env_secret1","env_secret2","env_secret3","env_secretA","env_secretB","env_secretC"]}'
+          '{"env_vars":["env_notSecret1","env_notSecretA","env_secret1","env_secret2","env_secret3","env_secretA","env_secretB","env_secretC"]}',
         );
       }
 
@@ -113,6 +113,6 @@ describe("test runtimes", () => {
 
       // Should delete project
       await removeProjectById(projectId).catch((err) => console.error(err));
-    }
+    },
   );
 });

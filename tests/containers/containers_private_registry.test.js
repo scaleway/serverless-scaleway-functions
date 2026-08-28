@@ -35,7 +35,7 @@ describe("Build and deploy on container with a base image private", () => {
     "..",
     "..",
     "examples",
-    "container"
+    "container",
   );
   const tmpDir = getTmpDirPath();
 
@@ -92,7 +92,7 @@ describe("Build and deploy on container with a base image private", () => {
     await originalImage.tag({ repo: privateRegistryImageRepo, tag: imageTag });
 
     const privateRegistryImage = docker.getImage(
-      `${privateRegistryImageRepo}:${imageTag}`
+      `${privateRegistryImageRepo}:${imageTag}`,
     );
 
     const auth = {
@@ -104,7 +104,7 @@ describe("Build and deploy on container with a base image private", () => {
       privateRegistryImage.push({ authconfig: auth }, (err, stream) => {
         if (err) return reject(err);
         docker.modem.followProgress(stream, (err, res) =>
-          err ? reject(err) : resolve(res)
+          err ? reject(err) : resolve(res),
         );
       });
     });
@@ -118,7 +118,7 @@ describe("Build and deploy on container with a base image private", () => {
 
   it("should create service in tmp directory", async () => {
     execSync(
-      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`
+      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`,
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
@@ -126,7 +126,7 @@ describe("Build and deploy on container with a base image private", () => {
     replaceTextInFile(
       path.join("my-container", "Dockerfile"),
       "FROM python:3-alpine",
-      `FROM ${privateRegistryImageRepo}:${imageTag}`
+      `FROM ${privateRegistryImageRepo}:${imageTag}`,
     );
     expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, "my-container"))).toBe(true);

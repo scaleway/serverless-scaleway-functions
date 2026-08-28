@@ -67,7 +67,7 @@ describe("printContainerEndpointsAfterDeployment", () => {
     };
 
     await jestExpect(
-      deployContainers.printContainerEndpointsAfterDeployment.call(ctx)
+      deployContainers.printContainerEndpointsAfterDeployment.call(ctx),
     ).rejects.toThrow("domain error");
   });
 });

@@ -9,7 +9,7 @@ const YAML = require("js-yaml");
 const tmpDirCommonPath = path.join(
   os.tmpdir(),
   "tmpdirs-serverless",
-  crypto.randomBytes(2).toString("hex")
+  crypto.randomBytes(2).toString("hex"),
 );
 
 function getTmpDirPath() {

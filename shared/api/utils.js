@@ -15,12 +15,18 @@ function getApiManager(apiUrl, token) {
 }
 
 /**
- * Custom Error class, to print an error message, and pass the Response if applicable
+ * Custom Error class, to print an error message, and pass the Response if applicable.
+ * Only keeps `status`/`data` off the Axios response, not the full object: the full
+ * response's `request`/`config` carry the raw HTTP request, headers included, and this
+ * error is routinely passed straight to `console.error`/logged by callers, which would
+ * otherwise dump the `X-Auth-Token` credential into logs/test output.
  */
 class CustomError extends Error {
   constructor(message, response) {
     super(message);
-    this.response = response;
+    this.response = response
+      ? { status: response.status, data: response.data }
+      : response;
   }
 }
 

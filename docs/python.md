@@ -14,7 +14,7 @@ Your `serverless.yml` would look like:
 
 ```yml
 provider:
-  runtime: python310
+  runtime: python314
 functions:
   first:
     handler: src/handlers/firstHandler.my_first_handler

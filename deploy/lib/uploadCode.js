@@ -3,13 +3,11 @@
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const BbPromise = require("bluebird");
 
 module.exports = {
-  uploadCode() {
-    return BbPromise.bind(this)
-      .then(this.getPresignedUrlForFunctions)
-      .then(this.uploadFunctionsCode);
+  async uploadCode() {
+    const functions = await this.getPresignedUrlForFunctions();
+    return this.uploadFunctionsCode(functions);
   },
 
   getPresignedUrlForFunctions() {
@@ -17,7 +15,7 @@ module.exports = {
       const archivePath = path.resolve(
         this.serverless.config.servicePath,
         ".serverless",
-        `${this.namespaceName}.zip`
+        `${this.namespaceName}.zip`,
       );
       const stats = fs.statSync(archivePath);
       const archiveSize = stats.size;
@@ -30,13 +28,13 @@ module.exports = {
             content_length: archiveSize,
             "Content-Type": "application/octet-stream",
           },
-        })
+        }),
       );
     });
 
     return Promise.all(promises).catch(() => {
       throw new Error(
-        "An error occured while getting a presigned URL to upload functions's archived code."
+        "An error occured while getting a presigned URL to upload functions's archived code.",
       );
     });
   },
@@ -48,14 +46,9 @@ module.exports = {
       const archivePath = path.resolve(
         this.serverless.config.servicePath,
         ".serverless",
-        `${this.namespaceName}.zip`
+        `${this.namespaceName}.zip`,
       );
-      return new Promise((resolve, reject) => {
-        fs.readFile(archivePath, (err, data) => {
-          if (err) reject(err);
-          resolve(data);
-        });
-      }).then((data) =>
+      return fs.promises.readFile(archivePath).then((data) =>
         axios({
           data,
           method: "put",
@@ -63,7 +56,7 @@ module.exports = {
           headers: func.uploadHeader,
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
-        })
+        }),
       );
     });
 

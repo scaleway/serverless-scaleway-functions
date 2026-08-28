@@ -30,7 +30,7 @@ module.exports = {
     }
 
     logger.log(
-      `WARNING: Env var ${found[1]} used in secret ${key} does not exist: this secret will not be created`
+      `WARNING: Env var ${found[1]} used in secret ${key} does not exist: this secret will not be created`,
     );
     return null;
   },
@@ -40,13 +40,13 @@ module.exports = {
   // see unit tests for all use cases
   async mergeSecretEnvVars(existingSecretEnvVars, newSecretEnvVars, logger) {
     const existingSecretEnvVarsByKey = new Map(
-      existingSecretEnvVars.map((i) => [i.key, i.hashed_value])
+      existingSecretEnvVars.map((i) => [i.key, i.hashed_value]),
     );
     const newSecretEnvVarsByKey = new Map(
       newSecretEnvVars.map((i) => [
         i.key,
         this.resolveSecretValue(i.key, i.value, logger),
-      ])
+      ]),
     );
 
     const result = [];
@@ -62,7 +62,7 @@ module.exports = {
         // exists in both
         const hashMatches = await argon2.verify(
           hashedValue,
-          newSecretEnvVarsByKey.get(key)
+          newSecretEnvVarsByKey.get(key),
         );
 
         if (!hashMatches) {

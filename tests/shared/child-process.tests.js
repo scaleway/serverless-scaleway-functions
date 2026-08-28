@@ -18,4 +18,10 @@ describe("Synchronous output capture of command test", () => {
     let output = execCaptureOutput("echo", ["foo bar"]);
     expect(output).toEqual("foo bar\n");
   });
+
+  it("should throw the underlying error instead of silently returning undefined when the command doesn't exist", () => {
+    expect(() => {
+      execCaptureOutput("this-command-definitely-does-not-exist", []);
+    }).toThrow();
+  });
 });

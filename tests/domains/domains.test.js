@@ -26,7 +26,7 @@ describe("Domain utils tests ", () => {
     // existing domains and domains to create are the same so should not return elements
     const domainsToCreateEmpty = domainUtils.getDomainsToCreate(
       hostnamesInput,
-      structInput
+      structInput,
     );
 
     expect(domainsToCreateEmpty.length).toBe(0);
@@ -34,7 +34,7 @@ describe("Domain utils tests ", () => {
     // adding host3
     const domainsToCreateOne = domainUtils.getDomainsToCreate(
       ["host1", "host2", "host3"],
-      structInput
+      structInput,
     );
 
     expect(domainsToCreateOne.length).toBe(1);
@@ -45,7 +45,7 @@ describe("Domain utils tests ", () => {
     // existing domains and domains to delete are the same so should not delete anything
     const domainsToDeleteEmpty = domainUtils.getDomainsToDelete(
       hostnamesInput,
-      structInput
+      structInput,
     );
 
     expect(domainsToDeleteEmpty.length).toBe(0);
@@ -53,7 +53,7 @@ describe("Domain utils tests ", () => {
     // removing host 2
     const domainsToDeleteOne = domainUtils.getDomainsToDelete(
       ["host1"],
-      structInput
+      structInput,
     );
 
     expect(domainsToDeleteOne.length).toBe(1);
@@ -63,14 +63,14 @@ describe("Domain utils tests ", () => {
   it("should flag every existing domain for deletion when serverless.yml no longer declares any custom domain", () => {
     const domainsToDeleteAll = domainUtils.getDomainsToDelete(
       undefined,
-      structInput
+      structInput,
     );
 
     expect(domainsToDeleteAll).toEqual(["id1", "id2"]);
 
     const domainsToDeleteAllNull = domainUtils.getDomainsToDelete(
       null,
-      structInput
+      structInput,
     );
 
     expect(domainsToDeleteAllNull).toEqual(["id1", "id2"]);

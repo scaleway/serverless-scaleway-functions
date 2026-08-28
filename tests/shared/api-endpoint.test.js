@@ -52,7 +52,7 @@ describe("getApi", () => {
     // configuration, so getApi()'s tie-break is what actually decides which
     // API implementation the rest of the plugin gets.
     const api = getApi(
-      makeObject({ containers: { web: {} }, functions: { handler: {} } })
+      makeObject({ containers: { web: {} }, functions: { handler: {} } }),
     );
 
     expect(api).toBeInstanceOf(FunctionApi);

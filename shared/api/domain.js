@@ -41,15 +41,15 @@ module.exports = {
         () => {},
         (reason) => {
           this.serverless.cli.log(
-            `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`
+            `Error on domain : ${createDomainParams.hostname}, reason : ${reason.message}`,
           );
 
           if (reason.message.includes("could not validate")) {
             this.serverless.cli.log(
-              "Ensure CNAME configuration is ok, it can take some time for a record to propagate"
+              "Ensure CNAME configuration is ok, it can take some time for a record to propagate",
             );
           }
-        }
+        },
       );
   },
 };

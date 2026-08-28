@@ -14,7 +14,7 @@ describe("getElementsToDelete", () => {
     const actual = singleSource.getElementsToDelete(
       false,
       existingServicesOnApi,
-      ["keep-me"]
+      ["keep-me"],
     );
 
     expect(actual.elementsIdsToRemove).toEqual([]);
@@ -24,7 +24,7 @@ describe("getElementsToDelete", () => {
     const actual = singleSource.getElementsToDelete(
       undefined,
       existingServicesOnApi,
-      ["keep-me"]
+      ["keep-me"],
     );
 
     expect(actual.elementsIdsToRemove).toEqual([]);
@@ -34,7 +34,7 @@ describe("getElementsToDelete", () => {
     const actual = singleSource.getElementsToDelete(
       null,
       existingServicesOnApi,
-      ["keep-me"]
+      ["keep-me"],
     );
 
     expect(actual.elementsIdsToRemove).toEqual([]);
@@ -44,7 +44,7 @@ describe("getElementsToDelete", () => {
     const actual = singleSource.getElementsToDelete(
       true,
       existingServicesOnApi,
-      ["keep-me"]
+      ["keep-me"],
     );
 
     expect(actual.elementsIdsToRemove).toEqual(["id-2"]);
@@ -54,7 +54,7 @@ describe("getElementsToDelete", () => {
     const actual = singleSource.getElementsToDelete(
       true,
       existingServicesOnApi,
-      ["keep-me", "prune-me"]
+      ["keep-me", "prune-me"],
     );
 
     expect(actual.elementsIdsToRemove).toEqual([]);
@@ -64,7 +64,7 @@ describe("getElementsToDelete", () => {
     const actual = singleSource.getElementsToDelete(
       true,
       existingServicesOnApi,
-      []
+      [],
     );
 
     expect(actual.elementsIdsToRemove).toEqual(["id-1", "id-2"]);

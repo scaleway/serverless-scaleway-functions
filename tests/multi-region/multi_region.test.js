@@ -27,7 +27,7 @@ const functionTemplateName = path.resolve(
   "..",
   "..",
   "examples",
-  "python3"
+  "python3",
 );
 const oldCwd = process.cwd();
 const serviceName = getServiceName();
@@ -54,7 +54,7 @@ describe("test regions", () => {
     // should create working directory
     const tmpDir = getTmpDirPath();
     execSync(
-      `${serverlessExec} create --template-path ${functionTemplateName} --path ${tmpDir}`
+      `${serverlessExec} create --template-path ${functionTemplateName} --path ${tmpDir}`,
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
@@ -67,12 +67,8 @@ describe("test regions", () => {
     api = new FunctionApi(apiUrl, scwToken);
     options.env.SCW_REGION = region;
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace.functions = await api.listFunctions(namespace.id);
 
     // should invoke service for region ${region}
     const deployedFunction = namespace.functions[0];
@@ -80,7 +76,7 @@ describe("test regions", () => {
     options.serviceName = deployedFunction.name;
     const output = serverlessInvoke(options).toString();
     expect(output).toEqual(
-      '"Hello From Python3 runtime on Serverless Framework and Scaleway Functions"'
+      '"Hello From Python3 runtime on Serverless Framework and Scaleway Functions"',
     );
 
     // should remove service for region ${region}

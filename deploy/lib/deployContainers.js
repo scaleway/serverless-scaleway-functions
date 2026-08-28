@@ -12,7 +12,7 @@ module.exports = {
         Promise.all(
           containers.map((container) => {
             this.serverless.cli.log(
-              `Container ${container.name} has been deployed to: https://${container.domain_name}`
+              `Container ${container.name} has been deployed to: https://${container.domain_name}`,
             );
 
             this.serverless.cli.log("Waiting for domains deployment...");
@@ -22,10 +22,10 @@ module.exports = {
                 domains.forEach((domain) => {
                   this.serverless.cli.log(`Domain ready: ${domain.hostname}`);
                 });
-              }
+              },
             );
-          })
-        )
+          }),
+        ),
     );
   },
 };

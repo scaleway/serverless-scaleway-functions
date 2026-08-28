@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const setUpDeployment = require("../shared/setUpDeployment");
 const getJwt = require("./lib/getJwt");
 const scalewayApi = require("../shared/api/endpoint");
@@ -30,8 +29,8 @@ class ScalewayJwt {
 
     this.hooks = {
       // Validate serverless.yml, set up default values, configure deployment...
-      "before:jwt:jwt": () => BbPromise.bind(this).then(this.setUpDeployment),
-      "jwt:jwt": () => BbPromise.bind(this).then(this.getJwt),
+      "before:jwt:jwt": () => this.setUpDeployment(),
+      "jwt:jwt": () => this.getJwt(),
     };
   }
 }

@@ -43,7 +43,7 @@ describe("test triggers", () => {
     options.env.SCW_REGION = scwRegion;
 
     let projectId, api;
-    let namespace = {};
+    let namespace;
 
     // should create project
     // not in beforeAll because of a known bug between concurrent tests and async beforeAll
@@ -71,20 +71,12 @@ describe("test triggers", () => {
     serverlessDeploy(options);
     if (runtime.isFunction) {
       api = new FunctionApi(functionApiUrl, scwToken);
-      namespace = await api
-        .getNamespaceFromList(serviceName, projectId)
-        .catch((err) => console.error(err));
-      namespace.functions = await api
-        .listFunctions(namespace.id)
-        .catch((err) => console.error(err));
+      namespace = await api.getNamespaceFromList(serviceName, projectId);
+      namespace.functions = await api.listFunctions(namespace.id);
     } else {
       api = new ContainerApi(containerApiUrl, scwToken);
-      namespace = await api
-        .getNamespaceFromList(serviceName, projectId)
-        .catch((err) => console.error(err));
-      namespace.containers = await api
-        .listContainers(namespace.id)
-        .catch((err) => console.error(err));
+      namespace = await api.getNamespaceFromList(serviceName, projectId);
+      namespace.containers = await api.listContainers(namespace.id);
     }
 
     // should create cronjob for function
@@ -97,9 +89,10 @@ describe("test triggers", () => {
       deployedApplication = namespace.containers[0];
       triggerInputs = config.custom.containers.first.events[0].schedule.input;
     }
-    const deployedTriggers = await api
-      .listTriggersForApplication(deployedApplication.id, runtime.isFunction)
-      .catch((err) => console.error(err));
+    const deployedTriggers = await api.listTriggersForApplication(
+      deployedApplication.id,
+      runtime.isFunction,
+    );
 
     expect(deployedTriggers.length).toEqual(1);
     for (const key in triggerInputs) {

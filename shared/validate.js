@@ -1,6 +1,5 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const fs = require("fs");
 const path = require("path");
 
@@ -26,7 +25,7 @@ const RUNTIMES_EXTENSIONS = {
 const REGION_LIST = ["fr-par", "nl-ams", "pl-waw"];
 
 const cronScheduleRegex = new RegExp(
-  /^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/
+  /^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/,
 );
 
 const triggerNameRegex = new RegExp(/^([a-zA-Z0-9-]){2,100}$/);
@@ -34,11 +33,11 @@ const triggerNameRegex = new RegExp(/^([a-zA-Z0-9-]){2,100}$/);
 const triggerNatsAccountIdRegex = new RegExp(/^([A-Z0-9]){56}$/);
 
 const triggerNatsProjectIdRegex = new RegExp(
-  /^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}$/
+  /^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}$/,
 );
 
 const triggerNatsSubjectRegex = new RegExp(
-  /^(\$?[a-zA-Z0-9_*>][a-zA-Z0-9_*>.]*){1,200}$/
+  /^(\$?[a-zA-Z0-9_*>][a-zA-Z0-9_*>.]*){1,200}$/,
 );
 
 const triggerSqsQueueRegex = new RegExp(/^([a-zA-Z0-9-_.]){2,80}$/);
@@ -48,7 +47,7 @@ const TRIGGERS_VALIDATION = {
   schedule: (trigger) => {
     if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
       throw new Error(
-        `Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`
+        `Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`,
       );
     }
   },
@@ -57,12 +56,12 @@ const TRIGGERS_VALIDATION = {
       throw new Error(
         `Trigger Schedule is invalid: ${
           trigger.name
-        }, name is invalid, should match regex: ${triggerNameRegex.toString()}`
+        }, name is invalid, should match regex: ${triggerNameRegex.toString()}`,
       );
     }
     if (!trigger.scw_nats_config) {
       throw new Error(
-        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config is missing`
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config is missing`,
       );
     }
     if (
@@ -72,19 +71,19 @@ const TRIGGERS_VALIDATION = {
       throw new Error(
         `Trigger Schedule is invalid: ${
           trigger.name
-        }, scw_nats_config.subject is invalid, should match regex: ${triggerNatsSubjectRegex.toString()}`
+        }, scw_nats_config.subject is invalid, should match regex: ${triggerNatsSubjectRegex.toString()}`,
       );
     }
     if (
       !trigger.scw_nats_config.mnq_nats_account_id ||
       !triggerNatsAccountIdRegex.test(
-        trigger.scw_nats_config.mnq_nats_account_id
+        trigger.scw_nats_config.mnq_nats_account_id,
       )
     ) {
       throw new Error(
         `Trigger Schedule is invalid: ${
           trigger.name
-        }, scw_nats_config.mnq_nats_account_id is invalid, should match regex: ${triggerNatsAccountIdRegex.toString()}`
+        }, scw_nats_config.mnq_nats_account_id is invalid, should match regex: ${triggerNatsAccountIdRegex.toString()}`,
       );
     }
     if (
@@ -94,7 +93,7 @@ const TRIGGERS_VALIDATION = {
       throw new Error(
         `Trigger Schedule is invalid: ${
           trigger.name
-        }, scw_nats_config.mnq_project_id is invalid, should match regex: ${triggerNatsProjectIdRegex.toString()}`
+        }, scw_nats_config.mnq_project_id is invalid, should match regex: ${triggerNatsProjectIdRegex.toString()}`,
       );
     }
     if (
@@ -102,7 +101,7 @@ const TRIGGERS_VALIDATION = {
       !REGION_LIST.includes(trigger.scw_nats_config.mnq_region)
     ) {
       throw new Error(
-        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.region is unknown`
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.region is unknown`,
       );
     }
   },
@@ -111,14 +110,14 @@ const TRIGGERS_VALIDATION = {
       throw new Error(
         `Invalid trigger "${
           trigger.name
-        }": name is invalid, should match regex "${triggerNameRegex.toString()}"`
+        }": name is invalid, should match regex "${triggerNameRegex.toString()}"`,
       );
     }
     if (!trigger.queue || !triggerSqsQueueRegex.test(trigger.queue)) {
       throw new Error(
         `Invalid trigger "${
           trigger.name
-        }": queue is invalid, should match regex "${triggerSqsQueueRegex.toString()}"`
+        }": queue is invalid, should match regex "${triggerSqsQueueRegex.toString()}"`,
       );
     }
     if (
@@ -128,7 +127,7 @@ const TRIGGERS_VALIDATION = {
       throw new Error(
         `Invalid trigger "${
           trigger.name
-        }": projectId is invalid, should match regex "${triggerSqsProjectIdRegex.toString()}"`
+        }": projectId is invalid, should match regex "${triggerSqsProjectIdRegex.toString()}"`,
       );
     }
     if (trigger.region && !REGION_LIST.includes(trigger.region)) {
@@ -138,24 +137,23 @@ const TRIGGERS_VALIDATION = {
 };
 
 module.exports = {
-  validate() {
-    return BbPromise.bind(this)
-      .then(this.validateServicePath)
-      .then(this.validateCredentials)
-      .then(this.validateRegion)
-      .then(this.validateNamespace)
-      .then(this.validateApplications)
-      .then(this.checkErrors);
+  async validate() {
+    await this.validateServicePath();
+    await this.validateCredentials();
+    await this.validateRegion();
+    const namespaceErrors = await this.validateNamespace();
+    const applicationErrors = await this.validateApplications(namespaceErrors);
+    return this.checkErrors(applicationErrors);
   },
 
   validateServicePath() {
     if (!this.serverless.config.servicePath) {
       throw new Error(
-        "This command can only be run inside a service directory"
+        "This command can only be run inside a service directory",
       );
     }
 
-    return BbPromise.resolve();
+    return Promise.resolve();
   },
 
   validateCredentials() {
@@ -181,11 +179,11 @@ module.exports = {
 
   checkErrors(errors) {
     if (!errors || !errors.length) {
-      return BbPromise.resolve();
+      return Promise.resolve();
     }
 
     // Format error messages for user
-    return BbPromise.reject(errors);
+    return Promise.reject(errors);
   },
 
   validateNamespace(errors) {
@@ -194,7 +192,7 @@ module.exports = {
     const namespaceEnvVars = this.serverless.service.provider.env;
     const namespaceErrors = this.validateEnv(namespaceEnvVars);
 
-    return BbPromise.resolve(currentErrors.concat(namespaceErrors));
+    return Promise.resolve(currentErrors.concat(namespaceErrors));
   },
 
   validateApplications(errors) {
@@ -226,7 +224,7 @@ module.exports = {
 
       if (!defaultRTexists) {
         functionErrors.push(
-          `Runtime ${this.runtime} is not supported, please check documentation for available runtimes`
+          `Runtime ${this.runtime} is not supported, please check documentation for available runtimes`,
         );
       }
 
@@ -259,7 +257,7 @@ module.exports = {
 
           if (!RTexists) {
             functionErrors.push(
-              `Runtime ${func.runtime} is not supported, please check documentation for available runtimes`
+              `Runtime ${func.runtime} is not supported, please check documentation for available runtimes`,
             );
           }
         }
@@ -270,7 +268,7 @@ module.exports = {
           const splitHandlerPath = func.handler.split(".");
           if (splitHandlerPath.length !== 2) {
             throw new Error(
-              `Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`
+              `Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`,
             );
           }
 
@@ -326,15 +324,15 @@ module.exports = {
 
     if (!functionNames.length && !containerNames.length) {
       functionErrors.push(
-        "You must define at least one function or container to deploy under the functions or custom key."
+        "You must define at least one function or container to deploy under the functions or custom key.",
       );
     } else if (functionNames.length && containerNames.length) {
       functionErrors.push(
-        "You cannot define both functions and custom.containers in the same service. Split them into separate services."
+        "You cannot define both functions and custom.containers in the same service. Split them into separate services.",
       );
     }
 
-    return BbPromise.resolve(currentErrors.concat(functionErrors));
+    return Promise.resolve(currentErrors.concat(functionErrors));
   },
 
   validateTriggers(triggers) {
@@ -353,7 +351,7 @@ module.exports = {
       const authorizedTriggers = Object.keys(TRIGGERS_VALIDATION);
       if (!authorizedTriggers.includes(triggerName)) {
         const errorMessage = `Trigger Type ${triggerName} is not currently supported by Scaleway's Serverless platform, supported types are the following: ${authorizedTriggers.join(
-          ", "
+          ", ",
         )}`;
         return [...accumulator, errorMessage];
       }
@@ -375,7 +373,7 @@ module.exports = {
     if (!variables) return errors;
     if (typeof variables !== "object") {
       throw new Error(
-        "Environment variables should be a map of strings under the form: key - value"
+        "Environment variables should be a map of strings under the form: key - value",
       );
     }
 
@@ -399,7 +397,7 @@ module.exports = {
       this.provider.serverless.service.custom.containers
     ) {
       let foundKey = Object.keys(
-        this.provider.serverless.service.custom.containers
+        this.provider.serverless.service.custom.containers,
       ).find((k) => k == containerName);
 
       if (foundKey) {
@@ -415,7 +413,7 @@ module.exports = {
     let res = false;
     if (this.provider.serverless.service.functions) {
       let foundKey = Object.keys(
-        this.provider.serverless.service.functions
+        this.provider.serverless.service.functions,
       ).find((k) => k == functionName);
 
       if (foundKey) {

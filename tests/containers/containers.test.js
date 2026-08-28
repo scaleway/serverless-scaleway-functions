@@ -31,7 +31,7 @@ describe("Service Lifecyle Integration Test", () => {
     "..",
     "..",
     "examples",
-    "container"
+    "container",
   );
   const tmpDir = getTmpDirPath();
 
@@ -61,7 +61,7 @@ describe("Service Lifecyle Integration Test", () => {
 
   it("should create service in tmp directory", () => {
     execSync(
-      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`
+      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`,
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
@@ -69,7 +69,7 @@ describe("Service Lifecyle Integration Test", () => {
     replaceTextInFile(
       "serverless.yml",
       '# description: ""',
-      `description: "${descriptionTest}"`
+      `description: "${descriptionTest}"`,
     );
     expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, "my-container"))).toBe(true);
@@ -118,9 +118,9 @@ describe("Service Lifecyle Integration Test", () => {
         (err, stream) => {
           if (err) return reject(err);
           docker.modem.followProgress(stream, (err, res) =>
-            err ? reject(err) : resolve(res)
+            err ? reject(err) : resolve(res),
           );
-        }
+        },
       );
     });
 
@@ -131,7 +131,7 @@ describe("Service Lifecyle Integration Test", () => {
       image.push({ authconfig: auth }, (err, stream) => {
         if (err) return reject(err);
         docker.modem.followProgress(stream, (err, res) =>
-          err ? reject(err) : resolve(res)
+          err ? reject(err) : resolve(res),
         );
       });
     });
@@ -155,7 +155,7 @@ describe("Service Lifecyle Integration Test", () => {
       .listContainers(namespace.id)
       .catch((err) => console.error(err));
     expect(nsContainersAfterSlsDeploy[0].registry_image).not.toContain(
-      "test-container"
+      "test-container",
     );
   });
 
@@ -172,7 +172,7 @@ describe("Service Lifecyle Integration Test", () => {
     replaceTextInFile(
       "my-container/server.py",
       "Hello, World from Scaleway Container !",
-      "Container successfully updated"
+      "Container successfully updated",
     );
     serverlessDeploy(options);
   });
@@ -190,12 +190,12 @@ describe("Service Lifecyle Integration Test", () => {
     replaceTextInFile(
       "serverless.yml",
       "directory: my-container",
-      "# directory: my-container"
+      "# directory: my-container",
     );
     replaceTextInFile(
       "serverless.yml",
       '# registryImage: ""',
-      "registryImage: docker.io/library/nginx:latest"
+      "registryImage: docker.io/library/nginx:latest",
     );
     replaceTextInFile("serverless.yml", "# port: 8080", "port: 80");
     // Need to change the probe path to / since Nginx doesn't have /health endpoint

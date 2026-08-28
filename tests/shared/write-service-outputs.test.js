@@ -45,7 +45,7 @@ describe("writeServiceOutputs", () => {
     expect(writeText).toHaveBeenNthCalledWith(1, "service: my-service");
     expect(writeText).toHaveBeenNthCalledWith(
       2,
-      "functions:\n  funcA\n  funcB"
+      "functions:\n  funcA\n  funcB",
     );
   });
 

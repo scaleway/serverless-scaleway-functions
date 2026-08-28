@@ -6,7 +6,7 @@ module.exports = {
   listProjects(organizationId) {
     return this.apiManager
       .get(
-        `?organization_id=${organizationId}&page_size=50&order_by=created_at_desc`
+        `?organization_id=${organizationId}&page_size=50&order_by=created_at_desc`,
       )
       .then((response) => response.data.projects)
       .catch(manageError);

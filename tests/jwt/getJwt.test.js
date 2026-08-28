@@ -9,7 +9,7 @@ describe("setNamespace", () => {
     const ctx = { namespaceName: "my-service" };
 
     expect(() => getJwt.setNamespace.call(ctx, undefined)).toThrow(
-      "Namespace <my-service> doesn't exist, you should deploy it first."
+      "Namespace <my-service> doesn't exist, you should deploy it first.",
     );
   });
 
@@ -31,7 +31,7 @@ describe("getJwtFunctions", () => {
       serverless: { cli: { log: (msg) => logged.push(msg) } },
       logged,
       issueJwtFunction: jest.fn(() =>
-        Promise.resolve({ token: "issued-token" })
+        Promise.resolve({ token: "issued-token" }),
       ),
     };
   }
@@ -50,7 +50,7 @@ describe("getJwtFunctions", () => {
     expect(ctx.issueJwtFunction).toHaveBeenCalledTimes(1);
     expect(ctx.issueJwtFunction).toHaveBeenCalledWith(
       "func-private",
-      "2099-01-01"
+      "2099-01-01",
     );
     expect(privateFunc.token).toEqual("issued-token");
     expect(publicFunc.token).toBeUndefined();
@@ -95,7 +95,7 @@ describe("getJwtContainers", () => {
       serverless: { cli: { log: () => {} } },
       issueJwtFunction: jest.fn(),
       issueJwtContainer: jest.fn(() =>
-        Promise.resolve({ token: "issued-token" })
+        Promise.resolve({ token: "issued-token" }),
       ),
     };
     const privateContainer = {
@@ -110,8 +110,63 @@ describe("getJwtContainers", () => {
     expect(ctx.issueJwtContainer).toHaveBeenCalledTimes(1);
     expect(ctx.issueJwtContainer).toHaveBeenCalledWith(
       "cont-private",
-      "2099-01-01"
+      "2099-01-01",
     );
     expect(privateContainer.token).toEqual("issued-token");
+  });
+});
+
+describe("getJwt (full orchestration chain)", () => {
+  function baseCtx() {
+    return {
+      ...getJwt,
+      namespaceName: "my-service",
+      tokenExpirationDate: "2099-01-01",
+      provider: { getScwProject: () => "project-1" },
+      serverless: { cli: { log: () => {} } },
+      getNamespaceFromList: () =>
+        Promise.resolve({ id: "ns-1", name: "my-service" }),
+      issueJwtNamespace: () => Promise.resolve({ token: "ns-token" }),
+    };
+  }
+
+  it("dispatches to listFunctions/getJwtFunctions for a function service", async () => {
+    const ctx = baseCtx();
+    ctx.listFunctions = (namespaceId) => {
+      expect(namespaceId).toEqual("ns-1");
+      return Promise.resolve([
+        { id: "func-1", name: "first", privacy: "private" },
+      ]);
+    };
+    ctx.issueJwtFunction = () => Promise.resolve({ token: "func-token" });
+
+    await getJwt.getJwt.call(ctx);
+
+    expect(ctx.namespace.token).toEqual("ns-token");
+  });
+
+  it("dispatches to listContainers/getJwtContainers for a container service", async () => {
+    const ctx = baseCtx();
+    ctx.listContainers = (namespaceId) => {
+      expect(namespaceId).toEqual("ns-1");
+      return Promise.resolve([
+        { id: "cont-1", name: "web", privacy: "private" },
+      ]);
+    };
+    ctx.issueJwtContainer = () => Promise.resolve({ token: "cont-token" });
+
+    await getJwt.getJwt.call(ctx);
+
+    expect(ctx.namespace.token).toEqual("ns-token");
+  });
+
+  it("propagates the setNamespace error when the namespace hasn't been deployed", async () => {
+    const ctx = baseCtx();
+    ctx.getNamespaceFromList = () => Promise.resolve(undefined);
+    ctx.listFunctions = () => Promise.resolve([]);
+
+    await expect(getJwt.getJwt.call(ctx)).rejects.toThrow(
+      "doesn't exist, you should deploy it first",
+    );
   });
 });

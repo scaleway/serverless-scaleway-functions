@@ -1,13 +1,10 @@
 "use strict";
 
-const BbPromise = require("bluebird");
-
 module.exports = {
-  deployTriggers() {
+  async deployTriggers() {
     this.serverless.cli.log("Deploying triggers...");
-    return BbPromise.bind(this)
-      .then(() => this.manageTriggers(this.functions, true))
-      .then(() => this.manageTriggers(this.containers, false));
+    await this.manageTriggers(this.functions, true);
+    return this.manageTriggers(this.containers, false);
   },
 
   manageTriggers(applications, isFunction) {
@@ -19,14 +16,14 @@ module.exports = {
     const promises = applications.map((application) =>
       this.getTriggersForApplication(application, isFunction)
         .then((appWithTriggers) =>
-          this.deletePreviousTriggersForApplication(appWithTriggers)
+          this.deletePreviousTriggersForApplication(appWithTriggers),
         )
         .then(() =>
-          this.createNewTriggersForApplication(application, isFunction)
+          this.createNewTriggersForApplication(application, isFunction),
         )
         .then((triggers) =>
-          this.printDeployedTriggersForApplication(application, triggers)
-        )
+          this.printDeployedTriggersForApplication(application, triggers),
+        ),
     );
 
     return Promise.all(promises);
@@ -37,7 +34,7 @@ module.exports = {
       (triggers) => ({
         ...application,
         currentTriggers: [...triggers],
-      })
+      }),
     );
   },
 
@@ -49,7 +46,7 @@ module.exports = {
           return this.deleteCronTrigger(trigger.id);
         }
         return this.deleteMessageTrigger(trigger.id);
-      }
+      },
     );
 
     return Promise.all(deleteTriggersPromises);
@@ -103,8 +100,8 @@ module.exports = {
   printDeployedTriggersForApplication(application, triggers) {
     triggers.forEach(() =>
       this.serverless.cli.log(
-        `Deployed a new trigger for application ${application.name}`
-      )
+        `Deployed a new trigger for application ${application.name}`,
+      ),
     );
     return undefined;
   },

@@ -16,7 +16,7 @@ describe("waitForFunctionStatus error tolerance", () => {
     const ctx = { getFunction: () => Promise.reject(customError(404)) };
 
     await jestExpect(
-      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready")
+      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready"),
     ).resolves.toBeUndefined();
   });
 
@@ -24,7 +24,7 @@ describe("waitForFunctionStatus error tolerance", () => {
     const ctx = { getFunction: () => Promise.reject(customError(403)) };
 
     await jestExpect(
-      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready")
+      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready"),
     ).rejects.toThrow();
   });
 
@@ -32,7 +32,7 @@ describe("waitForFunctionStatus error tolerance", () => {
     const ctx = { getFunction: () => Promise.reject(customError(500)) };
 
     await jestExpect(
-      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready")
+      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready"),
     ).rejects.toThrow();
   });
 
@@ -41,7 +41,7 @@ describe("waitForFunctionStatus error tolerance", () => {
     const ctx = { getFunction: () => Promise.reject(rawErr) };
 
     await jestExpect(
-      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready")
+      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready"),
     ).rejects.toThrow("network down");
   });
 });
@@ -51,7 +51,7 @@ describe("waitForContainer error tolerance", () => {
     const ctx = { getContainer: () => Promise.reject(customError(404)) };
 
     await jestExpect(
-      containersApi.waitForContainer.call(ctx, "container-id")
+      containersApi.waitForContainer.call(ctx, "container-id"),
     ).resolves.toBeUndefined();
   });
 
@@ -59,7 +59,7 @@ describe("waitForContainer error tolerance", () => {
     const ctx = { getContainer: () => Promise.reject(customError(403)) };
 
     await jestExpect(
-      containersApi.waitForContainer.call(ctx, "container-id")
+      containersApi.waitForContainer.call(ctx, "container-id"),
     ).rejects.toThrow();
   });
 
@@ -67,7 +67,7 @@ describe("waitForContainer error tolerance", () => {
     const ctx = { getContainer: () => Promise.reject(customError(500)) };
 
     await jestExpect(
-      containersApi.waitForContainer.call(ctx, "container-id")
+      containersApi.waitForContainer.call(ctx, "container-id"),
     ).rejects.toThrow();
   });
 
@@ -76,7 +76,7 @@ describe("waitForContainer error tolerance", () => {
     const ctx = { getContainer: () => Promise.reject(rawErr) };
 
     await jestExpect(
-      containersApi.waitForContainer.call(ctx, "container-id")
+      containersApi.waitForContainer.call(ctx, "container-id"),
     ).rejects.toThrow("network down");
   });
 });

@@ -10,7 +10,7 @@ useDotenv: true
 
 provider:
   name: scaleway
-  runtime: node22
+  runtime: node26
 
 functions:
   my-func:

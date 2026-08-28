@@ -1,17 +1,42 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const DEPLOY_FUNCTIONS_CONCURRENCY = 5; // max number of functions deployed at a time
 
+// Runs iteratee over items with at most `concurrency` calls in flight at
+// once, preserving result order. Native Promise has no built-in bounded-
+// concurrency map (Promise.all runs everything at once); this is a small
+// worker-pool: each worker pulls the next unclaimed index until none remain.
+async function mapWithConcurrency(items, concurrency, iteratee) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await iteratee(items[currentIndex]);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+
+  return results;
+}
+
 module.exports = {
-  deployFunctions() {
+  async deployFunctions() {
     this.serverless.cli.log("Deploying Functions...");
-    return BbPromise.bind(this).then(this.deployEachFunction);
+    return this.deployEachFunction();
   },
 
   deployEachFunction() {
-    return BbPromise.map(
+    return mapWithConcurrency(
       this.functions,
+      DEPLOY_FUNCTIONS_CONCURRENCY,
       (func) => {
         return this.deployFunction(func.id, {})
           .then((func) => {
@@ -22,13 +47,12 @@ module.exports = {
           .then((func) => this.printFunctionInformationAfterDeployment(func))
           .then((func) => this.waitForDomainsDeployment(func));
       },
-      { concurrency: DEPLOY_FUNCTIONS_CONCURRENCY }
     );
   },
 
   printFunctionInformationAfterDeployment(func) {
     this.serverless.cli.log(
-      `Function ${func.name} has been deployed to: https://${func.domain_name}`
+      `Function ${func.name} has been deployed to: https://${func.domain_name}`,
     );
 
     if (func.runtime_message !== undefined && func.runtime_message !== "") {
@@ -44,7 +68,7 @@ module.exports = {
     return this.waitDomainsAreDeployedFunction(func.id).then((domains) => {
       domains.forEach((domain) => {
         this.serverless.cli.log(
-          `Domain ready (${func.name}): ${domain.hostname}`
+          `Domain ready (${func.name}): ${domain.hostname}`,
         );
       });
       this.serverless.cli.log(`Domains for ${func.name} have been deployed!`);

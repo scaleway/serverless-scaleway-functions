@@ -94,14 +94,14 @@ module.exports = {
       if (!functionsAreReady) {
         if (attempt >= MAX_POLL_ATTEMPTS) {
           throw new Error(
-            `Timed out waiting for functions in namespace ${namespaceId} to become ready`
+            `Timed out waiting for functions in namespace ${namespaceId} to become ready`,
           );
         }
         return new Promise((resolve) => {
           setTimeout(
             () =>
               resolve(this.waitFunctionsAreDeployed(namespaceId, attempt + 1)),
-            POLL_INTERVAL_MS
+            POLL_INTERVAL_MS,
           );
         });
       }
@@ -125,7 +125,7 @@ module.exports = {
         if (func.status !== wantedStatus) {
           if (attempt >= MAX_POLL_ATTEMPTS) {
             throw new Error(
-              `Timed out waiting for function ${functionId} to reach status "${wantedStatus}"`
+              `Timed out waiting for function ${functionId} to reach status "${wantedStatus}"`,
             );
           }
           return new Promise((resolve) => {
@@ -135,10 +135,10 @@ module.exports = {
                   this.waitForFunctionStatus(
                     functionId,
                     wantedStatus,
-                    attempt + 1
-                  )
+                    attempt + 1,
+                  ),
                 ),
-              POLL_INTERVAL_MS
+              POLL_INTERVAL_MS,
             );
           });
         }
@@ -196,16 +196,16 @@ module.exports = {
       if (!domainsAreReady) {
         if (attempt >= MAX_POLL_ATTEMPTS) {
           throw new Error(
-            `Timed out waiting for domains on function ${functionId} to become ready`
+            `Timed out waiting for domains on function ${functionId} to become ready`,
           );
         }
         return new Promise((resolve) => {
           setTimeout(
             () =>
               resolve(
-                this.waitDomainsAreDeployedFunction(functionId, attempt + 1)
+                this.waitDomainsAreDeployedFunction(functionId, attempt + 1),
               ),
-            POLL_INTERVAL_MS
+            POLL_INTERVAL_MS,
           );
         });
       }

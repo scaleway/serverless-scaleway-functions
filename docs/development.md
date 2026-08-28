@@ -3,8 +3,8 @@
 To run Serverless Framework with a local checkout of this plugin, you can modify the `serverless.yml` for one or more functions as follows:
 
 ```yaml
-...
 
+...
 # Change this
 plugins:
   - serverless-scaleway-functions
@@ -20,9 +20,9 @@ Then you can run commands as normal.
 
 This repository contains multiple test suites, each with its own purpose:
 
-- [Functions](): tests that functions lifecycle (`serverless deploy` and `serverless remove`) works properly.
-- [Containers](): tests that container lifecycle (`serverless deploy` and `serverless remove`) works properly.
-- [Runtimes](): tests that our runtimes work properly by using the [examples]() we provide to use our platform.
+- [Functions](<>): tests that functions lifecycle (`serverless deploy` and `serverless remove`) works properly.
+- [Containers](<>): tests that container lifecycle (`serverless deploy` and `serverless remove`) works properly.
+- [Runtimes](<>): tests that our runtimes work properly by using the [examples](<>) we provide to use our platform.
 
 ### Requirements
 

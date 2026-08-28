@@ -12,19 +12,19 @@ const {
 } = require("@jest/globals");
 
 const buildAndPushContainers = rewire(
-  "../../deploy/lib/buildAndPushContainers.js"
+  "../../deploy/lib/buildAndPushContainers.js",
 );
 const extractStreamContents = buildAndPushContainers.__get__(
-  "extractStreamContents"
+  "extractStreamContents",
 );
 const findErrorInBuildOutput = buildAndPushContainers.__get__(
-  "findErrorInBuildOutput"
+  "findErrorInBuildOutput",
 );
 const getFilesInBuildContextDirectory = buildAndPushContainers.__get__(
-  "getFilesInBuildContextDirectory"
+  "getFilesInBuildContextDirectory",
 );
 const filterFilesWithDockerignore = buildAndPushContainers.__get__(
-  "filterFilesWithDockerignore"
+  "filterFilesWithDockerignore",
 );
 
 describe("extractStreamContents", () => {
@@ -116,7 +116,7 @@ describe("filterFilesWithDockerignore", () => {
     });
     fs.writeFileSync(
       path.join(dir, "node_modules", "some-dep", "index.js"),
-      ""
+      "",
     );
     fs.writeFileSync(path.join(dir, "server.py"), "");
     fs.writeFileSync(path.join(dir, ".env"), "SECRET=shh");
@@ -137,14 +137,14 @@ describe("filterFilesWithDockerignore", () => {
         ".env",
         "keep.env.example",
         path.join("node_modules", "some-dep", "index.js"),
-      ].sort()
+      ].sort(),
     );
   });
 
   it("excludes files and directories matched by .dockerignore patterns", () => {
     fs.writeFileSync(
       path.join(dir, ".dockerignore"),
-      ["node_modules", ".env"].join("\n")
+      ["node_modules", ".env"].join("\n"),
     );
 
     const files = getFilesInBuildContextDirectory(dir);
@@ -162,7 +162,7 @@ describe("filterFilesWithDockerignore", () => {
     // rather than the directory itself for a child negation to apply.
     fs.writeFileSync(
       path.join(dir, ".dockerignore"),
-      ["node_modules/*", "!node_modules/some-dep"].join("\n")
+      ["node_modules/*", "!node_modules/some-dep"].join("\n"),
     );
 
     const files = getFilesInBuildContextDirectory(dir);
@@ -174,7 +174,7 @@ describe("filterFilesWithDockerignore", () => {
         ".env",
         "keep.env.example",
         path.join("node_modules", "some-dep", "index.js"),
-      ].sort()
+      ].sort(),
     );
   });
 });

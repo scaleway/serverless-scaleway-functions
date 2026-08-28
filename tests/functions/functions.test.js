@@ -45,7 +45,7 @@ describe("Service Lifecyle Integration Test", () => {
     "..",
     "..",
     "examples",
-    "nodejs"
+    "nodejs",
   );
   const tmpDir = getTmpDirPath();
 
@@ -79,7 +79,7 @@ describe("Service Lifecyle Integration Test", () => {
 
   it("should create service in tmp directory", () => {
     execSync(
-      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`
+      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`,
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
@@ -89,7 +89,7 @@ describe("Service Lifecyle Integration Test", () => {
     replaceTextInFile(
       "serverless.yml",
       '# description: ""',
-      `description: "${descriptionTest}"`
+      `description: "${descriptionTest}"`,
     );
     jestExpect(fs.existsSync(path.join(tmpDir, serverlessFile))).toBe(true);
     jestExpect(fs.existsSync(path.join(tmpDir, "handler.js"))).toBe(true);
@@ -97,27 +97,21 @@ describe("Service Lifecyle Integration Test", () => {
 
   it("should deploy service to scaleway", async () => {
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions[0].description).toEqual(descriptionTest);
     jestExpect(namespace.functions[0].http_option).toEqual(
-      redirectedHttpOptionTest
+      redirectedHttpOptionTest,
     );
     functionName = namespace.functions[0].name;
   });
 
   it("should invoke function from scaleway", async () => {
-    await api
-      .waitFunctionsAreDeployed(namespace.id)
-      .catch((err) => console.error(err));
+    await api.waitFunctionsAreDeployed(namespace.id);
     options.serviceName = functionName;
     const output = serverlessInvoke(options).toString();
     jestExpect(output).toBe(
-      '{"message":"Hello from Serverless Framework and Scaleway Functions :D"}'
+      '{"message":"Hello from Serverless Framework and Scaleway Functions :D"}',
     );
   });
 
@@ -145,18 +139,14 @@ module.exports.handle = (event, context, cb) => {
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions.length).toEqual(2);
     jestExpect(namespace.functions[0].http_option).toEqual(
-      redirectedHttpOptionTest
+      redirectedHttpOptionTest,
     );
     jestExpect(namespace.functions[1].http_option).toEqual(
-      enabledHttpOptionTest
+      enabledHttpOptionTest,
     );
   });
 
@@ -164,13 +154,13 @@ module.exports.handle = (event, context, cb) => {
     options.serviceName = namespace.functions[0].name;
     const outputInvoke = serverlessInvoke(options).toString();
     jestExpect(outputInvoke).toEqual(
-      '{"message":"Serverless Update Succeeded"}'
+      '{"message":"Serverless Update Succeeded"}',
     );
 
     options.serviceName = namespace.functions[1].name;
     const outputInvokeSecond = serverlessInvoke(options).toString();
     jestExpect(outputInvokeSecond).toEqual(
-      '{"message":"Serverless Update Succeeded"}'
+      '{"message":"Serverless Update Succeeded"}',
     );
   });
 
@@ -180,29 +170,25 @@ module.exports.handle = (event, context, cb) => {
     replaceTextInFile(
       serverlessFile,
       "singleSource: false",
-      "singleSource: true"
+      "singleSource: true",
     );
     replaceTextInFile(serverlessFile, `  second: ${stringIdentifier}`, "");
     replaceTextInFile(
       serverlessFile,
       `    handler: handler.handle ${stringIdentifier}`,
-      ""
+      "",
     );
 
     // redeploy, func 2 should be removed
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions.length).toEqual(1);
 
     options.serviceName = namespace.functions[0].name;
     const outputInvoke = serverlessInvoke(options).toString();
     jestExpect(outputInvoke).toEqual(
-      '{"message":"Serverless Update Succeeded"}'
+      '{"message":"Serverless Update Succeeded"}',
     );
 
     options.serviceName = "second";
@@ -217,19 +203,15 @@ module.exports.handle = (event, context, cb) => {
     replaceTextInFile(
       serverlessFile,
       redirectedHttpOptionTest,
-      enabledHttpOptionTest
+      enabledHttpOptionTest,
     );
 
     // redeploy
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions[0].http_option).toEqual(
-      enabledHttpOptionTest
+      enabledHttpOptionTest,
     );
     functionName = namespace.functions[0].name;
   });
@@ -243,8 +225,8 @@ module.exports.handle = (event, context, cb) => {
   });
 
   it("should deploy function with another available runtime", async () => {
-    // example: python310
-    replaceTextInFile(serverlessFile, "node22", "python310");
+    // example: python314
+    replaceTextInFile(serverlessFile, "node26", "python314");
     const pythonHandler = `
 def handle(event, context):
   """handle a request to the function
@@ -254,7 +236,7 @@ def handle(event, context):
   """
 
   return {
-      "message": "Hello From Python310 runtime on Serverless Framework and Scaleway Functions"
+      "message": "Hello From Python314 runtime on Serverless Framework and Scaleway Functions"
   }
 `;
     fs.writeFileSync(path.join(tmpDir, "handler.py"), pythonHandler);
@@ -267,7 +249,7 @@ def handle(event, context):
     options.serviceName = functionName;
     const output = serverlessInvoke(options).toString();
     jestExpect(output).toEqual(
-      '{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}'
+      '{"message":"Hello From Python314 runtime on Serverless Framework and Scaleway Functions"}',
     );
   });
 
@@ -291,13 +273,13 @@ def handle(event, context):
   });
 
   it("should throw error runtime does not exist", () => {
-    replaceTextInFile(serverlessFile, "python310", "doesnotexist");
+    replaceTextInFile(serverlessFile, "python314", "doesnotexist");
     try {
       jestExpect(serverlessDeploy(options)).rejects.toThrow(Error);
     } catch (err) {
       // if not try catch, test would fail
     }
-    replaceTextInFile(serverlessFile, "doesnotexist", "node22");
+    replaceTextInFile(serverlessFile, "doesnotexist", "node26");
   });
 
   // TODO: throw error if http_option is incorrect
@@ -327,7 +309,7 @@ describe("validateRuntimes", () => {
     const actual = () => validateRuntime(func, existingRuntimes);
     jestExpect(actual).toThrow(Error);
     jestExpect(actual).toThrow(
-      'Runtime "bash4" does not exist, must be one of: node17, go118'
+      'Runtime "bash4" does not exist, must be one of: node17, go118',
     );
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
@@ -338,7 +320,7 @@ describe("validateRuntimes", () => {
     const actual = () => validateRuntime(func, existingRuntimes);
     jestExpect(actual).toThrow(Error);
     jestExpect(actual).toThrow(
-      'Runtime "node17" does not exist: cannot list runtimes'
+      'Runtime "node17" does not exist: cannot list runtimes',
     );
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
@@ -368,7 +350,7 @@ describe("validateRuntimes", () => {
     jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith(
-      "WARNING: Runtime bash4 is in status beta"
+      "WARNING: Runtime bash4 is in status beta",
     );
   });
 
@@ -390,7 +372,7 @@ describe("validateRuntimes", () => {
     jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith(
-      "WARNING: Runtime bash4 is in status beta: use with caution"
+      "WARNING: Runtime bash4 is in status beta: use with caution",
     );
   });
 });

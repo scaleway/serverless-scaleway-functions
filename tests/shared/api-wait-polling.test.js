@@ -30,7 +30,7 @@ describe("waitForFunctionStatus", () => {
     const result = functionsApi.waitForFunctionStatus.call(
       ctx,
       "func-id",
-      "ready"
+      "ready",
     );
 
     await expect(result).resolves.toEqual({ status: "ready" });
@@ -47,7 +47,7 @@ describe("waitForFunctionStatus", () => {
     };
 
     await expect(
-      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready")
+      functionsApi.waitForFunctionStatus.call(ctx, "func-id", "ready"),
     ).rejects.toThrow(/my-func.*boom/);
   });
 
@@ -65,7 +65,7 @@ describe("waitForFunctionStatus", () => {
     const resultPromise = functionsApi.waitForFunctionStatus.call(
       ctx,
       "func-id",
-      "ready"
+      "ready",
     );
 
     // Let the first getFunction() promise settle before advancing timers.
@@ -84,7 +84,7 @@ describe("waitForFunctionStatus", () => {
     const resultPromise = functionsApi.waitForFunctionStatus.call(
       ctx,
       "func-id",
-      "ready"
+      "ready",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 
@@ -105,7 +105,7 @@ describe("waitFunctionsAreDeployed", () => {
     };
 
     await expect(
-      functionsApi.waitFunctionsAreDeployed.call(ctx, "ns-1")
+      functionsApi.waitFunctionsAreDeployed.call(ctx, "ns-1"),
     ).resolves.toEqual([
       { name: "a", status: "ready" },
       { name: "b", status: "ready" },
@@ -122,7 +122,7 @@ describe("waitFunctionsAreDeployed", () => {
     };
 
     await expect(
-      functionsApi.waitFunctionsAreDeployed.call(ctx, "ns-1")
+      functionsApi.waitFunctionsAreDeployed.call(ctx, "ns-1"),
     ).rejects.toThrow("deploy failed");
   });
 
@@ -139,7 +139,7 @@ describe("waitFunctionsAreDeployed", () => {
 
     const resultPromise = functionsApi.waitFunctionsAreDeployed.call(
       ctx,
-      "ns-1"
+      "ns-1",
     );
 
     await Promise.resolve();
@@ -158,7 +158,7 @@ describe("waitFunctionsAreDeployed", () => {
 
     const resultPromise = functionsApi.waitFunctionsAreDeployed.call(
       ctx,
-      "ns-1"
+      "ns-1",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 
@@ -176,7 +176,7 @@ describe("waitDomainsAreDeployedFunction", () => {
     };
 
     await expect(
-      functionsApi.waitDomainsAreDeployedFunction.call(ctx, "func-1")
+      functionsApi.waitDomainsAreDeployedFunction.call(ctx, "func-1"),
     ).resolves.toEqual([{ hostname: "a.example.com", status: "ready" }]);
   });
 
@@ -193,7 +193,7 @@ describe("waitDomainsAreDeployedFunction", () => {
     };
 
     await expect(
-      functionsApi.waitDomainsAreDeployedFunction.call(ctx, "func-1")
+      functionsApi.waitDomainsAreDeployedFunction.call(ctx, "func-1"),
     ).rejects.toThrow("could not validate");
   });
 
@@ -213,7 +213,7 @@ describe("waitDomainsAreDeployedFunction", () => {
 
     const resultPromise = functionsApi.waitDomainsAreDeployedFunction.call(
       ctx,
-      "func-1"
+      "func-1",
     );
 
     await Promise.resolve();
@@ -233,7 +233,7 @@ describe("waitDomainsAreDeployedFunction", () => {
 
     const resultPromise = functionsApi.waitDomainsAreDeployedFunction.call(
       ctx,
-      "func-1"
+      "func-1",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 
@@ -258,7 +258,7 @@ describe("waitForContainer", () => {
       } else {
         await expect(result).resolves.toEqual(container);
       }
-    }
+    },
   );
 
   it("keeps polling on a non-final status (e.g. pending) until it reaches one", async () => {
@@ -272,7 +272,7 @@ describe("waitForContainer", () => {
 
     const resultPromise = containersApi.waitForContainer.call(
       ctx,
-      "container-id"
+      "container-id",
     );
 
     await Promise.resolve();
@@ -289,7 +289,7 @@ describe("waitForContainer", () => {
 
     const resultPromise = containersApi.waitForContainer.call(
       ctx,
-      "container-id"
+      "container-id",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 
@@ -311,7 +311,7 @@ describe("waitContainersAreDeployed", () => {
     };
 
     await expect(
-      containersApi.waitContainersAreDeployed.call(ctx, "ns-1")
+      containersApi.waitContainersAreDeployed.call(ctx, "ns-1"),
     ).resolves.toEqual([{ name: "web", status: "ready" }]);
   });
 
@@ -330,7 +330,7 @@ describe("waitContainersAreDeployed", () => {
     };
 
     await expect(
-      containersApi.waitContainersAreDeployed.call(ctx, "ns-1")
+      containersApi.waitContainersAreDeployed.call(ctx, "ns-1"),
     ).rejects.toThrow("crashed");
   });
 
@@ -339,7 +339,7 @@ describe("waitContainersAreDeployed", () => {
     const ctx = { apiManager: { get: () => Promise.reject(err) } };
 
     await expect(
-      containersApi.waitContainersAreDeployed.call(ctx, "ns-1")
+      containersApi.waitContainersAreDeployed.call(ctx, "ns-1"),
     ).rejects.toThrow();
   });
 
@@ -355,7 +355,7 @@ describe("waitContainersAreDeployed", () => {
 
     const resultPromise = containersApi.waitContainersAreDeployed.call(
       ctx,
-      "ns-1"
+      "ns-1",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 
@@ -373,7 +373,7 @@ describe("waitDomainsAreDeployedContainer", () => {
     };
 
     await expect(
-      containersApi.waitDomainsAreDeployedContainer.call(ctx, "container-1")
+      containersApi.waitDomainsAreDeployedContainer.call(ctx, "container-1"),
     ).resolves.toEqual([{ hostname: "a.example.com", status: "ready" }]);
   });
 
@@ -390,7 +390,7 @@ describe("waitDomainsAreDeployedContainer", () => {
     };
 
     await expect(
-      containersApi.waitDomainsAreDeployedContainer.call(ctx, "container-1")
+      containersApi.waitDomainsAreDeployedContainer.call(ctx, "container-1"),
     ).rejects.toThrow("could not validate");
   });
 
@@ -410,7 +410,7 @@ describe("waitDomainsAreDeployedContainer", () => {
 
     const resultPromise = containersApi.waitDomainsAreDeployedContainer.call(
       ctx,
-      "container-1"
+      "container-1",
     );
 
     await Promise.resolve();
@@ -430,7 +430,7 @@ describe("waitDomainsAreDeployedContainer", () => {
 
     const resultPromise = containersApi.waitDomainsAreDeployedContainer.call(
       ctx,
-      "container-1"
+      "container-1",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 
@@ -445,7 +445,7 @@ describe("waitNamespaceIsReady", () => {
     const ctx = { getNamespace: () => Promise.resolve({ status: "ready" }) };
 
     await expect(
-      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1")
+      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1"),
     ).resolves.toEqual({ status: "ready" });
   });
 
@@ -456,7 +456,7 @@ describe("waitNamespaceIsReady", () => {
     };
 
     await expect(
-      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1")
+      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1"),
     ).rejects.toThrow("ns broken");
   });
 
@@ -499,7 +499,7 @@ describe("waitNamespaceIsDeleted", () => {
     const ctx = { getNamespace: () => Promise.reject(err) };
 
     await expect(
-      namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1")
+      namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1"),
     ).resolves.toBe(true);
   });
 
@@ -509,7 +509,7 @@ describe("waitNamespaceIsDeleted", () => {
     };
 
     await expect(
-      namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1")
+      namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1"),
     ).resolves.toBe(true);
   });
 
@@ -529,7 +529,7 @@ describe("waitNamespaceIsDeleted", () => {
 
     const resultPromise = namespacesApi.waitNamespaceIsDeleted.call(
       ctx,
-      "ns-1"
+      "ns-1",
     );
 
     await Promise.resolve();
@@ -545,7 +545,7 @@ describe("waitNamespaceIsDeleted", () => {
     const ctx = { getNamespace: () => Promise.reject(err) };
 
     await expect(
-      namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1")
+      namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1"),
     ).rejects.toThrow(/server exploded/);
   });
 
@@ -556,7 +556,7 @@ describe("waitNamespaceIsDeleted", () => {
 
     const resultPromise = namespacesApi.waitNamespaceIsDeleted.call(
       ctx,
-      "ns-1"
+      "ns-1",
     );
     const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
 

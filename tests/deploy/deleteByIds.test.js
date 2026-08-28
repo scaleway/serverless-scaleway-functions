@@ -58,7 +58,7 @@ describe("deleteFunctionsByIds", () => {
     };
 
     await jestExpect(
-      createFunctions.deleteFunctionsByIds.call(ctx, ["func-1"])
+      createFunctions.deleteFunctionsByIds.call(ctx, ["func-1"]),
     ).rejects.toThrow("delete failed");
   });
 });
@@ -101,7 +101,7 @@ describe("deleteContainersByIds", () => {
     };
 
     await jestExpect(
-      createContainers.deleteContainersByIds.call(ctx, ["container-1"])
+      createContainers.deleteContainersByIds.call(ctx, ["container-1"]),
     ).rejects.toThrow("delete failed");
   });
 });
@@ -161,7 +161,7 @@ describe("createOrUpdateContainers", () => {
 
     const resultPromise = createContainers.createOrUpdateContainers.call(
       ctx,
-      []
+      [],
     );
 
     await Promise.resolve();

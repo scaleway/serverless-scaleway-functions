@@ -1,6 +1,4 @@
 "use strict";
-
-const BbPromise = require("bluebird");
 const singleSource = require("../../shared/singleSource");
 const secrets = require("../../shared/secrets");
 const domainUtils = require("../../shared/domains");
@@ -43,8 +41,8 @@ function adaptScalingOptionToAPI(scalingOption) {
   if (!property) {
     throw new Error(
       `scalingOption.type must be one of: ${Object.keys(
-        scalingOptionToAPIProperty
-      ).join(", ")}`
+        scalingOptionToAPIProperty,
+      ).join(", ")}`,
     );
   }
 
@@ -54,22 +52,21 @@ function adaptScalingOptionToAPI(scalingOption) {
 }
 
 module.exports = {
-  createContainers() {
-    return BbPromise.bind(this)
-      .then(() => this.listContainers(this.namespace.id))
-      .then(this.createOrUpdateContainers);
+  async createContainers() {
+    const containers = await this.listContainers(this.namespace.id);
+    return this.createOrUpdateContainers(containers);
   },
 
   deleteContainersByIds(containersIdsToDelete) {
     const deletePromises = containersIdsToDelete.map((containerIdToDelete) =>
       this.deleteContainer(containerIdToDelete).then((res) => {
         this.serverless.cli.log(
-          `Container ${res.name} removed from config file, deleting it...`
+          `Container ${res.name} removed from config file, deleting it...`,
         );
         return this.waitForContainer(containerIdToDelete).then(() => {
           this.serverless.cli.log(`Container ${res.name} deleted`);
         });
-      })
+      }),
     );
 
     return Promise.all(deletePromises);
@@ -80,11 +77,11 @@ module.exports = {
       const existingDomains = domainUtils.formatDomainsStructure(domains);
       const domainsToCreate = domainUtils.getDomainsToCreate(
         customDomains,
-        existingDomains
+        existingDomains,
       );
       const domainsIdToDelete = domainUtils.getDomainsToDelete(
         customDomains,
-        existingDomains
+        existingDomains,
       );
 
       const createPromises = domainsToCreate.map((newDomain) => {
@@ -99,7 +96,7 @@ module.exports = {
       const deletePromises = domainsIdToDelete.map((domainId) =>
         this.deleteDomain(domainId).then((res) => {
           this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        })
+        }),
       );
 
       return Promise.all([...createPromises, ...deletePromises]);
@@ -112,7 +109,7 @@ module.exports = {
     const deleteData = singleSource.getElementsToDelete(
       this.serverless.configurationInput.singleSource,
       foundContainers,
-      Object.keys(containers)
+      Object.keys(containers),
     );
 
     const updatePromises = deleteData.serviceNamesRet.map((containerName) => {
@@ -121,7 +118,7 @@ module.exports = {
       });
 
       const foundContainer = foundContainers.find(
-        (c) => c.name === container.name
+        (c) => c.name === container.name,
       );
 
       if (foundContainer) {
@@ -148,7 +145,7 @@ module.exports = {
       name: container.name,
       environment_variables: container.env,
       secret_environment_variables: secrets.convertObjectToModelSecretsArray(
-        container.secret
+        container.secret,
       ),
       namespace_id: this.namespace.id,
       description: container.description,
@@ -174,7 +171,7 @@ module.exports = {
     if (container.custom_domains && container.custom_domains.length > 0) {
       this.serverless.cli.log(
         "WARNING: custom_domains are available on container update only. " +
-          "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/"
+          "Redeploy your container to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/containers/how-to/add-a-custom-domain-to-a-container/",
       );
     }
 
@@ -197,7 +194,7 @@ module.exports = {
     // => This order of operation is simpler and does not require performing two separate waits.
     await this.applyDomainsContainer(
       foundContainer.id,
-      container.custom_domains
+      container.custom_domains,
     );
 
     let privateNetworkId = container.privateNetworkId;
@@ -212,7 +209,7 @@ module.exports = {
       secret_environment_variables: await secrets.mergeSecretEnvVars(
         foundContainer.secret_environment_variables,
         secrets.convertObjectToModelSecretsArray(container.secret),
-        this.serverless.cli
+        this.serverless.cli,
       ),
       description: container.description,
       memory_limit: container.memoryLimit,
@@ -251,11 +248,11 @@ module.exports = {
         }
 
         this.serverless.cli.log(
-          `Redeploying container ${container.name} to apply changes...`
+          `Redeploying container ${container.name} to apply changes...`,
         );
 
         return this.deployContainer(updatedContainer.id);
-      }
+      },
     );
   },
 };

@@ -92,16 +92,16 @@ module.exports = {
         if (!containersAreReady) {
           if (attempt >= MAX_POLL_ATTEMPTS) {
             throw new Error(
-              `Timed out waiting for containers in namespace ${namespaceId} to become ready`
+              `Timed out waiting for containers in namespace ${namespaceId} to become ready`,
             );
           }
           return new Promise((resolve) => {
             setTimeout(
               () =>
                 resolve(
-                  this.waitContainersAreDeployed(namespaceId, attempt + 1)
+                  this.waitContainersAreDeployed(namespaceId, attempt + 1),
                 ),
-              POLL_INTERVAL_MS
+              POLL_INTERVAL_MS,
             );
           });
         }
@@ -123,19 +123,19 @@ module.exports = {
         }
 
         const isContainerInFinalStatus = CONTAINERS_FINAL_STATUSES.includes(
-          container.status
+          container.status,
         );
 
         if (!isContainerInFinalStatus) {
           if (attempt >= MAX_POLL_ATTEMPTS) {
             throw new Error(
-              `Timed out waiting for container ${containerId} to reach a final status`
+              `Timed out waiting for container ${containerId} to reach a final status`,
             );
           }
           return new Promise((resolve) => {
             setTimeout(
               () => resolve(this.waitForContainer(containerId, attempt + 1)),
-              POLL_INTERVAL_MS
+              POLL_INTERVAL_MS,
             );
           });
         }
@@ -179,16 +179,16 @@ module.exports = {
       if (!domainsAreReady) {
         if (attempt >= MAX_POLL_ATTEMPTS) {
           throw new Error(
-            `Timed out waiting for domains on container ${containerId} to become ready`
+            `Timed out waiting for domains on container ${containerId} to become ready`,
           );
         }
         return new Promise((resolve) => {
           setTimeout(
             () =>
               resolve(
-                this.waitDomainsAreDeployedContainer(containerId, attempt + 1)
+                this.waitDomainsAreDeployedContainer(containerId, attempt + 1),
               ),
-            POLL_INTERVAL_MS
+            POLL_INTERVAL_MS,
           );
         });
       }

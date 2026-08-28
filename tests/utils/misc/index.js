@@ -56,7 +56,7 @@ function serverlessInvoke(options) {
   options = mergeOptionsWithEnv(options);
   return execSync(
     `${serverlessExec} invoke --function ${options.serviceName}`,
-    options
+    options,
   );
 }
 
@@ -74,7 +74,7 @@ function createTestService(
     serviceName: null,
     serverlessConfigHook: null, // Eventual hook that allows to customize serverless config
     runCurrentVersion: false,
-  }
+  },
 ) {
   const serviceName = options.serviceName || getServiceName();
 
@@ -84,7 +84,7 @@ function createTestService(
 
   // create a new Serverless service
   execSync(
-    `${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`
+    `${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`,
   );
   process.chdir(tmpDir);
 
@@ -119,7 +119,7 @@ async function createProject() {
   });
 
   console.log(
-    `Project ${project.name} created, waiting for it to be available...`
+    `Project ${project.name} created, waiting for it to be available...`,
   );
 
   await sleep(60000);

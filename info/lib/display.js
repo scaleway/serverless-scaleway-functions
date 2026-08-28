@@ -8,7 +8,7 @@ module.exports = {
 
     return this.getNamespaceFromList(
       configInput.service,
-      this.provider.getScwProject()
+      this.provider.getScwProject(),
     ).then((namespace) => {
       if (
         namespace === undefined ||

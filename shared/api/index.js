@@ -31,7 +31,7 @@ class FunctionApi {
       triggersApi,
       jwtApi,
       logsApi,
-      runtimesApi
+      runtimesApi,
     );
   }
 }
@@ -48,7 +48,7 @@ class ContainerApi {
       triggersApi,
       jwtApi,
       logsApi,
-      runtimesApi
+      runtimesApi,
     );
   }
 }

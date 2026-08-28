@@ -14,10 +14,10 @@ const path = require("path");
 const { getApiManager } = require("../../shared/api/utils");
 
 const key = fs.readFileSync(
-  path.join(__dirname, "fixtures", "self-signed-key.pem")
+  path.join(__dirname, "fixtures", "self-signed-key.pem"),
 );
 const cert = fs.readFileSync(
-  path.join(__dirname, "fixtures", "self-signed-cert.pem")
+  path.join(__dirname, "fixtures", "self-signed-cert.pem"),
 );
 
 describe("getApiManager", () => {
@@ -43,7 +43,7 @@ describe("getApiManager", () => {
     const apiManager = getApiManager(baseURL, "some-token");
 
     await jestExpect(apiManager.get("/")).rejects.toThrow(
-      /certificate|self.signed/i
+      /certificate|self.signed/i,
     );
   });
 });

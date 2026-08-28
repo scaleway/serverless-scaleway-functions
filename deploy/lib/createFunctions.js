@@ -1,6 +1,5 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const secrets = require("../../shared/secrets");
 const singleSource = require("../../shared/singleSource");
 const domainUtils = require("../../shared/domains");
@@ -11,24 +10,23 @@ const {
 } = require("../../shared/runtimes");
 
 module.exports = {
-  createFunctions() {
-    return BbPromise.bind(this)
-      .then(() => this.listFunctions(this.namespace.id))
-      .then(this.createOrUpdateFunctions);
+  async createFunctions() {
+    const functions = await this.listFunctions(this.namespace.id);
+    return this.createOrUpdateFunctions(functions);
   },
 
   deleteFunctionsByIds(funcIdsToDelete) {
     const deletePromises = funcIdsToDelete.map((funcIdToDelete) =>
       this.deleteFunction(funcIdToDelete).then((res) => {
         this.serverless.cli.log(
-          `Function ${res.name} removed from config file, deleting it...`
+          `Function ${res.name} removed from config file, deleting it...`,
         );
         return this.waitForFunctionStatus(funcIdToDelete, "deleted").then(
           () => {
             this.serverless.cli.log(`Function ${res.name} deleted`);
-          }
+          },
         );
-      })
+      }),
     );
 
     return Promise.all(deletePromises);
@@ -40,30 +38,33 @@ module.exports = {
     const deleteData = singleSource.getElementsToDelete(
       this.serverless.configurationInput.singleSource,
       foundFunctions,
-      Object.keys(functions)
+      Object.keys(functions),
     );
+
+    // run create or update promises sequentially (concurrency: 1)
+    // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
+    const updateOrCreateSequentially = async () => {
+      const updatedFunctions = [];
+      for (const functionName of deleteData.serviceNamesRet) {
+        const func = Object.assign(functions[functionName], {
+          name: functionName,
+        });
+
+        const foundFunc = foundFunctions.find((f) => f.name === func.name);
+
+        updatedFunctions.push(
+          await (foundFunc
+            ? this.updateSingleFunction(func, foundFunc)
+            : this.createSingleFunction(func)),
+        );
+      }
+
+      this.functions = updatedFunctions;
+    };
 
     return Promise.all([
       this.deleteFunctionsByIds(deleteData.elementsIdsToRemove),
-      // run create or update promises sequentially (concurrency: 1)
-      // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
-      BbPromise.map(
-        deleteData.serviceNamesRet,
-        (functionName) => {
-          const func = Object.assign(functions[functionName], {
-            name: functionName,
-          });
-
-          const foundFunc = foundFunctions.find((f) => f.name === func.name);
-
-          return foundFunc
-            ? this.updateSingleFunction(func, foundFunc)
-            : this.createSingleFunction(func);
-        },
-        { concurrency: 1 }
-      ).then((updatedFunctions) => {
-        this.functions = updatedFunctions;
-      }),
+      updateOrCreateSequentially(),
     ]);
   },
 
@@ -74,11 +75,11 @@ module.exports = {
       const existingDomains = domainUtils.formatDomainsStructure(domains);
       const domainsToCreate = domainUtils.getDomainsToCreate(
         customDomains,
-        existingDomains
+        existingDomains,
       );
       const domainsIdToDelete = domainUtils.getDomainsToDelete(
         customDomains,
-        existingDomains
+        existingDomains,
       );
 
       const createPromises = domainsToCreate.map((newDomain) => {
@@ -90,7 +91,7 @@ module.exports = {
       const deletePromises = domainsIdToDelete.map((domainId) =>
         this.deleteDomain(domainId).then((res) => {
           this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        })
+        }),
       );
 
       return Promise.all([...createPromises, ...deletePromises]);
@@ -104,11 +105,11 @@ module.exports = {
         r[a.language].push(a);
         return r;
       },
-      Object.create(null)
+      Object.create(null),
     );
 
     const existingRuntimesByName = Object.values(
-      existingRuntimesGroupedByLanguage
+      existingRuntimesGroupedByLanguage,
     )
       .flat()
       .reduce((map, r) => {
@@ -163,7 +164,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     let errorMessage = `Runtime "${currentRuntime}" does not exist`;
     if (existingRuntimes.length > 0) {
       errorMessage += `, must be one of: ${Object.keys(
-        existingRuntimesByName
+        existingRuntimesByName,
       ).join(", ")}`;
     } else {
       errorMessage += ": cannot list runtimes";
@@ -177,7 +178,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       name: func.name,
       environment_variables: func.env,
       secret_environment_variables: secrets.convertObjectToModelSecretsArray(
-        func.secret
+        func.secret,
       ),
       namespace_id: this.namespace.id,
       description: func.description,
@@ -197,21 +198,21 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     params.runtime = this.validateRuntime(
       func,
       availableRuntimes,
-      this.serverless.cli
+      this.serverless.cli,
     );
 
     // checking if there is custom_domains set on function creation.
     if (func.custom_domains && func.custom_domains.length > 0) {
       this.serverless.cli.log(
         "WARNING: custom_domains are available on function update only. " +
-          "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/"
+          "Redeploy your function to apply custom domains. Doc : https://www.scaleway.com/en/docs/compute/functions/how-to/add-a-custom-domain-name-to-a-function/",
       );
     }
 
     this.serverless.cli.log(`Creating function ${func.name}...`);
 
     return this.createFunction(params).then((response) =>
-      Object.assign(response, { handler: func.handler })
+      Object.assign(response, { handler: func.handler }),
     );
   },
 
@@ -229,7 +230,7 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
       secret_environment_variables: await secrets.mergeSecretEnvVars(
         foundFunc.secret_environment_variables,
         secrets.convertObjectToModelSecretsArray(func.secret),
-        this.serverless.cli
+        this.serverless.cli,
       ),
       description: func.description,
       memory_limit: func.memoryLimit,
@@ -248,14 +249,14 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
     params.runtime = this.validateRuntime(
       func,
       availableRuntimes,
-      this.serverless.cli
+      this.serverless.cli,
     );
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
 
     const [updatedFunction] = await Promise.all([
       this.updateFunction(foundFunc.id, params).then((response) =>
-        Object.assign(response, { handler: func.handler })
+        Object.assign(response, { handler: func.handler }),
       ),
       // assign domains
       this.applyDomainsFunc(foundFunc.id, func.custom_domains),

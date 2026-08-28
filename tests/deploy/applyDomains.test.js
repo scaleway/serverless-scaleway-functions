@@ -71,7 +71,7 @@ describe("applyDomainsContainer", () => {
     const resultPromise = createContainers.applyDomainsContainer.call(
       ctx,
       "container-1",
-      ["new.example.com"]
+      ["new.example.com"],
     );
 
     await Promise.resolve();
@@ -108,7 +108,7 @@ describe("updateSingleFunction", () => {
     const resultPromise = createFunctions.updateSingleFunction.call(
       ctx,
       { runtime: "node18", custom_domains: ["new.example.com"] },
-      { id: "func-1", secret_environment_variables: [] }
+      { id: "func-1", secret_environment_variables: [] },
     );
 
     await Promise.resolve();
@@ -150,7 +150,7 @@ describe("updateSingleContainer", () => {
     const resultPromise = createContainers.updateSingleContainer.call(
       ctx,
       { custom_domains: ["new.example.com"] },
-      { id: "container-1", secret_environment_variables: [] }
+      { id: "container-1", secret_environment_variables: [] },
     );
 
     await Promise.resolve();

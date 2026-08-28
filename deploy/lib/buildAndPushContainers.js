@@ -59,7 +59,7 @@ function getFilesInBuildContextDirectory(directory) {
 
         // Prepend the current directory name to each subfile path
         const relativeSubFiles = subFiles.map((subFile) =>
-          path.join(dirent.name, subFile)
+          path.join(dirent.name, subFile),
         );
         files = files.concat(relativeSubFiles);
       } else if (dirent.isFile() && dirent.name !== ".dockerignore") {
@@ -101,7 +101,7 @@ function validateContainerConfigBeforeBuild(containerConfig) {
               directory: my-container-directory
               buildArgs:
                 MY_BUILD_ARG: "my-value"
-          `
+          `,
     );
   }
 }
@@ -109,13 +109,13 @@ function validateContainerConfigBeforeBuild(containerConfig) {
 async function buildAndPushContainer(
   registryAuth,
   authConfig,
-  containerConfig
+  containerConfig,
 ) {
   const { name, directory, buildArgs } = containerConfig;
   const imageName = `${this.namespace.registry_endpoint}/${name}:latest`;
 
   this.serverless.cli.log(
-    `Building and pushing container ${name} to: ${imageName} ...`
+    `Building and pushing container ${name} to: ${imageName} ...`,
   );
 
   let buildOptions = {
@@ -132,20 +132,20 @@ async function buildAndPushContainer(
       context: directory,
       src: filterFilesWithDockerignore(
         directory,
-        getFilesInBuildContextDirectory(directory)
+        getFilesInBuildContextDirectory(directory),
       ),
     },
-    buildOptions
+    buildOptions,
   );
   const buildStreamEvents = await extractStreamContents(
     buildStream,
-    this.provider.options.verbose
+    this.provider.options.verbose,
   );
 
   const buildError = findErrorInBuildOutput(buildStreamEvents);
   if (buildError !== undefined) {
     throw new Error(
-      `Build did not succeed for container ${name}, error: ${buildError}`
+      `Build did not succeed for container ${name}, error: ${buildError}`,
     );
   }
 
@@ -153,7 +153,7 @@ async function buildAndPushContainer(
 
   const inspectedImage = await image.inspect().catch(() => {
     throw new Error(
-      `Image ${imageName} does not exist: run --verbose to see errors`
+      `Image ${imageName} does not exist: run --verbose to see errors`,
     );
   });
 
@@ -167,7 +167,7 @@ async function buildAndPushContainer(
         "Please pull your image's base image with platform `linux/amd64`: " +
         "first (`docker pull --platform=linux/amd64 <your_base_image>`), " +
         "and just after, run `serverless deploy`. You shouldn't pull the other " +
-        "image architecture between those two steps."
+        "image architecture between those two steps.",
     );
   }
 
@@ -188,7 +188,7 @@ module.exports = {
     try {
       await docker.checkAuth(registryAuth);
     } catch (err) {
-      throw new Error(`Docker error : ${err}`);
+      throw new Error(`Docker error : ${err}`, { cause: err });
     }
 
     const { containers } = this.provider.serverless.service.custom;
@@ -211,7 +211,7 @@ module.exports = {
           this,
           registryAuth,
           auth,
-          containerConfig
+          containerConfig,
         );
       });
 

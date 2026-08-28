@@ -65,8 +65,107 @@ describe("deletePreviousTriggersForApplication", () => {
     await jestExpect(
       deployTriggers.deletePreviousTriggersForApplication.call(ctx, {
         currentTriggers: [{ id: "cron-1", schedule: "* * * * *" }],
-      })
+      }),
     ).rejects.toThrow("delete failed");
+  });
+});
+
+describe("manageTriggers", () => {
+  it("does nothing and returns undefined when there are no applications", async () => {
+    const ctx = {
+      getTriggersForApplication: jest.fn(),
+      deletePreviousTriggersForApplication: jest.fn(),
+      createNewTriggersForApplication: jest.fn(),
+    };
+
+    const result = await deployTriggers.manageTriggers.call(ctx, [], true);
+
+    jestExpect(result).toBeUndefined();
+    jestExpect(ctx.getTriggersForApplication).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when applications is undefined/null", async () => {
+    const ctx = {};
+
+    jestExpect(
+      await deployTriggers.manageTriggers.call(ctx, undefined, true),
+    ).toBeUndefined();
+    jestExpect(
+      await deployTriggers.manageTriggers.call(ctx, null, true),
+    ).toBeUndefined();
+  });
+
+  it("chains get -> delete -> create -> print in order for each application, passing data through", async () => {
+    const calls = [];
+    const ctx = {
+      getTriggersForApplication: (application, isFunction) => {
+        calls.push(["get", application.id, isFunction]);
+        return Promise.resolve({ ...application, currentTriggers: ["old"] });
+      },
+      deletePreviousTriggersForApplication: (appWithTriggers) => {
+        calls.push(["delete", appWithTriggers.currentTriggers]);
+        return Promise.resolve();
+      },
+      createNewTriggersForApplication: (application, isFunction) => {
+        calls.push(["create", application.id, isFunction]);
+        return Promise.resolve(["new-trigger"]);
+      },
+      printDeployedTriggersForApplication: (application, triggers) => {
+        calls.push(["print", application.id, triggers]);
+        return undefined;
+      },
+    };
+
+    await deployTriggers.manageTriggers.call(
+      ctx,
+      [{ id: "app-1", name: "first" }],
+      true,
+    );
+
+    jestExpect(calls).toEqual([
+      ["get", "app-1", true],
+      ["delete", ["old"]],
+      ["create", "app-1", true],
+      ["print", "app-1", ["new-trigger"]],
+    ]);
+  });
+
+  it("propagates a failure from any step of the chain instead of swallowing it", async () => {
+    const ctx = {
+      getTriggersForApplication: () => Promise.reject(new Error("get failed")),
+    };
+
+    await jestExpect(
+      deployTriggers.manageTriggers.call(
+        ctx,
+        [{ id: "app-1", name: "first" }],
+        true,
+      ),
+    ).rejects.toThrow("get failed");
+  });
+});
+
+describe("getTriggersForApplication", () => {
+  it("spreads the fetched triggers into a new currentTriggers array on the application", async () => {
+    const ctx = {
+      listTriggersForApplication: (id, isFunction) => {
+        jestExpect(id).toEqual("app-1");
+        jestExpect(isFunction).toBe(true);
+        return Promise.resolve([{ id: "trigger-1" }]);
+      },
+    };
+
+    const result = await deployTriggers.getTriggersForApplication.call(
+      ctx,
+      { id: "app-1", name: "first" },
+      true,
+    );
+
+    jestExpect(result).toEqual({
+      id: "app-1",
+      name: "first",
+      currentTriggers: [{ id: "trigger-1" }],
+    });
   });
 });
 
@@ -93,7 +192,7 @@ describe("createNewTriggersForApplication", () => {
     const resultPromise = deployTriggers.createNewTriggersForApplication.call(
       ctx,
       { id: "app-1", name: "first" },
-      true
+      true,
     );
 
     await Promise.resolve();
@@ -114,7 +213,7 @@ describe("createNewTriggersForApplication", () => {
     const resultPromise = deployTriggers.createNewTriggersForApplication.call(
       ctx,
       { id: "app-1", name: "first" },
-      true
+      true,
     );
 
     await Promise.resolve();
@@ -135,7 +234,7 @@ describe("createNewTriggersForApplication", () => {
     const resultPromise = deployTriggers.createNewTriggersForApplication.call(
       ctx,
       { id: "app-1", name: "first" },
-      true
+      true,
     );
 
     await Promise.resolve();
@@ -156,8 +255,57 @@ describe("createNewTriggersForApplication", () => {
       deployTriggers.createNewTriggersForApplication.call(
         ctx,
         { id: "app-1", name: "first" },
-        true
-      )
+        true,
+      ),
     ).rejects.toThrow("create failed");
+  });
+
+  it("resolves to an empty array without creating anything when the application is no longer in serverless.yml", async () => {
+    const ctx = {
+      provider: {
+        serverless: { service: { functions: {} } },
+      },
+      createCronTrigger: jest.fn(),
+      createMessageTrigger: jest.fn(),
+    };
+
+    const result = await deployTriggers.createNewTriggersForApplication.call(
+      ctx,
+      { id: "app-1", name: "first" },
+      true,
+    );
+
+    jestExpect(result).toEqual([]);
+    jestExpect(ctx.createCronTrigger).not.toHaveBeenCalled();
+    jestExpect(ctx.createMessageTrigger).not.toHaveBeenCalled();
+  });
+
+  it("reads container events from custom.containers when isFunction is false", async () => {
+    const created = deferred();
+    const ctx = {
+      provider: {
+        serverless: {
+          service: {
+            custom: {
+              containers: {
+                first: { events: [{ schedule: { rate: "1 * * * *" } }] },
+              },
+            },
+          },
+        },
+      },
+      createCronTrigger: () => created.promise,
+    };
+
+    const resultPromise = deployTriggers.createNewTriggersForApplication.call(
+      ctx,
+      { id: "app-1", name: "first" },
+      false,
+    );
+
+    created.resolve();
+    const result = await resultPromise;
+
+    jestExpect(result).toEqual([undefined]);
   });
 });

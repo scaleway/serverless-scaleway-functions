@@ -8,7 +8,7 @@ function apiManagerReturning(responsesByUrl) {
   return {
     get: (url) => {
       const entry = Object.entries(responsesByUrl).find(([prefix]) =>
-        url.startsWith(prefix)
+        url.startsWith(prefix),
       );
       if (!entry) {
         return Promise.reject(new Error(`unexpected URL: ${url}`));
@@ -34,7 +34,7 @@ describe("listTriggersForApplication", () => {
     const result = await triggersApi.listTriggersForApplication.call(
       ctx,
       "app-1",
-      true
+      true,
     );
 
     expect(result).toEqual([{ id: "cron-1" }, { id: "trigger-1" }]);
@@ -89,7 +89,7 @@ describe("listTriggersForApplication", () => {
     const result = await triggersApi.listTriggersForApplication.call(
       ctx,
       "app-1",
-      true
+      true,
     );
 
     expect(result).toEqual([]);
@@ -110,7 +110,7 @@ describe("listTriggersForApplication", () => {
     };
 
     await expect(
-      triggersApi.listTriggersForApplication.call(ctx, "app-1", true)
+      triggersApi.listTriggersForApplication.call(ctx, "app-1", true),
     ).rejects.toThrow("boom");
   });
 });

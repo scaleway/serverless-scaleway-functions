@@ -1,22 +1,18 @@
 "use strict";
 
-const BbPromise = require("bluebird");
 const secrets = require("../../shared/secrets");
 
 module.exports = {
-  createServerlessNamespace() {
-    return BbPromise.bind(this)
-      .then(() =>
-        this.getNamespaceFromList(
-          this.namespaceName,
-          this.provider.getScwProject()
-        )
-      )
-      .then(this.createIfNotExists);
+  async createServerlessNamespace() {
+    const namespace = await this.getNamespaceFromList(
+      this.namespaceName,
+      this.provider.getScwProject(),
+    );
+    return this.createIfNotExists(namespace);
   },
 
   updateServerlessNamespace() {
-    return BbPromise.bind(this).then(() => this.updateNamespaceConfiguration());
+    return this.updateNamespaceConfiguration();
   },
 
   saveNamespaceToProvider(namespace) {
@@ -32,7 +28,7 @@ module.exports = {
 
     if (foundNamespace && foundNamespace.status === "ready") {
       this.saveNamespaceToProvider(foundNamespace);
-      return BbPromise.resolve();
+      return Promise.resolve();
     }
 
     if (foundNamespace && foundNamespace.status !== "ready") {
@@ -46,7 +42,7 @@ module.exports = {
       project_id: this.provider.getScwProject(),
       environment_variables: this.namespaceVariables,
       secret_environment_variables: secrets.convertObjectToModelSecretsArray(
-        this.namespaceSecretVariables
+        this.namespaceSecretVariables,
       ),
     };
 
@@ -65,9 +61,9 @@ module.exports = {
         params.secret_environment_variables = await secrets.mergeSecretEnvVars(
           this.namespace.secret_environment_variables,
           secrets.convertObjectToModelSecretsArray(
-            this.namespaceSecretVariables
+            this.namespaceSecretVariables,
           ),
-          this.serverless.cli
+          this.serverless.cli,
         );
       }
       return this.updateNamespace(this.namespace.id, params);
@@ -77,7 +73,7 @@ module.exports = {
 
   waitNamespaceIsReadyAndSave() {
     return this.waitNamespaceIsReady(this.namespace.id).then((namespace) =>
-      this.saveNamespaceToProvider(namespace)
+      this.saveNamespaceToProvider(namespace),
     );
   },
 };

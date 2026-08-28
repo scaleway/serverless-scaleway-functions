@@ -41,7 +41,7 @@ describe("createDomainAndLog", () => {
     };
 
     await jestExpect(
-      domainApi.createDomainAndLog.call(ctx, { hostname: "my.example.com" })
+      domainApi.createDomainAndLog.call(ctx, { hostname: "my.example.com" }),
     ).resolves.toBeUndefined();
 
     jestExpect(logs.some((l) => l.includes("Error on domain"))).toBe(true);

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: npx prettier@2.8.8 --check .
+      - run: npx prettier@3.9.6 --check .
 
   test:
     needs: lint
@@ -35,7 +35,7 @@ jobs:
             "shared",
             "triggers",
           ]
-        node-version: ["18.x", "20.x"]
+        node-version: ["20.x", "22.x"]
 
     runs-on: ubuntu-24.04
     steps:

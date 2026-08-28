@@ -14,7 +14,7 @@ Your `serverless.yml` would look like:
 
 ```yml
 provider:
-  runtime: node22
+  runtime: node26
 functions:
   first:
     handler: src/handlers/firstHandler.myFirstHandler

@@ -1,4 +1,3 @@
-const BbPromise = require("bluebird");
 const axios = require("axios");
 const { EOL } = require("os");
 
@@ -20,7 +19,7 @@ class ScalewayInvoke {
     this.isContainer = false;
     this.isFunction = false;
 
-    function validateFunctionOrContainer() {
+    const validateFunctionOrContainer = () => {
       // Check the user has specified a name, and that it's defined as either a function or container
       if (!this.options.function) {
         const msg = "Function or container not specified";
@@ -36,18 +35,18 @@ class ScalewayInvoke {
         this.serverless.cli.log(msg);
         throw new Error(msg);
       }
-    }
+    };
 
-    function lookUpFunctionOrContainer(ns) {
+    const lookUpFunctionOrContainer = (ns) => {
       // List containers/functions in the namespace
       if (this.isContainer) {
         return this.listContainers(ns.id);
       } else {
         return this.listFunctions(ns.id);
       }
-    }
+    };
 
-    function doInvoke(found) {
+    const doInvoke = (found) => {
       // Filter on name
       let func = found.find((f) => f.name === this.options.function);
 
@@ -69,22 +68,22 @@ class ScalewayInvoke {
         .catch((error) => {
           process.stderr.write(error.toString() + EOL);
         });
-    }
+    };
 
     this.hooks = {
-      "before:invoke:invoke": () =>
-        BbPromise.bind(this).then(this.setUpDeployment).then(this.validate),
-      "invoke:invoke": () =>
-        BbPromise.bind(this)
-          .then(validateFunctionOrContainer)
-          .then(() =>
-            this.getNamespaceFromList(
-              this.namespaceName,
-              this.provider.getScwProject()
-            )
-          )
-          .then(lookUpFunctionOrContainer)
-          .then(doInvoke),
+      "before:invoke:invoke": async () => {
+        await this.setUpDeployment();
+        return this.validate();
+      },
+      "invoke:invoke": async () => {
+        validateFunctionOrContainer();
+        const ns = await this.getNamespaceFromList(
+          this.namespaceName,
+          this.provider.getScwProject(),
+        );
+        const found = await lookUpFunctionOrContainer(ns);
+        return doInvoke(found);
+      },
     };
   }
 }
