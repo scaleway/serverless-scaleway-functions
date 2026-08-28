@@ -5,13 +5,18 @@ const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
 
-const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
+const {
+  getTmpDirPath,
+  replaceTextInFile,
+  readYamlFile,
+  writeYamlFile,
+} = require("../utils/fs");
 const {
   getServiceName,
   serverlessDeploy,
   serverlessRemove,
   serverlessInvoke,
-  createProject,
+  resolveTestProject,
 } = require("../utils/misc");
 const { ContainerApi, RegistryApi } = require("../../shared/api");
 const { execSync } = require("../../shared/child-process");
@@ -49,6 +54,7 @@ describe("Build and deploy on container with a base image private", () => {
     namespace,
     containerName,
     registryApi;
+  let usingExistingProject = false;
 
   const originalImageRepo = "python";
   const imageTag = "3-alpine";
@@ -61,9 +67,9 @@ describe("Build and deploy on container with a base image private", () => {
     api = new ContainerApi(apiUrl, scwToken);
     registryApi = new RegistryApi(registryApiUrl, scwToken);
 
-    await createProject().then((project) => {
-      projectId = project.id;
-    });
+    const testProject = await resolveTestProject();
+    projectId = testProject.id;
+    usingExistingProject = testProject.usingExistingProject;
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
     // pull the base image, create a private registry, push it into that registry, and remove the image locally
@@ -111,7 +117,11 @@ describe("Build and deploy on container with a base image private", () => {
   });
 
   afterAll(async () => {
-    await removeProjectById(projectId).catch();
+    // Only remove the project this test actually created, never a shared
+    // existing project resolveTestProject() reused instead.
+    if (!usingExistingProject) {
+      await removeProjectById(projectId).catch();
+    }
   });
 
   it("should create service in tmp directory", async () => {
@@ -120,7 +130,14 @@ describe("Build and deploy on container with a base image private", () => {
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
-    replaceTextInFile("serverless.yml", "scaleway-container", serviceName);
+    // See the identical comment in containers.test.js's "should create
+    // service in tmp directory" - `serverless create --path <tmpDir>`
+    // already overwrites `service:` with tmpDir's own (random hex)
+    // basename, so a plain text replace looking for the template's
+    // placeholder string silently no-ops. Set it directly via YAML instead.
+    const serverlessConfig = readYamlFile("serverless.yml");
+    serverlessConfig.service = serviceName;
+    writeYamlFile("serverless.yml", serverlessConfig);
     replaceTextInFile(
       path.join("my-container", "Dockerfile"),
       "FROM python:3-alpine",

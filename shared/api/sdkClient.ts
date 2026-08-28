@@ -1,32 +1,17 @@
 import { createClient } from "@scaleway/sdk-client";
 import type { Client } from "@scaleway/sdk-client";
 import type { Region } from "@scaleway/sdk-client";
-// Pinned to the 6.x line deliberately - verified directly (2026-08-26)
-// against the real API on Node 22.22.1 that undici@8.10.0's Agent throws
-// `InvalidArgumentError: invalid onRequestStart method` when passed as
-// fetch()'s `dispatcher`, because the standalone npm `undici` package and
-// whatever undici Node vendors internally for its built-in fetch can
-// drift apart, and a newer external Agent's handler interface isn't
-// necessarily one Node's internal fetch dispatch understands. undici@6.28
-// works cleanly (confirmed with 5 live sequential requests against the
-// real API). Re-verify the same way (a real request, not just a type
-// check - the mismatch above type-checked fine and only failed at
-// runtime) before ever bumping this past the 6.x line.
+// Pinned to 6.x deliberately - undici@8.10.0's Agent type-checks fine but
+// breaks at runtime against Node's internally-vendored undici. Re-verify
+// with a real request (not just tsc) before bumping past 6.x - see
+// docs/fixing-plan.md's M10 for the full investigation.
 import { Agent } from "undici";
 
-// The SDK's client-side auth guard (hasAuthenticationSecrets /
-// assertValidAuthenticationSecrets) requires a well-formed accessKey
-// (`^SCW[A-Z0-9]{17}$`) before it will even attach the authentication
-// interceptor to outgoing requests - but that interceptor
-// (`authenticateWithSecrets` in @scaleway/sdk-client) only ever puts
-// `secretKey` on the wire, via the `X-Auth-Token` header; `accessKey` is
-// never transmitted anywhere. Verified directly against the real API
-// (2026-08-26): a well-formed-but-unregistered accessKey plus a real
-// secretKey authenticates successfully, identically to a real accessKey.
-// This repo's entire credential model (provider/scalewayProvider.ts) has
-// only ever collected a secret key - there is no user-facing access-key
-// concept, and none is needed here; this constant exists purely to satisfy
-// the SDK's client-side format check, and is never sent to Scaleway.
+// Well-formed-but-unregistered is enough: @scaleway/sdk-client requires
+// accessKey to match `^SCW[A-Z0-9]{17}$` before it'll authenticate at
+// all, but only ever transmits secretKey on the wire - this repo has
+// never collected a real access key. See docs/fixing-plan.md's M10 for
+// the verification against the real API.
 const PLACEHOLDER_ACCESS_KEY = `SCW${"0".repeat(17)}`;
 
 export interface ScalewayClientOptions {
@@ -35,53 +20,29 @@ export interface ScalewayClientOptions {
   apiUrl?: string;
 }
 
-// This repo hits an intermittent `SocketError: other side closed`
-// against the real API, occasionally and identically through both this
-// SDK's fetch transport and the separate axios-based paths (jwt.ts/
-// logs.ts/uploadCode.ts) that predate this SDK migration - ruling out
-// either HTTP client implementation as the cause. Root cause (matches
-// nodejs/undici#5450, #3300, #2400 and others): undici's connection pool
-// can pull a pooled keep-alive socket for reuse in the same instant the
-// far end (a NAT, proxy, or load balancer sitting between us and the
-// Scaleway API) closes it for being idle - a genuine race, not a fixed
-// timeout misconfiguration. Tuning the client's own keepAliveTimeout to
-// sit below the intermediary's idle timeout only narrows that race
-// window, it can't close it - Scaleway doesn't publish (and could change)
-// whatever that intermediary's timeout is.
-//
-// Primary fix: stop pooling connections at all. This is a deploy CLI
-// making occasional, sequential requests, not a high-throughput service,
-// so the usual reason to reuse a connection (skip a repeated TCP/TLS
-// handshake) doesn't apply here - there's no meaningful cost to giving it
-// up, and doing so removes the race entirely instead of just narrowing
-// it. `fetch()` itself refuses to let a caller set a `Connection: close`
-// request header directly (it's on the Fetch spec's forbidden-header
-// list), so this is done via a dedicated undici Agent whose
-// keepAliveTimeout/keepAliveMaxTimeout are set to 1ms: a socket is
-// evicted from the pool essentially the instant it goes idle, long before
-// any subsequent request in this CLI's normal (multi-hundred-ms-to-
-// seconds apart) request cadence could ever reuse it - functionally
-// equivalent to closing the connection after every response, without
-// hand-rolling a raw undici Dispatcher.request() call just to get past
-// fetch()'s forbidden-header restriction. One Agent instance is shared
-// module-wide (not one per request) since constructing it is what's
-// comparatively expensive, not holding a reference to it.
+// Avoids a genuine race in undici's connection pool - a pooled keep-alive
+// socket can be reused in the same instant an intermediary (NAT/proxy/
+// load balancer) between us and the Scaleway API closes it for being
+// idle. keepAliveTimeout/keepAliveMaxTimeout of 1ms evicts a socket from
+// the pool essentially the instant it goes idle - functionally
+// equivalent to `Connection: close` (which fetch() itself refuses to let
+// a caller set directly). Tuning the timeout instead of near-eliminating
+// it would only narrow the race, not close it - Scaleway doesn't publish
+// (or guarantee) the intermediary's own timeout. Shared module-wide since
+// constructing the Agent is the expensive part, not holding a reference
+// to it. Full investigation: docs/fixing-plan.md's M10.
 const NON_PERSISTENT_DISPATCHER = new Agent({
   keepAliveTimeout: 1,
   keepAliveMaxTimeout: 1,
 });
 
-// Defense-in-depth on top of the fix above: even with non-persistent
-// connections, a plain one-off network failure (DNS blip, connection
-// refused, TLS hiccup) can still happen, and - per the undici issues
-// above - the pooling race isn't strictly impossible to hit in the
-// instant between eviction and reuse either. Retries only idempotent
-// methods (GET/HEAD/OPTIONS/PUT/DELETE) - retrying a POST/PATCH that
-// failed at the network level is unsafe in general, since there's no way
-// to know whether the server actually received and processed the request
-// before the connection dropped; retrying could create a duplicate
-// resource. This repo's create/update calls (createFunction,
-// createNamespace, etc.) intentionally stay non-retried.
+// Defense-in-depth on top of the fix above, for a genuine one-off network
+// blip unrelated to socket reuse. Only idempotent methods (GET/HEAD/
+// OPTIONS/PUT/DELETE) - retrying a POST/PATCH that failed at the network
+// level is unsafe, since there's no way to know whether the server
+// already processed the request before the connection dropped; retrying
+// could create a duplicate resource. This repo's create/update calls
+// (createFunction, createNamespace, etc.) intentionally stay non-retried.
 const MAX_FETCH_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 500;
 const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "OPTIONS", "PUT", "DELETE"]);

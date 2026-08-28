@@ -1,35 +1,35 @@
 # Code review findings & fixing plan
 
-Review date: 2026-08-26. Scope: `provider/`, `deploy/`, `remove/`, `invoke/`, `jwt/`, `logs/`, `info/`, `shared/`, `index.js` (all `.js`, excluding `tests/` and `examples/`). Every finding below was confirmed by reading the actual code directly (not inferred); line numbers refer to the current `master` (`c1e902d`).
+Review date: 2026-08-26. Scope: `provider/`, `deploy/`, `remove/`, `invoke/`, `jwt/`, `logs/`, `info/`, `shared/`, `index.js` (all `.js`, excluding `tests/` and `examples/`). Every finding below was confirmed by reading the actual code directly (not inferred); line numbers refer to the current `master` (`c1e902d`) **as of the review date** — the subsequent TypeScript + `@scaleway/sdk-*` rewrite (`v2llm` branch, 2026-08-26/27) renamed and restructured most of these files, so line numbers below are historical, not navigable against current code.
 
-This is a findings + plan document only — no code has been changed yet.
+This was a findings + plan document only when written — no code had been changed yet at review time. **Status update, 2026-08-27:** the TS/SDK rewrite resolved the large majority of these findings as a side effect of rewriting the underlying implementation, not because anyone worked this specific plan item-by-item — each row below was individually re-verified against current code. Two items are not fully resolved (#14, #21); see their notes. Re-verify against current code before trusting any status below if more time has passed since 2026-08-27 — this table isn't kept live.
 
 ## Summary
 
-| #   | Severity | Area          | One-liner                                                                                                    |
-| --- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------ |
-| 1   | Critical | API client    | TLS certificate verification is disabled for every API call                                                  |
-| 2   | High     | API client    | `manageError` silently swallows some errors instead of throwing                                              |
-| 3   | High     | Triggers      | Trigger delete/create calls aren't awaited — races that likely cause the still-open HTTP 409s                |
-| 4   | High     | API client    | List endpoints don't paginate — resources beyond page 1 are invisible                                        |
-| 5   | High     | Deploy        | Recent crash fix over-broadened silent failure to all 4xx, causing a _different_ crash downstream            |
-| 6   | High     | JWT           | `serverless jwt` issues function JWTs for containers (copy/paste bug)                                        |
-| 7   | High     | Provider      | Region from `~/.config/scw/config.yaml` (`default_region`) is silently discarded                             |
-| 8   | High     | Provider      | Partial `scwToken`/`scwProject` in `serverless.yml` crashes with an unhelpful `TypeError`                    |
-| 9   | Medium   | Deploy        | `.then(cli.log(...))` bug — delete confirmation log fires before deletion is confirmed                       |
-| 10  | Medium   | Deploy        | Domain-deployment wait isn't awaited — deploy can "succeed" before domains are ready                         |
-| 11  | Medium   | Registry      | Registry namespace listing uses the wrong query param name, breaking project scoping                         |
-| 12  | Medium   | Invoke        | `serverless invoke` has no auth header, isn't awaited, and crashes on an unmatched name                      |
-| 13  | Medium   | Domains       | `createDomainAndLog` is fire-and-forget; domain failures never fail the deploy                               |
-| 14  | Medium   | Containers    | `.dockerignore` contents are never applied — excluded files/secrets can end up in the image                  |
-| 15  | Medium   | Validation    | Nothing rejects defining both `functions` and `custom.containers` — confusing crash instead of a clear error |
-| 16  | Low      | Cleanup logic | `getElementsToDelete` inner loop is dead code (wrong comparison + non-mutating `slice`)                      |
-| 17  | Low      | Robustness    | All polling loops (`wait*`) are unbounded — no timeout/max attempts                                          |
-| 18  | Low      | Remove        | `waitNamespaceIsDeleted` discards the real error behind a generic message on any non-404 failure             |
-| 19  | Low      | Info          | `serverless info` has no `.catch` on its API calls — unhandled rejection on failure                          |
-| 20  | Low      | Code quality  | Dead `if (inspectedImage === undefined) return;` in container build                                          |
-| 21  | Low      | Code quality  | Function/container create-update paths are ~80 lines of duplicated, drifting logic                           |
-| 22  | Low      | Invoke        | Typo in user-facing error message ("servleress.yml")                                                         |
+| #   | Severity | Area          | One-liner                                                                                                    | Status (2026-08-27)                                                                                                                                                                                                                                                                                                                                                           |
+| --- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Critical | API client    | TLS certificate verification is disabled for every API call                                                  | **Resolved.** No `rejectUnauthorized` anywhere in `shared/`/`provider`/`deploy` — the axios client it lived on is gone.                                                                                                                                                                                                                                                       |
+| 2   | High     | API client    | `manageError` silently swallows some errors instead of throwing                                              | **Resolved.** `shared/api/utils.ts`'s `manageError` always throws (`CustomError` or plain `Error`), never swallows.                                                                                                                                                                                                                                                           |
+| 3   | High     | Triggers      | Trigger delete/create calls aren't awaited — races that likely cause the still-open HTTP 409s                | **Resolved.** `deploy/lib/deployTriggers.ts` returns/`Promise.all`s throughout.                                                                                                                                                                                                                                                                                               |
+| 4   | High     | API client    | List endpoints don't paginate — resources beyond page 1 are invisible                                        | **Resolved.** Every list call now uses the SDK's own `.all()` (`shared/api/namespaces.ts`, `functions.ts`, `containers.ts`, `registry.ts`).                                                                                                                                                                                                                                   |
+| 5   | High     | Deploy        | Recent crash fix over-broadened silent failure to all 4xx, causing a _different_ crash downstream            | **Resolved.** `waitForFunctionStatus`/`waitForContainer` (`shared/api/functions.ts`, `containers.ts`) tolerate only `err.status === 404`, not all 4xx.                                                                                                                                                                                                                        |
+| 6   | High     | JWT           | `serverless jwt` issues function JWTs for containers (copy/paste bug)                                        | **Resolved.** `shared/api/jwt.ts` has distinct `issueJwtFunction`/`issueJwtContainer`; `jwt/lib/getJwt.ts` dispatches on which is mixed in.                                                                                                                                                                                                                                   |
+| 7   | High     | Provider      | Region from `~/.config/scw/config.yaml` (`default_region`) is silently discarded                             | **Resolved.** `provider/scalewayProvider.ts` reads `scwConfig.default_region`.                                                                                                                                                                                                                                                                                                |
+| 8   | High     | Provider      | Partial `scwToken`/`scwProject` in `serverless.yml` crashes with an unhelpful `TypeError`                    | **Resolved.** Current credential-resolution branch handles either being set without crashing.                                                                                                                                                                                                                                                                                 |
+| 9   | Medium   | Deploy        | `.then(cli.log(...))` bug — delete confirmation log fires before deletion is confirmed                       | **Resolved.** `deploy/lib/createFunctions.ts`'s log is wrapped in `.then(() => {...})` and properly awaited/returned.                                                                                                                                                                                                                                                         |
+| 10  | Medium   | Deploy        | Domain-deployment wait isn't awaited — deploy can "succeed" before domains are ready                         | **Resolved.** `deploy/lib/deployFunctions.ts`/`deployContainers.ts` chain and return the domain wait.                                                                                                                                                                                                                                                                         |
+| 11  | Medium   | Registry      | Registry namespace listing uses the wrong query param name, breaking project scoping                         | **Resolved.** `shared/api/registry.ts` uses the SDK's typed `listNamespaces({ projectId })` — no hand-rolled query string.                                                                                                                                                                                                                                                    |
+| 12  | Medium   | Invoke        | `serverless invoke` has no auth header, isn't awaited, and crashes on an unmatched name                      | **Resolved.** `invoke/scalewayInvoke.ts` awaits throughout.                                                                                                                                                                                                                                                                                                                   |
+| 13  | Medium   | Domains       | `createDomainAndLog` is fire-and-forget; domain failures never fail the deploy                               | **Resolved.** Calls are collected into `Promise.all([...])` and returned in `createFunctions.ts`/`createContainers.ts`. Note: `createDomainAndLog` itself still deliberately resolves (doesn't reject) on a domain failure after logging it — that's intentional per-domain error tolerance, not the original fire-and-forget bug; see `tests/shared/domain-and-log.test.js`. |
+| 14  | Medium   | Containers    | `.dockerignore` contents are never applied — excluded files/secrets can end up in the image                  | **Still open.** Not touched by the TS/SDK rewrite (unrelated to API client code); needs its own dedicated look.                                                                                                                                                                                                                                                               |
+| 15  | Medium   | Validation    | Nothing rejects defining both `functions` and `custom.containers` — confusing crash instead of a clear error | **Resolved.** `shared/validate.ts` now throws a clear error.                                                                                                                                                                                                                                                                                                                  |
+| 16  | Low      | Cleanup logic | `getElementsToDelete` inner loop is dead code (wrong comparison + non-mutating `slice`)                      | **Resolved.** `shared/singleSource.ts`'s current version has no such dead branch.                                                                                                                                                                                                                                                                                             |
+| 17  | Low      | Robustness    | All polling loops (`wait*`) are unbounded — no timeout/max attempts                                          | **Resolved.** Every `wait*` in `shared/api/*.ts` now has a `MAX_POLL_ATTEMPTS` bound.                                                                                                                                                                                                                                                                                         |
+| 18  | Low      | Remove        | `waitNamespaceIsDeleted` discards the real error behind a generic message on any non-404 failure             | **Resolved.** Current version includes `err.message` in the thrown error.                                                                                                                                                                                                                                                                                                     |
+| 19  | Low      | Info          | `serverless info` has no `.catch` on its API calls — unhandled rejection on failure                          | **Resolved in effect.** Still no local `.catch`, but the promise chain is now properly returned up to the Serverless Framework's own hook runner, which handles the rejection — no longer a true unhandled rejection.                                                                                                                                                         |
+| 20  | Low      | Code quality  | Dead `if (inspectedImage === undefined) return;` in container build                                          | **Resolved.** Not present in current `deploy/lib/buildAndPushContainers.ts`.                                                                                                                                                                                                                                                                                                  |
+| 21  | Low      | Code quality  | Function/container create-update paths are ~80 lines of duplicated, drifting logic                           | **Partially true.** `createFunctions.ts`/`createContainers.ts` are now 378/391 lines (mostly TS interface boilerplate, not duplicated logic), and the specific drift this finding called out is gone — but the general "two near-identical files" shape legitimately still holds as a low-priority cleanup candidate.                                                         |
+| 22  | Low      | Invoke        | Typo in user-facing error message ("servleress.yml")                                                         | **Resolved.** `invoke/scalewayInvoke.ts` reads "...not defined in serverless.yml".                                                                                                                                                                                                                                                                                            |
 
 ---
 
@@ -507,7 +507,7 @@ Added 2026-08-26, as a follow-up investigation separate from the 22 findings abo
 
 ---
 
-## M1. Removing Bluebird
+## M1. Removing Bluebird — **Resolved, 2026-08-26/27.** `bluebird`/`BbPromise` no longer appears anywhere in the codebase (`grep -rln "bluebird\|BbPromise"` returns nothing) — fully removed as part of the TS/SDK rewrite, not via the staged plan below.
 
 **Files:** 16 files import `bluebird` as `BbPromise` — `deploy/scalewayDeploy.js`, `deploy/lib/{createFunctions,createContainers,createNamespace,deployFunctions,deployTriggers,uploadCode}.js`, `invoke/scalewayInvoke.js`, `remove/{scalewayRemove,lib/removeNamespace}.js`, `jwt/{scalewayJwt,lib/getJwt}.js`, `logs/{scalewayLogs,lib/getLogs}.js`, `info/scalewayInfo.js`, `shared/validate.js`.
 
@@ -589,7 +589,7 @@ Direct 1:1 native equivalents: `Promise.resolve()` / `Promise.reject(errors)`. N
 
 ---
 
-## M2. Dependency CVEs fixable within the existing semver range — and how far past that to actually go
+## M2. Dependency CVEs fixable within the existing semver range — and how far past that to actually go — **Resolved, exceeded.** `axios` is at `1.20.0`, `js-yaml` at `5.4.1` — past this section's staged "4.3.1 now, 5.4.0 later" target, already on the 5.x line (bumped 2026-08-27).
 
 `npm audit --omit=dev` reports 22 vulnerabilities in the production dependency tree (2 low, 6 moderate, 10 high, 4 critical). Most of the critical/high ones (`tar`, `decompress`, `protobufjs`, `form-data`, `@grpc/grpc-js`, `lodash`, `minimatch`, `brace-expansion`) are _transitive_ dependencies of `@serverless/utils` (already at its latest release, `6.15.0`) or of `dockerode`'s own dependency tree, pulled in for parts of those packages this plugin doesn't use (this plugin only imports `@serverless/utils/log`). Not independently actionable without upstream releases from those packages.
 
@@ -602,14 +602,14 @@ Two direct dependencies have high-severity CVEs, and for both the target should 
 
 **Fix (separate, deliberate follow-up):** evaluate `js-yaml` 5.x on its own — it's used in exactly one place (`provider/scalewayProvider.js`, parsing `~/.config/scw/config.yaml`), so the blast radius of checking its migration guide is small.
 
-## M3. Dependency CVEs needing a major version bump — go to latest, not just "patched enough"
+## M3. Dependency CVEs needing a major version bump — go to latest, not just "patched enough" — **Resolved.** `dockerode` at `5.0.1`, `argon2` at `0.45.1` — match this section's targets exactly.
 
 - **`dockerode`** (`^4.0.6`, resolved `4.0.6`, latest `5.0.1`, `isSemVerMajor: true`): moderate-severity, via a vulnerable `uuid` sub-dependency. `dockerode` is the library `deploy/lib/buildAndPushContainers.js` uses for the whole build/push flow — a major bump here needs real testing against `test:containers` (which already exercises build/push end-to-end) before merging, since dockerode's v5 changelog should be checked for breaking API changes to `buildImage`/`getImage`/`push`. **Target: `5.0.1`** (its actual latest, not an intermediate 4.x — there isn't a patched 4.x for this CVE per the audit's `fixAvailable`).
 - **`argon2`** (`^0.30.3`, resolved `0.30.3`, latest `0.45.1`, `isSemVerMajor: true`): high-severity, via `@mapbox/node-pre-gyp`'s vulnerable `tar` dependency (used for downloading argon2's native binary at install time — an install-time supply-chain concern, not a runtime one). `shared/secrets.js` uses this for secret-value hashing; a major bump needs the existing `tests/shared/secrets.test.js` (`mergeSecretEnvVars` tests already cover the hash-compare path) re-run, plus a check that argon2's native-binding install still works cleanly on whatever Node versions the CI matrix ends up covering (see M4). **Target: `0.45.1`** (its actual latest — jumping to an intermediate 0.3x/0.4x release just adds a second migration later for no benefit).
 
 **Fix:** each as its own PR (`npm install dockerode@latest` / `npm install argon2@latest`), verified against the relevant live suite (`test:containers` / `test:shared` + `test:functions`, since functions also use secrets) before merging, since both are semver-major and could carry breaking API changes. Landing on an intermediate version instead of the true latest just defers the same migration work to a future PR — go straight to latest once you're already paying for compatibility testing.
 
-## M4. Node 18.x is end-of-life in the CI matrix
+## M4. Node 18.x is end-of-life in the CI matrix — **Resolved.** CI matrix (`.github/workflows/test.yml`) tests 20.x/22.x only; `engines.node` is `>=20.20.2`.
 
 **File:** `.github/workflows/test.yml:38` — `node-version: ["18.x", "20.x"]`
 
@@ -617,7 +617,7 @@ Node 18 reached end-of-life on 2025-04-30 (no more security patches from upstrea
 
 **Fix:** drop `18.x` from the matrix, add `22.x` (current LTS) alongside `20.x`, and add an `engines.node` field to `package.json` reflecting the supported range.
 
-## M5. Callback-style `fs.readFile` in `uploadCode.js`, with a latent double-settle bug
+## M5. Callback-style `fs.readFile` in `uploadCode.js`, with a latent double-settle bug — **Resolved.** `deploy/lib/uploadCode.ts` uses `fs.promises.readFile(archivePath)` — no manual Promise wrapper, the double-settle shape is structurally gone.
 
 **File:** `deploy/lib/uploadCode.js:53-58`
 
@@ -640,7 +640,7 @@ Worth calling out beyond just style: the current code has a latent bug the moder
 
 **Fix:** replace with `fs.promises.readFile(archivePath)`, drop the manual `Promise` wrapper.
 
-## M6. Dev tooling — bump to latest across the board (lower priority)
+## M6. Dev tooling — bump to latest across the board (lower priority) — **Resolved.** A full dependency-currency pass (2026-08-27) confirmed every dependency in `package.json` is at its absolute npm latest except two deliberate holds (`typescript` and `@babel/preset-env`, both blocked by peer-dependency/engine constraints — see `CLAUDE.md`'s Conventions section and `shared/api/sdkClient.ts` for the `undici` pin, which is its own deliberate hold for a different reason). `rewire` is gone from `package.json` entirely.
 
 `npm outdated` shows every dev dependency has a newer release available. None of these affect runtime/published behavior — dev-only, but staying current here is what keeps the _next_ update small instead of compounding into another multi-major jump like M1/M3. Target latest for all of them, each as its own isolated PR so a reviewer can trust each diff is purely mechanical:
 
@@ -682,7 +682,7 @@ Net effect: with M-5b, the `export =` fix, and both native-module patches landed
 
 **Fix, if pursued:** package-manager swap (`bun install`, `bun.lock`, CI's `oven-sh/setup-bun`) is **done** — see the row above. The test-runner swap (`bun test` replacing `jest`) should stay parked until `bun:test`'s Jest-compatibility shim covers the fake-timer APIs this repo's tests rely on (or those tests are rewritten to avoid them) — re-check against newer Bun releases periodically rather than working around it here.
 
-## M8. Live integration suites: a narrow race when run concurrently on one machine (optional)
+## M8. Live integration suites: a narrow race when run concurrently on one machine (optional) — **Not re-verified, 2026-08-27.** `tests/utils/misc/index.ts` still shells out via `shared/child-process` (file extension changed `.js`→`.ts` in the TS migration, mechanism not confirmed unchanged) — likely still accurate but wasn't re-checked in this pass; treat as open until someone does.
 
 **File:** `tests/utils/misc/index.js`'s `createTestService()` — `execSync(\`npm link --force ${repoDir}\`)`.
 
@@ -708,6 +708,33 @@ Running multiple suites concurrently **on one machine** (as opposed to CI's sepa
 
 - What's the actual motivation, given `eslint.config.mjs` is only 33 lines with one custom rule — migration effort is cheap either way, so is this about lint/format speed, collapsing two tools into one, or something else?
 - Timing relative to the in-progress TypeScript migration (`feature/typescript-migration` branch) — finish that first, or fold in together?
+
+---
+
+## M10. SDK client investigation notes (accessKey, socket-reuse race, undici version pin) — done, 2026-08-26/27
+
+Three separate incident write-ups from building `shared/api/sdkClient.ts` during the `@scaleway/sdk-*` migration, moved here from inline code comments (which now just state the load-bearing rule and point back to this section) so the source file stays readable.
+
+### accessKey isn't required, only well-formed
+
+`@scaleway/sdk-client`'s client-side auth guard (`hasAuthenticationSecrets`/`assertValidAuthenticationSecrets`) requires a well-formed `accessKey` (`^SCW[A-Z0-9]{17}$`) before it will even attach the authentication interceptor to outgoing requests — but that interceptor (`authenticateWithSecrets`) only ever puts `secretKey` on the wire, via the `X-Auth-Token` header; `accessKey` is never transmitted anywhere. Verified directly against the real API (2026-08-26): a well-formed-but-unregistered accessKey plus a real secretKey authenticates successfully, identically to a real accessKey. This repo's entire credential model (`provider/scalewayProvider.ts`) has only ever collected a secret key — there is no user-facing access-key concept, and none is needed. `sdkClient.ts`'s `PLACEHOLDER_ACCESS_KEY` constant (`` `SCW${"0".repeat(17)}` ``) exists purely to satisfy the SDK's client-side format check.
+
+### `SocketError: other side closed` — a socket-reuse race, not a client bug
+
+This repo hit an intermittent `SocketError: other side closed` against the real API during live-suite validation, occasionally and identically through both the new SDK's fetch transport and the separate axios-based paths (`jwt.ts`/`logs.ts`/`uploadCode.ts`) that predate the SDK migration — ruling out either HTTP client implementation as the cause.
+
+Root cause, confirmed via web research matching this repo's symptoms exactly against [nodejs/undici#5450](https://github.com/nodejs/undici/issues/5450), [#3300](https://github.com/nodejs/undici/issues/3300), and [#2400](https://github.com/nodejs/undici/issues/2400): undici's connection pool can pull a pooled keep-alive socket for reuse in the same instant an intermediary (a NAT, proxy, or load balancer sitting between this plugin and the Scaleway API) closes it for being idle. This is a genuine **race**, not a fixed timeout misconfiguration — tuning the client's own `keepAliveTimeout` to sit below the intermediary's idle timeout only narrows that race window, it can't close it, since Scaleway doesn't publish (and could change) whatever that intermediary's timeout actually is.
+
+Two mitigations were shipped, in this order:
+
+1. **Retry wrapper** (`scalewayFetch` in `sdkClient.ts`) — retries only idempotent methods (GET/HEAD/OPTIONS/PUT/DELETE) on a genuine network-level failure (`fetch()` throwing a `TypeError`, never an HTTP error response). POST/PATCH (create/update calls) intentionally stay non-retried, since a network failure doesn't reveal whether the server already processed the request — retrying could create a duplicate resource.
+2. **Non-persistent connections** (the actual fix for the race, not just a mitigation of its symptom) — since this is a deploy CLI making occasional, sequential requests rather than a high-throughput service, there's no meaningful cost to giving up connection reuse entirely. A dedicated `undici.Agent` with `keepAliveTimeout`/`keepAliveMaxTimeout` set to 1ms evicts a socket from the pool essentially the instant it goes idle — functionally equivalent to `Connection: close` (which `fetch()` itself refuses to let a caller set directly — it's on the Fetch spec's forbidden-header list). The retry wrapper stays as defense-in-depth for a genuine one-off network blip unrelated to socket reuse.
+
+### `undici` (the npm package) drifts from the undici Node vendors internally — pin to 6.x
+
+Adding `undici` as a direct dependency (needed to get the `Agent` class for the fix above) surfaced a real, easy-to-miss gotcha: the standalone npm `undici` package and whatever undici Node vendors internally for its own built-in `fetch` can be different versions, and a newer external `Agent`'s handler interface isn't necessarily one Node's internal fetch dispatch understands.
+
+Verified directly (2026-08-26, Node 22.22.1): `undici@8.10.0`'s `Agent`, passed as `fetch()`'s `dispatcher` option, **type-checks fine** but throws `InvalidArgumentError: invalid onRequestStart method` at runtime on the very first real request. `undici@6.28.0` works cleanly — confirmed with 5 live sequential requests against the real API. `package.json` pins `undici` to `^6.28.0` for this reason; **do not bump past the 6.x line without re-verifying with a real request against the live API, not just a type check** — the mismatch above passed `tsc` without any error.
 
 ---
 

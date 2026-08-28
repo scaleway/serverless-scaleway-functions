@@ -68,6 +68,36 @@ describe("deletePreviousTriggersForApplication", () => {
       }),
     ).rejects.toThrow("delete failed");
   });
+
+  it("passes isFunction through to deleteCronTrigger and the whole trigger object through to deleteMessageTrigger", async () => {
+    const cronCalls = [];
+    const messageCalls = [];
+    const messageTrigger = { id: "msg-1", sourceType: "sqs" };
+    const ctx = {
+      deleteCronTrigger: (...args) => {
+        cronCalls.push(args);
+        return Promise.resolve();
+      },
+      deleteMessageTrigger: (...args) => {
+        messageCalls.push(args);
+        return Promise.resolve();
+      },
+    };
+
+    await deployTriggers.deletePreviousTriggersForApplication.call(
+      ctx,
+      {
+        currentTriggers: [
+          { id: "cron-1", schedule: "* * * * *" },
+          messageTrigger,
+        ],
+      },
+      false,
+    );
+
+    jestExpect(cronCalls).toEqual([["cron-1", false]]);
+    jestExpect(messageCalls).toEqual([[messageTrigger, false]]);
+  });
 });
 
 describe("manageTriggers", () => {
@@ -245,6 +275,48 @@ describe("createNewTriggersForApplication", () => {
     await resultPromise;
 
     jestExpect(created.isSettled()).toBe(true);
+  });
+
+  it("names each schedule event cron-<index>, for Containers' sourceType:'cron' Trigger naming", async () => {
+    const capturedParams = [];
+    const ctx = {
+      provider: {
+        serverless: {
+          service: {
+            custom: {
+              containers: {
+                first: {
+                  events: [
+                    { schedule: { rate: "1 * * * *" } },
+                    {
+                      schedule: {
+                        rate: "2 * * * *",
+                        input: { key: "value" },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      createCronTrigger: (applicationId, isFunction, params) => {
+        capturedParams.push(params);
+        return Promise.resolve();
+      },
+    };
+
+    await deployTriggers.createNewTriggersForApplication.call(
+      ctx,
+      { id: "app-1", name: "first" },
+      false,
+    );
+
+    jestExpect(capturedParams).toEqual([
+      { name: "cron-0", schedule: "1 * * * *", args: {} },
+      { name: "cron-1", schedule: "2 * * * *", args: { key: "value" } },
+    ]);
   });
 
   it("propagates a create failure instead of swallowing it", async () => {

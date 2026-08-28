@@ -74,6 +74,7 @@
     "@scaleway/sdk-client": "^2.6.0",
     "@scaleway/sdk-container": "^2.12.0",
     "@scaleway/sdk-function": "^2.11.0",
+    "@scaleway/sdk-mnq": "^2.9.0",
     "@scaleway/sdk-registry": "^2.9.0",
     "@serverless/utils": "^6.13.1",
     "argon2": "^0.45.1",

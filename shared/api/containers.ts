@@ -1,15 +1,19 @@
 import { Errors } from "@scaleway/sdk-client";
 
+// Containerv1's Container type - see the long comment above toLegacyContainer
+// for the full v1beta1 -> v1 field mapping this shape reflects.
 interface SdkContainer {
   id: string;
   name: string;
   status: string;
   errorMessage?: string;
-  domainName: string;
+  publicEndpoint: string;
   privateNetworkId?: string;
-  httpOption: string;
-  registryImage: string;
-  secretEnvironmentVariables: { key: string; hashedValue: string }[];
+  httpsConnectionsOnly: boolean;
+  image: string;
+  secretEnvironmentVariables: Record<string, string>;
+  mvcpuLimit: number;
+  memoryLimitBytes: number;
 }
 
 interface SdkDomain {
@@ -27,7 +31,11 @@ interface ContainerSdkApi {
   };
   createContainer(request: Record<string, unknown>): Promise<SdkContainer>;
   updateContainer(request: Record<string, unknown>): Promise<SdkContainer>;
-  deployContainer(request: { containerId: string }): Promise<SdkContainer>;
+  // v1 renamed deployContainer -> redeployContainer (create/update now always
+  // deploy on their own, so this is only needed for the explicit "force a
+  // rollout" case) - see deployContainer() below, which keeps its own
+  // exported name for deploy/lib/deployContainers.ts's sake.
+  redeployContainer(request: { containerId: string }): Promise<SdkContainer>;
   deleteContainer(request: { containerId: string }): Promise<SdkContainer>;
   getContainer(request: { containerId: string }): Promise<SdkContainer>;
   listDomains(request: {
@@ -67,7 +75,23 @@ interface WaitDomainsAreDeployedContainerContext extends ContainerSdkContext {
 // buildAndPushContainers.ts read directly: domain_name,
 // private_network_id, secret_environment_variables) - preserved via
 // aliasing rather than changing every consumer, same pattern as
-// functions.ts/namespaces.ts.
+// functions.ts/namespaces.ts. This is also where v1's breaking field
+// changes get absorbed so no caller needs to change:
+//   - domainName -> publicEndpoint (still surfaced as domain_name)
+//   - registryImage -> image (still surfaced as registry_image)
+//   - httpOption ('enabled'|'redirected' string) -> httpsConnectionsOnly
+//     (boolean) - not a bijective mapping (the old 'redirected' value
+//     301-redirected HTTP to HTTPS rather than rejecting it outright), but
+//     httpsConnectionsOnly: true is the closest available v1 semantic for
+//     "only HTTPS should reach the container", so 'redirected' -> true and
+//     anything else (including unset, matching the old default) -> false.
+//   - secretEnvironmentVariables: {key,hashedValue}[] -> Record<string,string>
+//   - memoryLimit (MB) -> memoryLimitBytes (bytes)
+//   - cpuLimit -> mvcpuLimit (same mvCPU unit, rename only)
+//   - maxConcurrency: removed outright in v1 (already deprecated pre-v1 -
+//     see deploy/lib/createContainers.ts's maxConcurrencyDeprecationWarning)
+//     - simply never forwarded to the SDK call, params.max_concurrency stays
+//     accepted here so that file's warning logic needs no change.
 interface ContainerRecord {
   id: string;
   name: string;
@@ -78,6 +102,8 @@ interface ContainerRecord {
   http_option?: string;
   registry_image?: string;
   secret_environment_variables?: { key: string; hashed_value: string }[];
+  memory_limit?: number;
+  cpu_limit?: number;
   [key: string]: unknown;
 }
 
@@ -89,17 +115,37 @@ interface DomainRecord {
   [key: string]: unknown;
 }
 
+const BYTES_PER_MB = 1024 * 1024;
+
+function toLegacyHttpOption(
+  httpsConnectionsOnly: boolean | undefined,
+): string | undefined {
+  if (httpsConnectionsOnly === undefined) return undefined;
+  return httpsConnectionsOnly ? "redirected" : "enabled";
+}
+
+function toSdkHttpsConnectionsOnly(httpOption: unknown): boolean | undefined {
+  if (httpOption === undefined) return undefined;
+  return httpOption === "redirected";
+}
+
 function toLegacyContainer(container: SdkContainer): ContainerRecord {
   return {
     ...container,
     error_message: container.errorMessage,
-    domain_name: container.domainName,
+    domain_name: container.publicEndpoint,
     private_network_id: container.privateNetworkId,
-    http_option: container.httpOption,
-    registry_image: container.registryImage,
-    secret_environment_variables: container.secretEnvironmentVariables?.map(
-      (secret) => ({ key: secret.key, hashed_value: secret.hashedValue }),
-    ),
+    http_option: toLegacyHttpOption(container.httpsConnectionsOnly),
+    registry_image: container.image,
+    secret_environment_variables: container.secretEnvironmentVariables
+      ? Object.entries(container.secretEnvironmentVariables).map(
+          ([key, hashed_value]) => ({ key, hashed_value }),
+        )
+      : undefined,
+    memory_limit: container.memoryLimitBytes
+      ? Math.round(container.memoryLimitBytes / BYTES_PER_MB)
+      : undefined,
+    cpu_limit: container.mvcpuLimit,
   };
 }
 
@@ -115,7 +161,23 @@ function toLegacyDomain(domain: SdkDomain): DomainRecord {
 // (same "preserve caller, translate internally" approach as everywhere
 // else in this migration). http/tcp probe sub-objects need no renaming -
 // {path} and {} already match the SDK's shape exactly.
-function toSdkHealthCheck(
+//
+// v1 split the old single `healthCheck` into `livenessProbe` (new, ongoing
+// runtime restarts) and `startupProbe` (only checked while the container is
+// starting, aborting the deployment on failure). The old healthCheck's
+// behavior - abort deployment if the check fails during startup - matches
+// startupProbe's documented semantics, so that's what this repo's single
+// `healthCheck:` config maps onto; there is no serverless.yml surface for
+// livenessProbe (not a breaking change, just not exposed yet).
+// Verified directly against the live v1 API (2026-08-27): even though the
+// SDK's own generated type marks ContainerProbe.timeout as optional,
+// creating a container with a startupProbe and no timeout is rejected with
+// "invalid argument(s): startup_probe.timeout is required, value is
+// required" - there's no serverless.yml config surface for this (the old
+// healthCheck never had a timeout field either), so a fixed default is used.
+const DEFAULT_STARTUP_PROBE_TIMEOUT = "1s";
+
+function toSdkStartupProbe(
   healthCheck: unknown,
 ): Record<string, unknown> | undefined {
   if (!healthCheck || typeof healthCheck !== "object") return undefined;
@@ -123,6 +185,7 @@ function toSdkHealthCheck(
   return {
     failureThreshold: hc.failure_threshold,
     interval: hc.interval,
+    timeout: DEFAULT_STARTUP_PROBE_TIMEOUT,
     http: hc.http,
     tcp: hc.tcp,
   };
@@ -154,6 +217,46 @@ export async function listContainers(
   return containers.map(toLegacyContainer);
 }
 
+function toSdkMemoryLimitBytes(memoryLimitMb: unknown): number | undefined {
+  return typeof memoryLimitMb === "number"
+    ? memoryLimitMb * BYTES_PER_MB
+    : undefined;
+}
+
+// deploy/lib/createContainers.ts builds this via
+// secrets.convertObjectToModelSecretsArray()/secrets.mergeSecretEnvVars() -
+// an array of {key, value} (create) or {key, value: string|null} (update,
+// where null means "removed") - matching v1beta1's Secret[] request shape.
+// v1's CreateContainerRequest/UpdateContainerRequest instead take a plain
+// Record<string,string> with zero shape translation on the wire (verified
+// against the real generated marshaller, which does a bare
+// `secret_environment_variables: request.secretEnvironmentVariables`
+// passthrough) - so the array has to be converted here.
+//
+// A Record<string,string> has no way to carry update's "value: null" removal
+// signal, so a null-valued entry is simply dropped from the map rather than
+// forwarded. Whether that's actually correct depends on whether v1's update
+// treats an included secretEnvironmentVariables map as "replace the whole
+// map" (in which case dropping a key here does delete it - correct) or as a
+// per-key merge (in which case a removed secret would keep lingering
+// server-side instead of being deleted) - not yet confirmed against the
+// live API from this environment.
+function toSdkSecretEnvironmentVariables(
+  secretEnvironmentVariables: unknown,
+): Record<string, string> | undefined {
+  if (!Array.isArray(secretEnvironmentVariables)) return undefined;
+  const result: Record<string, string> = {};
+  for (const secret of secretEnvironmentVariables as {
+    key: string;
+    value: string | null;
+  }[]) {
+    if (secret.value !== null) {
+      result[secret.key] = secret.value;
+    }
+  }
+  return result;
+}
+
 export async function createContainer(
   this: ContainerSdkContext,
   params: Record<string, unknown>,
@@ -162,20 +265,21 @@ export async function createContainer(
     name: params.name,
     namespaceId: params.namespace_id,
     environmentVariables: params.environment_variables,
-    secretEnvironmentVariables: params.secret_environment_variables,
+    secretEnvironmentVariables: toSdkSecretEnvironmentVariables(
+      params.secret_environment_variables,
+    ),
     description: params.description,
-    memoryLimit: params.memory_limit,
-    cpuLimit: params.cpu_limit,
+    memoryLimitBytes: toSdkMemoryLimitBytes(params.memory_limit),
+    mvcpuLimit: params.cpu_limit,
     minScale: params.min_scale,
     maxScale: params.max_scale,
-    registryImage: params.registry_image,
-    maxConcurrency: params.max_concurrency,
+    image: params.registry_image,
     timeout: params.timeout,
     privacy: params.privacy,
     port: params.port,
-    httpOption: params.http_option,
+    httpsConnectionsOnly: toSdkHttpsConnectionsOnly(params.http_option),
     sandbox: params.sandbox,
-    healthCheck: toSdkHealthCheck(params.health_check),
+    startupProbe: toSdkStartupProbe(params.health_check),
     scalingOption: toSdkScalingOption(params.scaling_option),
     privateNetworkId: params.private_network_id,
   });
@@ -190,20 +294,21 @@ export async function updateContainer(
   const container = await this.sdkApi.updateContainer({
     containerId,
     environmentVariables: params.environment_variables,
-    secretEnvironmentVariables: params.secret_environment_variables,
+    secretEnvironmentVariables: toSdkSecretEnvironmentVariables(
+      params.secret_environment_variables,
+    ),
     description: params.description,
-    memoryLimit: params.memory_limit,
-    cpuLimit: params.cpu_limit,
+    memoryLimitBytes: toSdkMemoryLimitBytes(params.memory_limit),
+    mvcpuLimit: params.cpu_limit,
     minScale: params.min_scale,
     maxScale: params.max_scale,
-    registryImage: params.registry_image,
-    maxConcurrency: params.max_concurrency,
+    image: params.registry_image,
     timeout: params.timeout,
     privacy: params.privacy,
     port: params.port,
-    httpOption: params.http_option,
+    httpsConnectionsOnly: toSdkHttpsConnectionsOnly(params.http_option),
     sandbox: params.sandbox,
-    healthCheck: toSdkHealthCheck(params.health_check),
+    startupProbe: toSdkStartupProbe(params.health_check),
     scalingOption: toSdkScalingOption(params.scaling_option),
     privateNetworkId: params.private_network_id,
   });
@@ -214,14 +319,10 @@ export async function deployContainer(
   this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
-  const container = await this.sdkApi.deployContainer({ containerId });
+  const container = await this.sdkApi.redeployContainer({ containerId });
   return toLegacyContainer(container);
 }
 
-/**
- * Deletes the container by containerId
- * @returns container with status deleting
- */
 export async function deleteContainer(
   this: ContainerSdkContext,
   containerId: string,
@@ -230,9 +331,6 @@ export async function deleteContainer(
   return toLegacyContainer(container);
 }
 
-/**
- * Get container information by containerId
- */
 export async function getContainer(
   this: ContainerSdkContext,
   containerId: string,
@@ -279,9 +377,6 @@ export function waitContainersAreDeployed(
     });
 }
 
-/**
- * @param containerId id of the container to check
- */
 export function waitForContainer(
   this: WaitForContainerContext,
   containerId: string,
@@ -326,9 +421,6 @@ export function waitForContainer(
     });
 }
 
-/**
- * Waiting for all domains to be ready on a container
- */
 export function waitDomainsAreDeployedContainer(
   this: WaitDomainsAreDeployedContainerContext,
   containerId: string,
@@ -369,10 +461,6 @@ export function waitDomainsAreDeployedContainer(
   });
 }
 
-/**
- * listDomains is used to read all domains of a wanted container.
- * @param containerId the id of the container to read domains.
- */
 export async function listDomainsContainer(
   this: ContainerSdkContext,
   containerId: string,

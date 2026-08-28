@@ -9,6 +9,7 @@
         "@scaleway/sdk-client": "^2.6.0",
         "@scaleway/sdk-container": "^2.12.0",
         "@scaleway/sdk-function": "^2.11.0",
+        "@scaleway/sdk-mnq": "^2.9.0",
         "@scaleway/sdk-registry": "^2.9.0",
         "@serverless/utils": "^6.13.1",
         "argon2": "^0.45.1",
@@ -384,6 +385,8 @@
     "@scaleway/sdk-container": ["@scaleway/sdk-container@2.12.0", "", { "dependencies": { "@scaleway/random-name": "6.0.2", "@scaleway/sdk-std": "2.6.0" }, "peerDependencies": { "@scaleway/sdk-client": "^2.6.0" } }, "sha512-62nVHXYwymtbryqjLuFgxKaFzfzbqL8jNf/e1l9wxx4D7AECxXVp9vYOYhRczh7u+imsupZfATVhyjTdzGJfFQ=="],
 
     "@scaleway/sdk-function": ["@scaleway/sdk-function@2.11.0", "", { "dependencies": { "@scaleway/random-name": "6.0.2", "@scaleway/sdk-std": "2.6.0" }, "peerDependencies": { "@scaleway/sdk-client": "^2.6.0" } }, "sha512-9BVnqFCt7zGLr+3D6Z1H5NJQnd/HR44AdqxGZIQnlB0Bk2czthomUczDZu1m4Is/03EEKUTU6lY9WLeNBgLcVw=="],
+
+    "@scaleway/sdk-mnq": ["@scaleway/sdk-mnq@2.9.0", "", { "dependencies": { "@scaleway/random-name": "6.0.2", "@scaleway/sdk-std": "2.6.0" }, "peerDependencies": { "@scaleway/sdk-client": "^2.6.0" } }, "sha512-MKpcvKbdwiPJ6Kn3r9ISkSV77vy350Sa8rkDz3bORm1yUJfYu+spbeHCyua8VOIDCljflsz4BrJBY8cNYdKaRg=="],
 
     "@scaleway/sdk-registry": ["@scaleway/sdk-registry@2.9.0", "", { "dependencies": { "@scaleway/random-name": "6.0.2", "@scaleway/sdk-std": "2.6.0" }, "peerDependencies": { "@scaleway/sdk-client": "^2.6.0" } }, "sha512-JHJ5cSJd5WwWBoBqiwIUg1i5y7zin/pQCtNrXDRT/vVbsrSyKGoFMdW3jeDBOj4juKZs6RmIoQDVHWF62JpzDg=="],
 

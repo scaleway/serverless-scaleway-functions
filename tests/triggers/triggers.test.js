@@ -8,7 +8,8 @@ const {
   getServiceName,
   serverlessDeploy,
   serverlessRemove,
-  createProject,
+  resolveTestProject,
+  isUsingExistingTestProject,
   createTestService,
 } = require("../utils/misc");
 
@@ -34,8 +35,20 @@ const runtimesToTest = [
   { name: "container-schedule", isFunction: false },
 ];
 
+// A shared existing project's resources (registry namespace naming, MNQ
+// activation, etc.) can collide across concurrent test cases the way they
+// can't when each case gets its own isolated project - so when
+// resolveTestProject() below is going to reuse an existing project instead
+// of creating one, these run sequentially instead of concurrently. The
+// `it`/`it.concurrent` split has to happen at this static call-site level
+// (Jest has no per-case "concurrent unless..." toggle), so it reads the
+// same synchronous check resolveTestProject() itself uses.
+const runRuntimeTests = isUsingExistingTestProject
+  ? it.each(runtimesToTest)
+  : it.concurrent.each(runtimesToTest);
+
 describe("test triggers", () => {
-  it.concurrent.each(runtimesToTest)("triggers for %s", async (runtime) => {
+  runRuntimeTests("triggers for %s", async (runtime) => {
     let options = {};
     options.env = {};
     options.env.SCW_SECRET_KEY = scwToken;
@@ -46,11 +59,9 @@ describe("test triggers", () => {
 
     // should create project
     // not in beforeAll because of a known bug between concurrent tests and async beforeAll
-    await createProject()
-      .then((project) => {
-        projectId = project.id;
-      })
-      .catch((err) => console.error(err));
+    const testProject = await resolveTestProject();
+    projectId = testProject.id;
+    const usingExistingProject = testProject.usingExistingProject;
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
     // should create service in tmp directory
@@ -124,7 +135,10 @@ describe("test triggers", () => {
       // If not try catch, test would fail
     }
 
-    // should remove project
-    await removeProjectById(projectId).catch((err) => console.error(err));
+    // should remove project - only the one this test actually created,
+    // never a shared existing project resolveTestProject() reused instead.
+    if (!usingExistingProject) {
+      await removeProjectById(projectId).catch((err) => console.error(err));
+    }
   });
 });

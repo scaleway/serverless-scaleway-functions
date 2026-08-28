@@ -1,6 +1,10 @@
 import type { ServerlessLoggerContext } from "./types";
 
-interface SdkDomain {
+// This file only ever creates/deletes a domain, never lists or waits on
+// one - deliberately narrower than functions.ts/containers.ts's own
+// (differently-shaped, also locally-scoped) domain types, which cover
+// list/wait and so also carry `status`/`error_message`.
+interface SdkDomainMutationResult {
   id: string;
   hostname: string;
 }
@@ -13,11 +17,13 @@ interface DomainSdkApi {
   // these aren't just optional-field supersets of each other, the ID key
   // name itself differs. Record<string, unknown> here is a deliberate,
   // narrow escape hatch for that one real mismatch, not a general pattern.
-  createDomain(request: Record<string, unknown>): Promise<SdkDomain>;
-  deleteDomain(request: { domainId: string }): Promise<SdkDomain>;
+  createDomain(
+    request: Record<string, unknown>,
+  ): Promise<SdkDomainMutationResult>;
+  deleteDomain(request: { domainId: string }): Promise<SdkDomainMutationResult>;
 }
 
-interface DomainRecord {
+interface DomainMutationRecord {
   id: string;
   hostname: string;
   [key: string]: unknown;
@@ -34,21 +40,16 @@ interface DomainSdkContext {
 }
 
 interface DomainSelfContext extends DomainSdkContext {
-  createDomain(params: CreateDomainParams): Promise<DomainRecord>;
+  createDomain(params: CreateDomainParams): Promise<DomainMutationRecord>;
 }
 
-/**
- * createDomain is used to call for domain creation, warning : this
- * function does not wait for the domain
- * to be ready.
- * @param params is an object that contains
- * the "function_id" or "container_id", and the "hostname".
- * @returns Promise with create request result.
- */
+// Does not wait for the domain to become ready - see
+// waitDomainsAreDeployedFunction/Container in functions.ts/containers.ts
+// for that.
 export async function createDomain(
   this: DomainSdkContext,
   params: CreateDomainParams,
-): Promise<DomainRecord> {
+): Promise<DomainMutationRecord> {
   const domain = await this.sdkApi.createDomain({
     hostname: params.hostname,
     functionId: params.function_id,
@@ -57,14 +58,10 @@ export async function createDomain(
   return { ...domain };
 }
 
-/**
- * deleteDomains is used to destroy an existing domain by it's ID.
- * @param domainID ID of the selected domain.
- */
 export async function deleteDomain(
   this: DomainSdkContext,
   domainID: string,
-): Promise<DomainRecord> {
+): Promise<DomainMutationRecord> {
   const domain = await this.sdkApi.deleteDomain({ domainId: domainID });
   return { ...domain };
 }

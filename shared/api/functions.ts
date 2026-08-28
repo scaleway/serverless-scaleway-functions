@@ -193,10 +193,6 @@ export async function getPresignedUrl(
   });
 }
 
-/**
- * Deletes the function by functionId
- * @returns function with status deleting.
- */
 export async function deleteFunction(
   this: FunctionSdkContext,
   functionId: string,
@@ -205,9 +201,6 @@ export async function deleteFunction(
   return toLegacyFunction(func);
 }
 
-/**
- * Get function information by functionId
- */
 export async function getFunction(
   this: FunctionSdkContext,
   functionId: string,
@@ -254,10 +247,6 @@ export function waitFunctionsAreDeployed(
     });
 }
 
-/**
- * @param functionId id of the function to check
- * @param wantedStatus wanted function status before leaving the wait status.
- */
 export function waitForFunctionStatus(
   this: WaitForFunctionStatusContext,
   functionId: string,
@@ -306,10 +295,6 @@ export function waitForFunctionStatus(
     });
 }
 
-/**
- * listDomains is used to read all domains of a wanted function.
- * @param functionId the id of the function to read domains.
- */
 export async function listDomainsFunction(
   this: FunctionSdkContext,
   functionId: string,
@@ -318,9 +303,6 @@ export async function listDomainsFunction(
   return response.domains.map(toLegacyDomain);
 }
 
-/**
- * Waiting for all domains to be ready on a function
- */
 export function waitDomainsAreDeployedFunction(
   this: WaitDomainsAreDeployedFunctionContext,
   functionId: string,

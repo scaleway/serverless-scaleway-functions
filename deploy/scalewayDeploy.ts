@@ -5,6 +5,7 @@
 import validate = require("../shared/validate");
 import setUpDeployment = require("../shared/setUpDeployment");
 import createNamespace = require("./lib/createNamespace");
+import createRegistryNamespace = require("./lib/createRegistryNamespace");
 import createFunctions = require("./lib/createFunctions");
 import createContainers = require("./lib/createContainers");
 import buildAndPushContainers = require("./lib/buildAndPushContainers");
@@ -35,6 +36,7 @@ class ScalewayDeploy {
   setUpDeployment!: () => void;
   createServerlessNamespace!: () => Promise<void>;
   updateServerlessNamespace!: () => Promise<unknown>;
+  ensureRegistryNamespace!: () => Promise<void>;
   createFunctions!: () => Promise<unknown>;
   createContainers!: () => Promise<unknown>;
   buildAndPushContainers!: () => Promise<void>;
@@ -56,6 +58,7 @@ class ScalewayDeploy {
       validate,
       setUpDeployment,
       createNamespace,
+      createRegistryNamespace,
       createFunctions,
       createContainers,
       buildAndPushContainers,
@@ -74,6 +77,7 @@ class ScalewayDeploy {
         Object.keys(this.provider.serverless.service.custom.containers)
           .length !== 0
       ) {
+        await this.ensureRegistryNamespace();
         await this.buildAndPushContainers();
         await this.createContainers();
         return this.deployContainers();

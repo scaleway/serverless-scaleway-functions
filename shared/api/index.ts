@@ -14,7 +14,7 @@ import sdkClient = require("./sdkClient");
 const { createScalewayClientFromResourceUrl, createLazySdkApi } = sdkClient;
 import { Accountv3 } from "@scaleway/sdk-account";
 import { Functionv1beta1 } from "@scaleway/sdk-function";
-import { Containerv1beta1 } from "@scaleway/sdk-container";
+import { Containerv1 } from "@scaleway/sdk-container";
 
 // interface ... extends only accepts a named type reference, not a `typeof`
 // expression directly - these aliases exist purely so the declaration merges
@@ -67,6 +67,9 @@ interface AccountApi extends AccountMixin {}
 class FunctionApi implements ApiManagerContext {
   apiManager: ApiManagerContext["apiManager"];
   sdkApi: Functionv1beta1.API;
+  // See the comment on NamespaceSdkContext in namespaces.ts - Functionv1beta1
+  // still wants secretEnvironmentVariables as {key,value|null}[].
+  secretEnvironmentVariablesShape: "array" | "record" = "array";
 
   constructor(apiUrl: string, token: string) {
     this.apiManager = getApiManager(apiUrl, token);
@@ -103,16 +106,17 @@ interface FunctionApi
 
 class ContainerApi implements ApiManagerContext {
   apiManager: ApiManagerContext["apiManager"];
-  sdkApi: Containerv1beta1.API;
+  sdkApi: Containerv1.API;
+  // See the comment on NamespaceSdkContext in namespaces.ts - Containerv1
+  // wants secretEnvironmentVariables as a plain Record<string,string>.
+  secretEnvironmentVariablesShape: "array" | "record" = "record";
 
   constructor(apiUrl: string, token: string) {
     this.apiManager = getApiManager(apiUrl, token);
     // Lazy plain-value Proxy - see AccountApi's constructor comment above.
     this.sdkApi = createLazySdkApi(
       () =>
-        new Containerv1beta1.API(
-          createScalewayClientFromResourceUrl(apiUrl, token),
-        ),
+        new Containerv1.API(createScalewayClientFromResourceUrl(apiUrl, token)),
     );
     Object.assign(
       this,

@@ -4,14 +4,19 @@ const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
 
-const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
+const {
+  getTmpDirPath,
+  replaceTextInFile,
+  readYamlFile,
+  writeYamlFile,
+} = require("../utils/fs");
 const {
   getServiceName,
   sleep,
   serverlessDeploy,
   serverlessInvoke,
   serverlessRemove,
-  createProject,
+  resolveTestProject,
 } = require("../utils/misc");
 const { ContainerApi } = require("../../shared/api");
 const { execSync } = require("../../shared/child-process");
@@ -39,22 +44,25 @@ describe("Service Lifecyle Integration Test", () => {
   options.env.SCW_REGION = scwRegion;
 
   let oldCwd, serviceName, projectId, api, namespace, containerName;
+  let usingExistingProject = false;
   const descriptionTest = "slsfw test description";
 
   beforeAll(async () => {
     oldCwd = process.cwd();
     serviceName = getServiceName();
     api = new ContainerApi(apiUrl, scwToken);
-    await createProject()
-      .then((project) => {
-        projectId = project.id;
-      })
-      .catch((err) => console.error(err));
+    const testProject = await resolveTestProject();
+    projectId = testProject.id;
+    usingExistingProject = testProject.usingExistingProject;
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
   });
 
   afterAll(async () => {
-    await removeProjectById(projectId).catch((err) => console.error(err));
+    // Only remove the project this test actually created, never a shared
+    // existing project resolveTestProject() reused instead.
+    if (!usingExistingProject) {
+      await removeProjectById(projectId).catch((err) => console.error(err));
+    }
   });
 
   it("should create service in tmp directory", () => {
@@ -63,7 +71,19 @@ describe("Service Lifecyle Integration Test", () => {
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
-    replaceTextInFile("serverless.yml", "scaleway-container", serviceName);
+    // `serverless create --template-path ... --path <tmpDir>` sets `service:`
+    // to <tmpDir>'s own basename (confirmed against the live osls 3.77.1
+    // CLI - not just a template default), so the placeholder
+    // "scaleway-container" string this used to look for is already gone by
+    // this point and a plain text replace silently no-ops. tmpDir's
+    // basename is a random hex string (tests/utils/fs's getTmpDirPath()),
+    // which is only a valid Scaleway resource name when it happens to start
+    // with a-f rather than 0-9 - so this was passing or failing at random
+    // depending on the generated hex. Set `service:` directly via the
+    // parsed YAML instead, which is immune to whatever create left there.
+    const serverlessConfig = readYamlFile("serverless.yml");
+    serverlessConfig.service = serviceName;
+    writeYamlFile("serverless.yml", serverlessConfig);
     replaceTextInFile(
       "serverless.yml",
       '# description: ""',

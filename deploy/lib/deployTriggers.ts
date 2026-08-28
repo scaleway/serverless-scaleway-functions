@@ -36,8 +36,8 @@ interface DeployTriggersContext {
     applicationId: string,
     isFunction: boolean,
   ): Promise<Trigger[]>;
-  deleteCronTrigger(triggerId: string): Promise<unknown>;
-  deleteMessageTrigger(triggerId: string): Promise<unknown>;
+  deleteCronTrigger(triggerId: string, isFunction: boolean): Promise<unknown>;
+  deleteMessageTrigger(trigger: Trigger, isFunction: boolean): Promise<unknown>;
   createCronTrigger(
     applicationId: string,
     isFunction: boolean,
@@ -58,6 +58,7 @@ interface DeployTriggersContext {
   ): Promise<ApplicationWithTriggers>;
   deletePreviousTriggersForApplication(
     application: ApplicationWithTriggers,
+    isFunction: boolean,
   ): Promise<unknown[]>;
   createNewTriggersForApplication(
     application: ApplicationRecord,
@@ -90,7 +91,7 @@ export function manageTriggers(
   const promises = applications.map((application) =>
     this.getTriggersForApplication(application, isFunction)
       .then((appWithTriggers) =>
-        this.deletePreviousTriggersForApplication(appWithTriggers),
+        this.deletePreviousTriggersForApplication(appWithTriggers, isFunction),
       )
       .then(() => this.createNewTriggersForApplication(application, isFunction))
       .then((triggers) =>
@@ -117,13 +118,14 @@ export function getTriggersForApplication(
 export function deletePreviousTriggersForApplication(
   this: DeployTriggersContext,
   application: ApplicationWithTriggers,
+  isFunction: boolean,
 ): Promise<unknown[]> {
   // Delete and re-create every triggers...
   const deleteTriggersPromises = application.currentTriggers.map((trigger) => {
     if ("schedule" in trigger) {
-      return this.deleteCronTrigger(trigger.id);
+      return this.deleteCronTrigger(trigger.id, isFunction);
     }
-    return this.deleteMessageTrigger(trigger.id);
+    return this.deleteMessageTrigger(trigger, isFunction);
   });
 
   return Promise.all(deleteTriggersPromises);
@@ -150,9 +152,13 @@ export function createNewTriggersForApplication(
 
   const createTriggersPromises = (
     serverlessApp.events as unknown as TriggerEvent[]
-  ).map((event) => {
+  ).map((event, index) => {
     if ("schedule" in event) {
       return this.createCronTrigger(application.id, isFunction, {
+        // Only read for Containers (v1) - a cron there is a named Trigger,
+        // unlike Functions' separate, unnamed Cron resource. Index-based
+        // since schedule events have no name field in serverless.yml.
+        name: `cron-${index}`,
         schedule: event.schedule.rate,
         args: event.schedule.input || {},
       });

@@ -107,6 +107,7 @@ describe("scalewayDeploy: deploy:deploy hook", () => {
     const order = [];
     stubStep(deploy, order, "createServerlessNamespace");
     stubStep(deploy, order, "updateServerlessNamespace");
+    stubStep(deploy, order, "ensureRegistryNamespace");
     stubStep(deploy, order, "buildAndPushContainers");
     stubStep(deploy, order, "createContainers");
     stubStep(deploy, order, "deployContainers");
@@ -129,6 +130,7 @@ describe("scalewayDeploy: deploy:deploy hook", () => {
     jestExpect(order).toEqual([
       "createServerlessNamespace",
       "updateServerlessNamespace",
+      "ensureRegistryNamespace",
       "buildAndPushContainers",
       "createContainers",
       "deployContainers",
