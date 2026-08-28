@@ -3,6 +3,7 @@
 const Docker = require("dockerode");
 const path = require("path");
 const fs = require("fs");
+const ignore = require("ignore");
 
 const docker = new Docker();
 
@@ -73,6 +74,21 @@ function getFilesInBuildContextDirectory(directory) {
   return files;
 }
 
+function filterFilesWithDockerignore(directory, files) {
+  const dockerignorePath = path.join(directory, ".dockerignore");
+
+  if (!fs.existsSync(dockerignorePath)) {
+    return files;
+  }
+
+  const patterns = fs.readFileSync(dockerignorePath, "utf8").split(/\r?\n/);
+  const ig = ignore().add(patterns);
+
+  // Patterns in .dockerignore are matched against POSIX-style relative
+  // paths, regardless of the host OS path separator.
+  return files.filter((file) => !ig.ignores(file.split(path.sep).join("/")));
+}
+
 function validateContainerConfigBeforeBuild(containerConfig) {
   const { name, buildArgs } = containerConfig;
 
@@ -114,7 +130,10 @@ async function buildAndPushContainer(
   const buildStream = await docker.buildImage(
     {
       context: directory,
-      src: getFilesInBuildContextDirectory(directory),
+      src: filterFilesWithDockerignore(
+        directory,
+        getFilesInBuildContextDirectory(directory)
+      ),
     },
     buildOptions
   );
@@ -137,10 +156,6 @@ async function buildAndPushContainer(
       `Image ${imageName} does not exist: run --verbose to see errors`
     );
   });
-
-  if (inspectedImage === undefined) {
-    return;
-  }
 
   if (inspectedImage["Architecture"] !== "amd64") {
     throw new Error(

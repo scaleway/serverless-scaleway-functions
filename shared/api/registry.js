@@ -10,7 +10,7 @@ class RegistryApi {
 
   listRegistryNamespace(projectId) {
     return this.apiManager
-      .get(`namespaces?projectId=${projectId}`)
+      .get(`namespaces?project_id=${projectId}`)
       .then((response) => response.data.namespaces)
       .catch(manageError);
   }

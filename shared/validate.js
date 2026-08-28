@@ -160,7 +160,9 @@ module.exports = {
 
   validateCredentials() {
     if (
+      !this.provider.scwToken ||
       this.provider.scwToken.length !== 36 ||
+      !this.provider.getScwProject() ||
       this.provider.getScwProject().length !== 36
     ) {
       const errorMessage = [
@@ -325,6 +327,10 @@ module.exports = {
     if (!functionNames.length && !containerNames.length) {
       functionErrors.push(
         "You must define at least one function or container to deploy under the functions or custom key."
+      );
+    } else if (functionNames.length && containerNames.length) {
+      functionErrors.push(
+        "You cannot define both functions and custom.containers in the same service. Split them into separate services."
       );
     }
 

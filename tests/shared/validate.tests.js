@@ -158,3 +158,97 @@ describe("Configuration validation test", () => {
     });
   });
 });
+
+describe("validateApplications - functions/containers mutual exclusivity", () => {
+  function ctxWith(functions, containers) {
+    return {
+      ...validate,
+      runtime: "node18",
+      serverless: {
+        service: {
+          functions,
+          custom: { containers },
+        },
+      },
+    };
+  }
+
+  it("rejects a service that defines both functions and custom.containers", async () => {
+    const ctx = ctxWith(
+      { first: { runtime: "go118", events: [] } },
+      { second: { events: [] } }
+    );
+
+    const errors = await validate.validateApplications.call(ctx, []);
+
+    expect(errors.some((e) => e.includes("cannot define both"))).toBe(true);
+  });
+
+  it("does not flag a functions-only config", async () => {
+    const ctx = ctxWith({ first: { runtime: "go118", events: [] } }, {});
+
+    const errors = await validate.validateApplications.call(ctx, []);
+
+    expect(errors.some((e) => e.includes("cannot define both"))).toBe(false);
+  });
+
+  it("does not flag a containers-only config", async () => {
+    const ctx = ctxWith({}, { second: { events: [] } });
+
+    const errors = await validate.validateApplications.call(ctx, []);
+
+    expect(errors.some((e) => e.includes("cannot define both"))).toBe(false);
+  });
+
+  it("still flags the neither-defined case with its own message", async () => {
+    const ctx = ctxWith({}, {});
+
+    const errors = await validate.validateApplications.call(ctx, []);
+
+    expect(errors.some((e) => e.includes("must define at least one"))).toBe(
+      true
+    );
+    expect(errors.some((e) => e.includes("cannot define both"))).toBe(false);
+  });
+});
+
+describe("validateCredentials", () => {
+  function ctxWith(scwToken, scwProject) {
+    return {
+      provider: {
+        scwToken,
+        getScwProject: () => scwProject,
+      },
+    };
+  }
+
+  it("passes with a valid 36-char token and project", () => {
+    expect(() =>
+      validate.validateCredentials.call(ctxWith("a".repeat(36), "b".repeat(36)))
+    ).not.toThrow();
+  });
+
+  it("throws the friendly error, not a TypeError, when only scwToken is set", () => {
+    expect(() =>
+      validate.validateCredentials.call(ctxWith("a".repeat(36), undefined))
+    ).toThrow(/scwToken.*scwProject.*invalid/i);
+  });
+
+  it("throws the friendly error, not a TypeError, when only scwProject is set", () => {
+    expect(() =>
+      validate.validateCredentials.call(ctxWith(undefined, "b".repeat(36)))
+    ).toThrow(/scwToken.*scwProject.*invalid/i);
+  });
+
+  it("throws the friendly error when neither is set", () => {
+    expect(() =>
+      validate.validateCredentials.call(ctxWith(undefined, undefined))
+    ).toThrow(/scwToken.*scwProject.*invalid/i);
+  });
+
+  it("throws when a token/project is set but the wrong length", () => {
+    expect(() =>
+      validate.validateCredentials.call(ctxWith("too-short", "b".repeat(36)))
+    ).toThrow(/scwToken.*scwProject.*invalid/i);
+  });
+});

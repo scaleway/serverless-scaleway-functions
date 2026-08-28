@@ -4,12 +4,26 @@ const { manageError } = require("./utils");
 
 const CONTAINERS_FINAL_STATUSES = ["ready", "error", "locked"];
 
+const LIST_PAGE_SIZE = 100;
+const POLL_INTERVAL_MS = 5000;
+// ~10 minutes at POLL_INTERVAL_MS before giving up on a stuck wait.
+const MAX_POLL_ATTEMPTS = 120;
+
 module.exports = {
-  listContainers(namespaceId) {
-    const containersUrl = `namespaces/${namespaceId}/containers`;
+  listContainers(namespaceId, page = 1, accumulated = []) {
+    const containersUrl = `namespaces/${namespaceId}/containers?page=${page}&page_size=${LIST_PAGE_SIZE}`;
     return this.apiManager
       .get(containersUrl)
-      .then((response) => response.data.containers || [])
+      .then((response) => {
+        const containers = response.data.containers || [];
+        const all = accumulated.concat(containers);
+
+        if (containers.length < LIST_PAGE_SIZE) {
+          return all;
+        }
+
+        return this.listContainers(namespaceId, page + 1, all);
+      })
       .catch(manageError);
   },
 
@@ -59,7 +73,7 @@ module.exports = {
       .catch(manageError);
   },
 
-  waitContainersAreDeployed(namespaceId) {
+  waitContainersAreDeployed(namespaceId, attempt = 1) {
     return this.apiManager
       .get(`namespaces/${namespaceId}/containers`)
       .then((response) => {
@@ -76,10 +90,18 @@ module.exports = {
           }
         }
         if (!containersAreReady) {
+          if (attempt >= MAX_POLL_ATTEMPTS) {
+            throw new Error(
+              `Timed out waiting for containers in namespace ${namespaceId} to become ready`
+            );
+          }
           return new Promise((resolve) => {
             setTimeout(
-              () => resolve(this.waitContainersAreDeployed(namespaceId)),
-              5000
+              () =>
+                resolve(
+                  this.waitContainersAreDeployed(namespaceId, attempt + 1)
+                ),
+              POLL_INTERVAL_MS
             );
           });
         }
@@ -93,7 +115,7 @@ module.exports = {
    * @param {UUID} containerId id of the container to check
    * @returns
    */
-  waitForContainer(containerId) {
+  waitForContainer(containerId, attempt = 1) {
     return this.getContainer(containerId)
       .then((container) => {
         if (container.status === "error") {
@@ -105,20 +127,28 @@ module.exports = {
         );
 
         if (!isContainerInFinalStatus) {
+          if (attempt >= MAX_POLL_ATTEMPTS) {
+            throw new Error(
+              `Timed out waiting for container ${containerId} to reach a final status`
+            );
+          }
           return new Promise((resolve) => {
-            setTimeout(() => resolve(this.waitForContainer(containerId)), 5000);
+            setTimeout(
+              () => resolve(this.waitForContainer(containerId, attempt + 1)),
+              POLL_INTERVAL_MS
+            );
           });
         }
 
         return container;
       })
       .catch((err) => {
-        // toleration on 4XX errors because on some status, for example deleting the API
-        // will return a 404 err code if item has been deleted.
+        // toleration on 404 only: some operations (e.g. checking status of
+        // an item after deletion) will return a 404 once the item is gone.
         if (err.response === undefined) {
           // if we have a raw Error
           throw err;
-        } else if (err.response.status >= 500) {
+        } else if (err.response.status !== 404) {
           // if we have a CustomError, we can check the status
           throw new Error(err);
         }
@@ -130,7 +160,7 @@ module.exports = {
    * @param {UUID} containerId
    * @returns
    */
-  waitDomainsAreDeployedContainer(containerId) {
+  waitDomainsAreDeployedContainer(containerId, attempt = 1) {
     return this.listDomainsContainer(containerId).then((domains) => {
       let domainsAreReady = true;
 
@@ -147,10 +177,18 @@ module.exports = {
         }
       }
       if (!domainsAreReady) {
+        if (attempt >= MAX_POLL_ATTEMPTS) {
+          throw new Error(
+            `Timed out waiting for domains on container ${containerId} to become ready`
+          );
+        }
         return new Promise((resolve) => {
           setTimeout(
-            () => resolve(this.waitDomainsAreDeployedContainer(containerId)),
-            5000
+            () =>
+              resolve(
+                this.waitDomainsAreDeployedContainer(containerId, attempt + 1)
+              ),
+            POLL_INTERVAL_MS
           );
         });
       }

@@ -1,6 +1,15 @@
 const rewire = require("rewire");
 const { Readable } = require("stream");
-const { describe, it, expect } = require("@jest/globals");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+} = require("@jest/globals");
 
 const buildAndPushContainers = rewire(
   "../../deploy/lib/buildAndPushContainers.js"
@@ -10,6 +19,12 @@ const extractStreamContents = buildAndPushContainers.__get__(
 );
 const findErrorInBuildOutput = buildAndPushContainers.__get__(
   "findErrorInBuildOutput"
+);
+const getFilesInBuildContextDirectory = buildAndPushContainers.__get__(
+  "getFilesInBuildContextDirectory"
+);
+const filterFilesWithDockerignore = buildAndPushContainers.__get__(
+  "filterFilesWithDockerignore"
 );
 
 describe("extractStreamContents", () => {
@@ -88,5 +103,78 @@ describe("findErrorInBuildOutput", () => {
     const expected =
       'Head "https://rg.fr-par.scw.cloud/v2/some-private-registry/python/manifests/3.10.3-alpine3.15": error parsing HTTP 403 response body: no error details found in HTTP response body: "{"details":[{"action":"read","resource":"api_namespace"},{"action":"read","resource":"registry_image"}],"message":"insufficient permissions","type":"permissions_denied"}"';
     expect(actual).toEqual(expected);
+  });
+});
+
+describe("filterFilesWithDockerignore", () => {
+  let dir;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "dockerignore-test-"));
+    fs.mkdirSync(path.join(dir, "node_modules", "some-dep"), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(dir, "node_modules", "some-dep", "index.js"),
+      ""
+    );
+    fs.writeFileSync(path.join(dir, "server.py"), "");
+    fs.writeFileSync(path.join(dir, ".env"), "SECRET=shh");
+    fs.writeFileSync(path.join(dir, "keep.env.example"), "");
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("returns every file unfiltered when there is no .dockerignore", () => {
+    const files = getFilesInBuildContextDirectory(dir);
+    const actual = filterFilesWithDockerignore(dir, files).sort();
+
+    expect(actual).toEqual(
+      [
+        "server.py",
+        ".env",
+        "keep.env.example",
+        path.join("node_modules", "some-dep", "index.js"),
+      ].sort()
+    );
+  });
+
+  it("excludes files and directories matched by .dockerignore patterns", () => {
+    fs.writeFileSync(
+      path.join(dir, ".dockerignore"),
+      ["node_modules", ".env"].join("\n")
+    );
+
+    const files = getFilesInBuildContextDirectory(dir);
+    const actual = filterFilesWithDockerignore(dir, files).sort();
+
+    // node_modules/** and .env are excluded; the .dockerignore file itself
+    // was already dropped by getFilesInBuildContextDirectory.
+    expect(actual).toEqual(["server.py", "keep.env.example"].sort());
+  });
+
+  it("respects negation patterns to re-include a specific path", () => {
+    // Negating a path whose parent directory is itself excluded doesn't
+    // work (standard gitignore/dockerignore limitation) - the exclude
+    // pattern has to target the directory's contents (node_modules/*)
+    // rather than the directory itself for a child negation to apply.
+    fs.writeFileSync(
+      path.join(dir, ".dockerignore"),
+      ["node_modules/*", "!node_modules/some-dep"].join("\n")
+    );
+
+    const files = getFilesInBuildContextDirectory(dir);
+    const actual = filterFilesWithDockerignore(dir, files).sort();
+
+    expect(actual).toEqual(
+      [
+        "server.py",
+        ".env",
+        "keep.env.example",
+        path.join("node_modules", "some-dep", "index.js"),
+      ].sort()
+    );
   });
 });

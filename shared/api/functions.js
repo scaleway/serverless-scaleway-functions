@@ -2,12 +2,26 @@
 
 const { manageError } = require("./utils");
 
+const LIST_PAGE_SIZE = 100;
+const POLL_INTERVAL_MS = 5000;
+// ~10 minutes at POLL_INTERVAL_MS before giving up on a stuck wait.
+const MAX_POLL_ATTEMPTS = 120;
+
 module.exports = {
-  listFunctions(namespaceId) {
-    const functionsUrl = `namespaces/${namespaceId}/functions`;
+  listFunctions(namespaceId, page = 1, accumulated = []) {
+    const functionsUrl = `namespaces/${namespaceId}/functions?page=${page}&page_size=${LIST_PAGE_SIZE}`;
     return this.apiManager
       .get(functionsUrl)
-      .then((response) => response.data.functions || [])
+      .then((response) => {
+        const functions = response.data.functions || [];
+        const all = accumulated.concat(functions);
+
+        if (functions.length < LIST_PAGE_SIZE) {
+          return all;
+        }
+
+        return this.listFunctions(namespaceId, page + 1, all);
+      })
       .catch(manageError);
   },
 
@@ -64,7 +78,7 @@ module.exports = {
       .catch(manageError);
   },
 
-  waitFunctionsAreDeployed(namespaceId) {
+  waitFunctionsAreDeployed(namespaceId, attempt = 1) {
     return this.listFunctions(namespaceId).then((functions) => {
       let functionsAreReady = true;
       for (let i = 0; i < functions.length; i += 1) {
@@ -78,10 +92,16 @@ module.exports = {
         }
       }
       if (!functionsAreReady) {
+        if (attempt >= MAX_POLL_ATTEMPTS) {
+          throw new Error(
+            `Timed out waiting for functions in namespace ${namespaceId} to become ready`
+          );
+        }
         return new Promise((resolve) => {
           setTimeout(
-            () => resolve(this.waitFunctionsAreDeployed(namespaceId)),
-            5000
+            () =>
+              resolve(this.waitFunctionsAreDeployed(namespaceId, attempt + 1)),
+            POLL_INTERVAL_MS
           );
         });
       }
@@ -95,7 +115,7 @@ module.exports = {
    * @param {String} wantedStatus wanted function status before leaving the wait status.
    * @returns
    */
-  waitForFunctionStatus(functionId, wantedStatus) {
+  waitForFunctionStatus(functionId, wantedStatus, attempt = 1) {
     return this.getFunction(functionId)
       .then((func) => {
         if (func.status === "error") {
@@ -103,11 +123,22 @@ module.exports = {
         }
 
         if (func.status !== wantedStatus) {
+          if (attempt >= MAX_POLL_ATTEMPTS) {
+            throw new Error(
+              `Timed out waiting for function ${functionId} to reach status "${wantedStatus}"`
+            );
+          }
           return new Promise((resolve) => {
             setTimeout(
               () =>
-                resolve(this.waitForFunctionStatus(functionId, wantedStatus)),
-              5000
+                resolve(
+                  this.waitForFunctionStatus(
+                    functionId,
+                    wantedStatus,
+                    attempt + 1
+                  )
+                ),
+              POLL_INTERVAL_MS
             );
           });
         }
@@ -115,12 +146,12 @@ module.exports = {
         return func;
       })
       .catch((err) => {
-        // toleration on 4XX errors because on some status, for example deleting the API
-        // will return a 404 err code if item has been deleted.
+        // toleration on 404 only: some operations (e.g. checking status of
+        // an item after deletion) will return a 404 once the item is gone.
         if (err.response === undefined) {
           // if we have a raw Error
           throw err;
-        } else if (err.response.status >= 500) {
+        } else if (err.response.status !== 404) {
           // if we have a CustomError, we can check the status
           throw new Error(err);
         }
@@ -146,7 +177,7 @@ module.exports = {
    * @param {UUID} functionId
    * @returns
    */
-  waitDomainsAreDeployedFunction(functionId) {
+  waitDomainsAreDeployedFunction(functionId, attempt = 1) {
     return this.listDomainsFunction(functionId).then((domains) => {
       let domainsAreReady = true;
 
@@ -163,10 +194,18 @@ module.exports = {
         }
       }
       if (!domainsAreReady) {
+        if (attempt >= MAX_POLL_ATTEMPTS) {
+          throw new Error(
+            `Timed out waiting for domains on function ${functionId} to become ready`
+          );
+        }
         return new Promise((resolve) => {
           setTimeout(
-            () => resolve(this.waitDomainsAreDeployedFunction(functionId)),
-            5000
+            () =>
+              resolve(
+                this.waitDomainsAreDeployedFunction(functionId, attempt + 1)
+              ),
+            POLL_INTERVAL_MS
           );
         });
       }

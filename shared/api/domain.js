@@ -33,7 +33,7 @@ module.exports = {
   },
 
   createDomainAndLog(createDomainParams) {
-    this.createDomain(createDomainParams)
+    return this.createDomain(createDomainParams)
       .then((res) => {
         this.serverless.cli.log(`Creating domain ${res.hostname}`);
       })

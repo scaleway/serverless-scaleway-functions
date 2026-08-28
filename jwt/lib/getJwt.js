@@ -73,7 +73,7 @@ module.exports = {
   getJwtContainers(containers) {
     const promises = containers.map((container) => {
       if (container.privacy === PRIVACY_PRIVATE) {
-        return this.issueJwtFunction(container.id, this.tokenExpirationDate)
+        return this.issueJwtContainer(container.id, this.tokenExpirationDate)
           .then((response) =>
             Object.assign(container, { token: response.token })
           )

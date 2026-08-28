@@ -14,15 +14,6 @@ module.exports = {
       for (let i = 0; i < existingServicesOnApi.length; i++) {
         const apiService = existingServicesOnApi[i];
 
-        for (let ii = 0; ii < serviceNamesRet.length; ii++) {
-          const serviceName = serviceNamesRet[ii];
-
-          if (apiService === serviceName) {
-            serviceNamesRet.slice(ii, 1);
-            break;
-          }
-        }
-
         if (!serviceNamesRet.includes(apiService.name)) {
           elementsIdsToRemove.push(apiService.id);
         }

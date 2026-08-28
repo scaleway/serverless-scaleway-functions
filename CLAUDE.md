@@ -1,0 +1,82 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project overview
+
+This is `serverless-scaleway-functions`, a plugin for the [Serverless Framework v3](https://github.com/oss-serverless/serverless) that adds a `scaleway` provider, letting `serverless.yml` files deploy Scaleway Serverless Functions and Scaleway Serverless Containers. It's a CommonJS Node.js library published to npm, not an application.
+
+## Commands
+
+```bash
+npm run lint            # eslint . --cache
+npm run check-format    # prettier --check .
+npm run format          # prettier --write .
+npm run coverage        # jest --coverage
+```
+
+### Tests are integration tests, not unit tests
+
+Most of `tests/` deploys real functions/containers against the live Scaleway API and tears them down again — there is no mocking layer for the API calls. Running them requires:
+
+- Docker installed and usable
+- The `serverless`/`osls` CLI installed globally
+- A real Scaleway account/project with quota, and credentials exported as `SCW_TOKEN` / `SCW_PROJECT` (or `SCW_SECRET_KEY` / `SCW_DEFAULT_PROJECT_ID`)
+
+Do not assume `npm run test:*` can run in a sandboxed/offline environment. Test suites are split by area and run independently (`package.json` scripts and CI matrix in `.github/workflows/test.yml` both enumerate them):
+
+```bash
+npm run test:functions        # tests/functions
+npm run test:containers       # tests/containers/containers.test.js
+npm run test:containers-private
+npm run test:deploy           # tests/deploy
+npm run test:domains          # tests/domain
+npm run test:multi-region     # tests/multi-region
+npm run test:provider         # tests/provider
+npm run test:runtimes         # tests/runtimes (slowest, ~6 min — builds/deploys all example templates)
+npm run test:shared           # tests/shared — closest thing to pure unit tests (validate, secrets, child-process)
+npm run test:triggers         # tests/triggers
+```
+
+Run a single test by name: `jest tests/<suite> -t "test name regex"`. Jest timeout is set very high (`tests/setup-tests.js`, 5,000,000ms) because deploys are slow. `npm run clean-up` (`tests/teardown.js`) removes leftover namespaces/registries from failed runs — CI always runs it in an `if: always()` job.
+
+CI (`.github/workflows/test.yml`) runs prettier check, then the full test matrix (each suite x Node 18/20) against real Scaleway credentials from repo secrets, then cleanup.
+
+## Architecture
+
+### Plugin registration
+
+`index.js` is the plugin entry point. It registers one class per Serverless Framework lifecycle concern with `serverless.pluginManager.addPlugin`:
+
+- `provider/scalewayProvider.js` — registers the `scaleway` provider itself, resolves credentials (CLI flags > `SCW_SECRET_KEY`/`SCW_DEFAULT_PROJECT_ID` > deprecated `SCW_TOKEN`/`SCW_PROJECT` > `~/.config/scw/config.yaml`) and region.
+- `deploy/scalewayDeploy.js` — hooks into `deploy:deploy` etc.
+- `remove/scalewayRemove.js`
+- `invoke/scalewayInvoke.js`
+- `jwt/scalewayJwt.js`
+- `logs/scalewayLogs.js` (deprecated command, kept for compat)
+- `info/scalewayInfo.js`
+
+### Mixin pattern
+
+Each top-level plugin class (e.g. `ScalewayDeploy`) does not implement its logic inline. Instead its constructor `Object.assign`s a set of small modules from its `lib/` subfolder (and from `shared/`) onto `this`, then wires them together via `this.hooks`, chaining steps with Bluebird promises. Example: `deploy/scalewayDeploy.js` composes `shared/validate.js`, `shared/setUpDeployment.js`, and everything in `deploy/lib/` (`createNamespace`, `createFunctions`, `createContainers`, `buildAndPushContainers`, `uploadCode`, `deployFunctions`, `deployContainers`, `deployTriggers`), plus `shared/api/*` for HTTP calls. When touching one of these plugins, look at the `this.hooks` block in its top-level file first — that's the map of the whole flow — then follow into the relevant `lib/` module.
+
+Deploy flow branches on whether `serverless.yml` defines `functions` (functions path) or `custom.containers` (containers path); a service can't mix both today per the mixin's `chainFunctions`/`chainContainers` logic.
+
+### Shared API client layer
+
+`shared/api/` holds one file per Scaleway API resource (`functions.js`, `containers.js`, `namespaces.js`, `registry.js`, `domain.js`, `triggers.js`, `logs.js`, `account.js`, `jwt.js`), all built on `endpoint.js`/`utils.js`. `shared/constants.js` defines the API base URLs (functions, containers, registry, account) and the default region (`fr-par`). Plugins consume these via `scalewayApi.getApi(this)` (`shared/api/index.js`), not by calling `axios` directly.
+
+### Configuration model
+
+A single `serverless.yml` maps to one namespace, containing either `functions:` or `custom.containers:` (mutually exclusive). `shared/validate.js` and `shared/singleSource.js` enforce config shape and the default "prune anything not in the file" deploy behavior (`singleSource`, can be disabled per-service). `shared/runtimes.js` and `shared/secrets.js` centralize runtime-list/secret handling shared across functions and containers.
+
+### Examples as fixtures, not docs-only
+
+`examples/` (one directory per runtime: `python3`, `node20`, `golang`, `rust`, etc.) is used directly by `tests/runtimes` — the runtime test suite builds and deploys these example projects against the live API. Changing an example's `serverless.yml` shape affects CI, not just documentation. `examples/**/*.js` is excluded from eslint.
+
+## Conventions
+
+- Plain CommonJS (`require`/`module.exports`), no TypeScript, no build step — `main` in `package.json` points straight at `index.js`.
+- Prettier (v2.8.8, default config) is the formatting authority; CI's `lint` job runs `check-format`, not eslint, as the required gate.
+- PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0) — the merge process squashes commits and uses the PR title as the final commit message (see `.github/CONTRIBUTING.md`).
+- Docs live in `docs/` (per-runtime notes for Go/JS/PHP/Python/Rust, plus `containers.md`, `custom-domains.md`, `events.md`, `secrets.md`, `troubleshooting.md`, `development.md`) — update the relevant file there when changing user-facing behavior, matching the config reference in `README.md`.

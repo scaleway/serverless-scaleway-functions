@@ -32,7 +32,7 @@ class ScalewayInvoke {
       this.isFunction = this.isDefinedFunction(this.options.function);
 
       if (!this.isContainer && !this.isFunction) {
-        const msg = `Function or container ${this.options.function} not defined in servleress.yml`;
+        const msg = `Function or container ${this.options.function} not defined in serverless.yml`;
         this.serverless.cli.log(msg);
         throw new Error(msg);
       }
@@ -50,10 +50,17 @@ class ScalewayInvoke {
     function doInvoke(found) {
       // Filter on name
       let func = found.find((f) => f.name === this.options.function);
+
+      if (!func) {
+        const msg = `${this.options.function} is not deployed yet, run "serverless deploy" first`;
+        this.serverless.cli.log(msg);
+        throw new Error(msg);
+      }
+
       const url = "https://" + func.domain_name;
 
       // Invoke
-      axios
+      return axios
         .get(url)
         .then((res) => {
           // Make sure we write to stdout here to ensure we can capture output

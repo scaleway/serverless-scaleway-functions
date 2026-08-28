@@ -137,9 +137,12 @@ class ScalewayProvider {
       this.scwRegion = options["scw-region"];
     } else if (process.env.SCW_REGION) {
       this.scwRegion = process.env.SCW_REGION;
+    } else if (this.serverless.service.provider.scwRegion) {
+      this.scwRegion = this.serverless.service.provider.scwRegion;
     } else {
-      this.scwRegion =
-        this.serverless.service.provider.scwRegion || DEFAULT_REGION;
+      // this.scwRegion may already have been set by setCredentials() from
+      // the local Scaleway CLI config file's default_region.
+      this.scwRegion = this.scwRegion || DEFAULT_REGION;
     }
     this.apiFunctionUrl =
       process.env.SCW_FUNCTION_URL || `${FUNCTIONS_API_URL}/${this.scwRegion}`;

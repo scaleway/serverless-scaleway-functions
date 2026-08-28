@@ -59,4 +59,20 @@ describe("Domain utils tests ", () => {
     expect(domainsToDeleteOne.length).toBe(1);
     expect(domainsToDeleteOne[0]).toBe("id2");
   });
+
+  it("should flag every existing domain for deletion when serverless.yml no longer declares any custom domain", () => {
+    const domainsToDeleteAll = domainUtils.getDomainsToDelete(
+      undefined,
+      structInput
+    );
+
+    expect(domainsToDeleteAll).toEqual(["id1", "id2"]);
+
+    const domainsToDeleteAllNull = domainUtils.getDomainsToDelete(
+      null,
+      structInput
+    );
+
+    expect(domainsToDeleteAllNull).toEqual(["id1", "id2"]);
+  });
 });
