@@ -1,14 +1,83 @@
-import { manageError } from "./utils";
-import type { ApiManagerContext } from "./types";
+import { Errors } from "@scaleway/sdk-client";
 
+interface SdkContainer {
+  id: string;
+  name: string;
+  status: string;
+  errorMessage?: string;
+  domainName: string;
+  privateNetworkId?: string;
+  httpOption: string;
+  registryImage: string;
+  secretEnvironmentVariables: { key: string; hashedValue: string }[];
+}
+
+interface SdkDomain {
+  id: string;
+  hostname: string;
+  status: string;
+  errorMessage?: string;
+}
+
+interface ContainerSdkApi {
+  listContainers(request?: { namespaceId?: string }): Promise<{
+    containers: SdkContainer[];
+  }> & {
+    all(): Promise<SdkContainer[]>;
+  };
+  createContainer(request: Record<string, unknown>): Promise<SdkContainer>;
+  updateContainer(request: Record<string, unknown>): Promise<SdkContainer>;
+  deployContainer(request: { containerId: string }): Promise<SdkContainer>;
+  deleteContainer(request: { containerId: string }): Promise<SdkContainer>;
+  getContainer(request: { containerId: string }): Promise<SdkContainer>;
+  listDomains(request: {
+    containerId: string;
+  }): Promise<{ domains: SdkDomain[] }>;
+}
+
+interface ContainerSdkContext {
+  sdkApi: ContainerSdkApi;
+}
+
+interface WaitContainersAreDeployedContext extends ContainerSdkContext {
+  waitContainersAreDeployed(
+    namespaceId: string,
+    attempt?: number,
+  ): Promise<ContainerRecord[]>;
+}
+
+interface WaitForContainerContext extends ContainerSdkContext {
+  getContainer(containerId: string): Promise<ContainerRecord>;
+  waitForContainer(
+    containerId: string,
+    attempt?: number,
+  ): Promise<ContainerRecord | undefined>;
+}
+
+interface WaitDomainsAreDeployedContainerContext extends ContainerSdkContext {
+  listDomainsContainer(containerId: string): Promise<DomainRecord[]>;
+  waitDomainsAreDeployedContainer(
+    containerId: string,
+    attempt?: number,
+  ): Promise<DomainRecord[]>;
+}
+
+// External shape this file has always returned (snake_case fields
+// deploy/lib/createContainers.ts, deploy/lib/deployContainers.ts and
+// buildAndPushContainers.ts read directly: domain_name,
+// private_network_id, secret_environment_variables) - preserved via
+// aliasing rather than changing every consumer, same pattern as
+// functions.ts/namespaces.ts.
 interface ContainerRecord {
   id: string;
   name: string;
   status: string;
   error_message?: string;
   domain_name?: string;
-  description?: string;
+  private_network_id?: string;
   http_option?: string;
+  registry_image?: string;
+  secret_environment_variables?: { key: string; hashed_value: string }[];
   [key: string]: unknown;
 }
 
@@ -20,132 +89,172 @@ interface DomainRecord {
   [key: string]: unknown;
 }
 
-interface ContainerApi extends ApiManagerContext {
-  listContainers(
-    namespaceId: string,
-    page?: number,
-    accumulated?: ContainerRecord[],
-  ): Promise<ContainerRecord[]>;
-  getContainer(containerId: string): Promise<ContainerRecord>;
-  waitContainersAreDeployed(
-    namespaceId: string,
-    attempt?: number,
-  ): Promise<ContainerRecord[]>;
-  waitForContainer(
-    containerId: string,
-    attempt?: number,
-  ): Promise<ContainerRecord | undefined>;
-  listDomainsContainer(containerId: string): Promise<DomainRecord[]>;
-  waitDomainsAreDeployedContainer(
-    containerId: string,
-    attempt?: number,
-  ): Promise<DomainRecord[]>;
+function toLegacyContainer(container: SdkContainer): ContainerRecord {
+  return {
+    ...container,
+    error_message: container.errorMessage,
+    domain_name: container.domainName,
+    private_network_id: container.privateNetworkId,
+    http_option: container.httpOption,
+    registry_image: container.registryImage,
+    secret_environment_variables: container.secretEnvironmentVariables?.map(
+      (secret) => ({ key: secret.key, hashed_value: secret.hashedValue }),
+    ),
+  };
 }
 
-const CONTAINERS_FINAL_STATUSES = ["ready", "error", "locked"];
+function toLegacyDomain(domain: SdkDomain): DomainRecord {
+  return { ...domain, error_message: domain.errorMessage };
+}
 
-const LIST_PAGE_SIZE = 100;
+// deploy/lib/createContainers.ts's adaptHealthCheckToAPI/
+// adaptScalingOptionToAPI build these two nested objects with the old raw
+// REST API's snake_case field names (failure_threshold,
+// concurrent_requests_threshold, etc.) - translate to the SDK's camelCase
+// equivalents here, at the API boundary, rather than touching that file
+// (same "preserve caller, translate internally" approach as everywhere
+// else in this migration). http/tcp probe sub-objects need no renaming -
+// {path} and {} already match the SDK's shape exactly.
+function toSdkHealthCheck(
+  healthCheck: unknown,
+): Record<string, unknown> | undefined {
+  if (!healthCheck || typeof healthCheck !== "object") return undefined;
+  const hc = healthCheck as Record<string, unknown>;
+  return {
+    failureThreshold: hc.failure_threshold,
+    interval: hc.interval,
+    http: hc.http,
+    tcp: hc.tcp,
+  };
+}
+
+function toSdkScalingOption(
+  scalingOption: unknown,
+): Record<string, unknown> | undefined {
+  if (!scalingOption || typeof scalingOption !== "object") return undefined;
+  const so = scalingOption as Record<string, unknown>;
+  return {
+    concurrentRequestsThreshold: so.concurrent_requests_threshold,
+    cpuUsageThreshold: so.cpu_usage_threshold,
+    memoryUsageThreshold: so.memory_usage_threshold,
+  };
+}
+
 const POLL_INTERVAL_MS = 5000;
 // ~10 minutes at POLL_INTERVAL_MS before giving up on a stuck wait.
 const MAX_POLL_ATTEMPTS = 120;
 
-export function listContainers(
-  this: ContainerApi,
+const CONTAINERS_FINAL_STATUSES = ["ready", "error", "locked"];
+
+export async function listContainers(
+  this: ContainerSdkContext,
   namespaceId: string,
-  page = 1,
-  accumulated: ContainerRecord[] = [],
 ): Promise<ContainerRecord[]> {
-  const containersUrl = `namespaces/${namespaceId}/containers?page=${page}&page_size=${LIST_PAGE_SIZE}`;
-  return this.apiManager
-    .get<{ containers: ContainerRecord[] }>(containersUrl)
-    .then((response) => {
-      const containers = response.data.containers || [];
-      const all = accumulated.concat(containers);
-
-      if (containers.length < LIST_PAGE_SIZE) {
-        return all;
-      }
-
-      return this.listContainers(namespaceId, page + 1, all);
-    })
-    .catch(manageError);
+  const containers = await this.sdkApi.listContainers({ namespaceId }).all();
+  return containers.map(toLegacyContainer);
 }
 
-export function createContainer(
-  this: ApiManagerContext,
+export async function createContainer(
+  this: ContainerSdkContext,
   params: Record<string, unknown>,
 ): Promise<ContainerRecord> {
-  return this.apiManager
-    .post<ContainerRecord>("containers", params)
-    .then((response) => response.data)
-    .catch(manageError);
+  const container = await this.sdkApi.createContainer({
+    name: params.name,
+    namespaceId: params.namespace_id,
+    environmentVariables: params.environment_variables,
+    secretEnvironmentVariables: params.secret_environment_variables,
+    description: params.description,
+    memoryLimit: params.memory_limit,
+    cpuLimit: params.cpu_limit,
+    minScale: params.min_scale,
+    maxScale: params.max_scale,
+    registryImage: params.registry_image,
+    maxConcurrency: params.max_concurrency,
+    timeout: params.timeout,
+    privacy: params.privacy,
+    port: params.port,
+    httpOption: params.http_option,
+    sandbox: params.sandbox,
+    healthCheck: toSdkHealthCheck(params.health_check),
+    scalingOption: toSdkScalingOption(params.scaling_option),
+    privateNetworkId: params.private_network_id,
+  });
+  return toLegacyContainer(container);
 }
 
-export function updateContainer(
-  this: ApiManagerContext,
+export async function updateContainer(
+  this: ContainerSdkContext,
   containerId: string,
   params: Record<string, unknown>,
 ): Promise<ContainerRecord> {
-  const updateUrl = `containers/${containerId}`;
-  return this.apiManager
-    .patch<ContainerRecord>(updateUrl, params)
-    .then((response) => response.data)
-    .catch(manageError);
+  const container = await this.sdkApi.updateContainer({
+    containerId,
+    environmentVariables: params.environment_variables,
+    secretEnvironmentVariables: params.secret_environment_variables,
+    description: params.description,
+    memoryLimit: params.memory_limit,
+    cpuLimit: params.cpu_limit,
+    minScale: params.min_scale,
+    maxScale: params.max_scale,
+    registryImage: params.registry_image,
+    maxConcurrency: params.max_concurrency,
+    timeout: params.timeout,
+    privacy: params.privacy,
+    port: params.port,
+    httpOption: params.http_option,
+    sandbox: params.sandbox,
+    healthCheck: toSdkHealthCheck(params.health_check),
+    scalingOption: toSdkScalingOption(params.scaling_option),
+    privateNetworkId: params.private_network_id,
+  });
+  return toLegacyContainer(container);
 }
 
-export function deployContainer(
-  this: ApiManagerContext,
+export async function deployContainer(
+  this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
-  return this.apiManager
-    .post<ContainerRecord>(`containers/${containerId}/deploy`, {})
-    .then((response) => response.data)
-    .catch(manageError);
+  const container = await this.sdkApi.deployContainer({ containerId });
+  return toLegacyContainer(container);
 }
 
 /**
  * Deletes the container by containerId
  * @returns container with status deleting
  */
-export function deleteContainer(
-  this: ApiManagerContext,
+export async function deleteContainer(
+  this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
-  return this.apiManager
-    .delete<ContainerRecord>(`/containers/${containerId}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  const container = await this.sdkApi.deleteContainer({ containerId });
+  return toLegacyContainer(container);
 }
 
 /**
  * Get container information by containerId
  */
-export function getContainer(
-  this: ApiManagerContext,
+export async function getContainer(
+  this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
-  return this.apiManager
-    .get<ContainerRecord>(`containers/${containerId}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  const container = await this.sdkApi.getContainer({ containerId });
+  return toLegacyContainer(container);
 }
 
 export function waitContainersAreDeployed(
-  this: ContainerApi,
+  this: WaitContainersAreDeployedContext,
   namespaceId: string,
   attempt = 1,
 ): Promise<ContainerRecord[]> {
-  return this.apiManager
-    .get<{ containers: ContainerRecord[] }>(
-      `namespaces/${namespaceId}/containers`,
-    )
-    .then((response) => {
-      const containers = response.data.containers || [];
+  return this.sdkApi
+    .listContainers({ namespaceId })
+    .all()
+    .then((containers) => {
       let containersAreReady = true;
       for (let i = 0; i < containers.length; i += 1) {
-        const container = response.data.containers[i];
+        const container = containers[i];
         if (container.status === "error") {
-          throw new Error(container.error_message);
+          throw new Error(container.errorMessage);
         }
         if (container.status !== "ready") {
           containersAreReady = false;
@@ -166,16 +275,15 @@ export function waitContainersAreDeployed(
           );
         });
       }
-      return containers;
-    })
-    .catch(manageError);
+      return containers.map(toLegacyContainer);
+    });
 }
 
 /**
  * @param containerId id of the container to check
  */
 export function waitForContainer(
-  this: ContainerApi,
+  this: WaitForContainerContext,
   containerId: string,
   attempt = 1,
 ): Promise<ContainerRecord | undefined> {
@@ -208,14 +316,13 @@ export function waitForContainer(
     .catch((err) => {
       // toleration on 404 only: some operations (e.g. checking status of
       // an item after deletion) will return a 404 once the item is gone.
-      if (err.response === undefined) {
-        // if we have a raw Error
-        throw err;
-      } else if (err.response.status !== 404) {
-        // if we have a CustomError, we can check the status
-        throw new Error(err);
+      if (err instanceof Errors.ScalewayError) {
+        if (err.status !== 404) {
+          throw new Error(err.message);
+        }
+        return undefined;
       }
-      return undefined;
+      throw err;
     });
 }
 
@@ -223,7 +330,7 @@ export function waitForContainer(
  * Waiting for all domains to be ready on a container
  */
 export function waitDomainsAreDeployedContainer(
-  this: ContainerApi,
+  this: WaitDomainsAreDeployedContainerContext,
   containerId: string,
   attempt = 1,
 ): Promise<DomainRecord[]> {
@@ -266,14 +373,10 @@ export function waitDomainsAreDeployedContainer(
  * listDomains is used to read all domains of a wanted container.
  * @param containerId the id of the container to read domains.
  */
-export function listDomainsContainer(
-  this: ApiManagerContext,
+export async function listDomainsContainer(
+  this: ContainerSdkContext,
   containerId: string,
 ): Promise<DomainRecord[]> {
-  const domainsUrl = `domains?container_id=${containerId}`;
-
-  return this.apiManager
-    .get<{ domains: DomainRecord[] }>(domainsUrl)
-    .then((response) => response.data.domains)
-    .catch(manageError);
+  const response = await this.sdkApi.listDomains({ containerId });
+  return response.domains.map(toLegacyDomain);
 }

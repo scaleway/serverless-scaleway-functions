@@ -1,6 +1,3 @@
-import { manageError } from "./utils";
-import type { ApiManagerContext } from "./types";
-
 interface Trigger {
   id: string;
   args?: Record<string, unknown>;
@@ -10,114 +7,115 @@ interface Trigger {
 
 type TriggerParams = Record<string, unknown>;
 
+interface SdkListResponse<T> {
+  all(): Promise<T[]>;
+}
+
+interface TriggerSdkApi {
+  // Same real per-product ID-field-name mismatch as domain.ts's
+  // createDomain (functionId vs containerId) - Record<string, unknown> is
+  // a deliberate, narrow escape hatch here too, not a general pattern.
+  listCrons(request: Record<string, unknown>): SdkListResponse<Trigger>;
+  listTriggers(request: Record<string, unknown>): SdkListResponse<Trigger>;
+  createCron(request: Record<string, unknown>): Promise<Trigger>;
+  createTrigger(request: Record<string, unknown>): Promise<Trigger>;
+  updateCron(request: Record<string, unknown>): Promise<Trigger>;
+  deleteCron(request: { cronId: string }): Promise<Trigger>;
+  deleteTrigger(request: { triggerId: string }): Promise<Trigger>;
+}
+
+interface TriggerSdkContext {
+  sdkApi: TriggerSdkApi;
+}
+
 export async function listTriggersForApplication(
-  this: ApiManagerContext,
+  this: TriggerSdkContext,
   applicationId: string,
   isFunction: boolean,
 ): Promise<Trigger[]> {
-  let cronTriggersUrl = `crons?function_id=${applicationId}`;
-  if (!isFunction) {
-    cronTriggersUrl = `crons?container_id=${applicationId}`;
-  }
+  const ownerIdField = isFunction ? "functionId" : "containerId";
 
-  const cronTriggers = await this.apiManager
-    .get<{ crons: Trigger[] }>(cronTriggersUrl)
-    .then((response) => response.data.crons)
-    .catch(manageError);
-
-  let messageTriggersUrl = `triggers?function_id=${applicationId}`;
-  if (!isFunction) {
-    messageTriggersUrl = `triggers?container_id=${applicationId}`;
-  }
-
-  const messageTriggers = await this.apiManager
-    .get<{ triggers: Trigger[] }>(messageTriggersUrl)
-    .then((response) => response.data.triggers)
-    .catch(manageError);
+  const cronTriggers = await this.sdkApi
+    .listCrons({ [ownerIdField]: applicationId })
+    .all();
+  const messageTriggers = await this.sdkApi
+    .listTriggers({ [ownerIdField]: applicationId })
+    .all();
 
   return [...cronTriggers, ...messageTriggers];
 }
 
-export function createCronTrigger(
-  this: ApiManagerContext,
+export async function createCronTrigger(
+  this: TriggerSdkContext,
   applicationId: string,
   isFunction: boolean,
   params: TriggerParams,
 ): Promise<Trigger> {
-  let payload: TriggerParams & {
-    function_id?: string;
-    container_id?: string;
-  } = {
-    ...params,
-    function_id: applicationId,
-  };
-
-  if (!isFunction) {
-    payload = {
-      ...params,
-      container_id: applicationId,
-    };
-  }
-  return this.apiManager
-    .post<Trigger>("crons", payload)
-    .then((response) => response.data)
-    .catch(manageError);
+  const ownerIdField = isFunction ? "functionId" : "containerId";
+  return this.sdkApi.createCron({
+    [ownerIdField]: applicationId,
+    schedule: params.schedule,
+    args: params.args,
+  });
 }
 
-export function createMessageTrigger(
-  this: ApiManagerContext,
+export async function createMessageTrigger(
+  this: TriggerSdkContext,
   applicationId: string,
   isFunction: boolean,
   params: TriggerParams,
 ): Promise<Trigger> {
-  let payload: TriggerParams & {
-    function_id?: string;
-    container_id?: string;
-  } = {
-    ...params,
-    function_id: applicationId,
+  const ownerIdField = isFunction ? "functionId" : "containerId";
+
+  const request: Record<string, unknown> = {
+    [ownerIdField]: applicationId,
+    name: params.name,
   };
 
-  if (!isFunction) {
-    payload = {
-      ...params,
-      container_id: applicationId,
+  if (params.scw_nats_config) {
+    const nats = params.scw_nats_config as Record<string, unknown>;
+    request.scwNatsConfig = {
+      subject: nats.subject,
+      mnqNatsAccountId: nats.mnq_nats_account_id,
+      mnqProjectId: nats.mnq_project_id,
+      mnqRegion: nats.mnq_region,
     };
   }
-  return this.apiManager
-    .post<Trigger>("triggers", payload)
-    .then((response) => response.data)
-    .catch(manageError);
+
+  if (params.scw_sqs_config) {
+    const sqs = params.scw_sqs_config as Record<string, unknown>;
+    request.scwSqsConfig = {
+      queue: sqs.queue,
+      mnqProjectId: sqs.mnq_project_id,
+      mnqRegion: sqs.mnq_region,
+    };
+  }
+
+  return this.sdkApi.createTrigger(request);
 }
 
-export function updateCronTrigger(
-  this: ApiManagerContext,
+export async function updateCronTrigger(
+  this: TriggerSdkContext,
   triggerId: string,
   params: TriggerParams,
 ): Promise<Trigger> {
-  const updateUrl = `crons/${triggerId}`;
-  return this.apiManager
-    .patch<Trigger>(updateUrl, params)
-    .then((response) => response.data)
-    .catch(manageError);
+  return this.sdkApi.updateCron({
+    cronId: triggerId,
+    schedule: params.schedule,
+    args: params.args,
+  });
 }
 
-export function deleteCronTrigger(
-  this: ApiManagerContext,
+export async function deleteCronTrigger(
+  this: TriggerSdkContext,
   triggerId: string,
 ): Promise<Trigger> {
-  return this.apiManager
-    .delete<Trigger>(`crons/${triggerId}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  return this.sdkApi.deleteCron({ cronId: triggerId });
 }
 
-export function deleteMessageTrigger(
-  this: ApiManagerContext,
+export async function deleteMessageTrigger(
+  this: TriggerSdkContext,
   triggerId: string,
 ): Promise<Trigger> {
-  return this.apiManager
-    .delete<Trigger>(`triggers/${triggerId}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  return this.sdkApi.deleteTrigger({ triggerId });
 }

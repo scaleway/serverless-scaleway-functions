@@ -3,6 +3,7 @@
 const functionsApi = require("../../shared/api/functions");
 const containersApi = require("../../shared/api/containers");
 const namespacesApi = require("../../shared/api/namespaces");
+const { Errors } = require("@scaleway/sdk-client");
 
 // These wait* helpers recurse via setTimeout(..., N) until the resource
 // reaches a final status. Fake timers let us drive that recursion
@@ -86,14 +87,20 @@ describe("waitForFunctionStatus", () => {
   });
 });
 
+function sdkListFunctions(functions) {
+  return { all: () => Promise.resolve(functions) };
+}
+
 describe("waitFunctionsAreDeployed", () => {
   it("resolves once every function in the namespace is ready", async () => {
     const ctx = {
-      listFunctions: () =>
-        Promise.resolve([
-          { name: "a", status: "ready" },
-          { name: "b", status: "ready" },
-        ]),
+      sdkApi: {
+        listFunctions: () =>
+          sdkListFunctions([
+            { name: "a", status: "ready" },
+            { name: "b", status: "ready" },
+          ]),
+      },
     };
 
     await expect(
@@ -106,11 +113,13 @@ describe("waitFunctionsAreDeployed", () => {
 
   it("throws as soon as any function reports an error status, without waiting for the rest", async () => {
     const ctx = {
-      listFunctions: () =>
-        Promise.resolve([
-          { name: "a", status: "error", error_message: "deploy failed" },
-          { name: "b", status: "pending" },
-        ]),
+      sdkApi: {
+        listFunctions: () =>
+          sdkListFunctions([
+            { name: "a", status: "error", errorMessage: "deploy failed" },
+            { name: "b", status: "pending" },
+          ]),
+      },
     };
 
     await expect(
@@ -121,11 +130,13 @@ describe("waitFunctionsAreDeployed", () => {
   it("polls again when at least one function isn't ready yet", async () => {
     let call = 0;
     const ctx = Object.assign({}, functionsApi, {
-      listFunctions: () => {
-        call += 1;
-        return Promise.resolve([
-          { name: "a", status: call === 1 ? "pending" : "ready" },
-        ]);
+      sdkApi: {
+        listFunctions: () => {
+          call += 1;
+          return sdkListFunctions([
+            { name: "a", status: call === 1 ? "pending" : "ready" },
+          ]);
+        },
       },
     });
 
@@ -145,7 +156,10 @@ describe("waitFunctionsAreDeployed", () => {
 
   it("gives up after ~10 minutes instead of polling forever", async () => {
     const ctx = Object.assign({}, functionsApi, {
-      listFunctions: () => Promise.resolve([{ name: "a", status: "pending" }]),
+      sdkApi: {
+        listFunctions: () =>
+          sdkListFunctions([{ name: "a", status: "pending" }]),
+      },
     });
 
     const resultPromise = functionsApi.waitFunctionsAreDeployed.call(
@@ -291,14 +305,16 @@ describe("waitForContainer", () => {
   });
 });
 
+function sdkListContainers(containers) {
+  return { all: () => Promise.resolve(containers) };
+}
+
 describe("waitContainersAreDeployed", () => {
   it("resolves with the container list once every container is ready", async () => {
     const ctx = {
-      apiManager: {
-        get: () =>
-          Promise.resolve({
-            data: { containers: [{ name: "web", status: "ready" }] },
-          }),
+      sdkApi: {
+        listContainers: () =>
+          sdkListContainers([{ name: "web", status: "ready" }]),
       },
     };
 
@@ -309,15 +325,11 @@ describe("waitContainersAreDeployed", () => {
 
   it("throws as soon as a container reports an error status", async () => {
     const ctx = {
-      apiManager: {
-        get: () =>
-          Promise.resolve({
-            data: {
-              containers: [
-                { name: "web", status: "error", error_message: "crashed" },
-              ],
-            },
-          }),
+      sdkApi: {
+        listContainers: () =>
+          sdkListContainers([
+            { name: "web", status: "error", errorMessage: "crashed" },
+          ]),
       },
     };
 
@@ -328,7 +340,9 @@ describe("waitContainersAreDeployed", () => {
 
   it("wraps a raw API failure through manageError instead of hanging", async () => {
     const err = new Error("network down");
-    const ctx = { apiManager: { get: () => Promise.reject(err) } };
+    const ctx = {
+      sdkApi: { listContainers: () => ({ all: () => Promise.reject(err) }) },
+    };
 
     await expect(
       containersApi.waitContainersAreDeployed.call(ctx, "ns-1"),
@@ -337,11 +351,9 @@ describe("waitContainersAreDeployed", () => {
 
   it("gives up after ~10 minutes instead of polling forever", async () => {
     const ctx = Object.assign({}, containersApi, {
-      apiManager: {
-        get: () =>
-          Promise.resolve({
-            data: { containers: [{ name: "web", status: "pending" }] },
-          }),
+      sdkApi: {
+        listContainers: () =>
+          sdkListContainers([{ name: "web", status: "pending" }]),
       },
     });
 
@@ -432,63 +444,18 @@ describe("waitDomainsAreDeployedContainer", () => {
   });
 });
 
-describe("waitNamespaceIsReady", () => {
-  it("resolves once the namespace is ready", async () => {
-    const ctx = { getNamespace: () => Promise.resolve({ status: "ready" }) };
-
-    await expect(
-      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1"),
-    ).resolves.toEqual({ status: "ready" });
-  });
-
-  it("throws when the namespace reports an error status", async () => {
-    const ctx = {
-      getNamespace: () =>
-        Promise.resolve({ status: "error", error_message: "ns broken" }),
-    };
-
-    await expect(
-      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1"),
-    ).rejects.toThrow("ns broken");
-  });
-
-  it("polls again (every 1s) while the namespace is still pending", async () => {
-    let call = 0;
-    const ctx = Object.assign({}, namespacesApi, {
-      getNamespace: () => {
-        call += 1;
-        return Promise.resolve({ status: call === 1 ? "pending" : "ready" });
-      },
-    });
-
-    const resultPromise = namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1");
-
-    await Promise.resolve();
-    await jest.advanceTimersByTimeAsync(1000);
-
-    await expect(resultPromise).resolves.toEqual({ status: "ready" });
-    expect(call).toEqual(2);
-  });
-
-  it("gives up after ~10 minutes instead of polling forever", async () => {
-    const ctx = Object.assign({}, namespacesApi, {
-      getNamespace: () => Promise.resolve({ status: "pending" }),
-    });
-
-    const resultPromise = namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1");
-    const assertion = expect(resultPromise).rejects.toThrow(/Timed out/);
-
-    await jest.advanceTimersByTimeAsync(610000);
-
-    await assertion;
-  });
-});
+// waitNamespaceIsReady now delegates entirely to the SDK's own
+// waitForNamespace/waitForResource (shared/api/namespaces.ts) - the
+// polling/backoff/timeout behavior that used to be hand-rolled and tested
+// here is Scaleway's own tested responsibility now, not this repo's. Only
+// the error-status check (throw when the namespace lands in "error")
+// still lives in this repo's code, and is simple enough not to need its
+// own dedicated fake-timer test.
 
 describe("waitNamespaceIsDeleted", () => {
-  it("resolves true once the namespace is gone (404)", async () => {
-    const err = new Error("not found");
-    err.response = { status: 404 };
-    const ctx = { getNamespace: () => Promise.reject(err) };
+  it("resolves true once the namespace is gone (ResourceNotFoundError)", async () => {
+    const err = new Errors.ResourceNotFoundError(404, {}, "namespace", "ns-1");
+    const ctx = { sdkApi: { getNamespace: () => Promise.reject(err) } };
 
     await expect(
       namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1"),
@@ -497,7 +464,7 @@ describe("waitNamespaceIsDeleted", () => {
 
   it("resolves true immediately once the API returns a non-deleting namespace", async () => {
     const ctx = {
-      getNamespace: () => Promise.resolve({ status: "ready" }),
+      sdkApi: { getNamespace: () => Promise.resolve({ status: "ready" }) },
     };
 
     await expect(
@@ -508,14 +475,16 @@ describe("waitNamespaceIsDeleted", () => {
   it("keeps polling while status is 'deleting'", async () => {
     let call = 0;
     const ctx = Object.assign({}, namespacesApi, {
-      getNamespace: () => {
-        call += 1;
-        if (call === 1) {
-          return Promise.resolve({ status: "deleting" });
-        }
-        const err = new Error("not found");
-        err.response = { status: 404 };
-        return Promise.reject(err);
+      sdkApi: {
+        getNamespace: () => {
+          call += 1;
+          if (call === 1) {
+            return Promise.resolve({ status: "deleting" });
+          }
+          return Promise.reject(
+            new Errors.ResourceNotFoundError(404, {}, "namespace", "ns-1"),
+          );
+        },
       },
     });
 
@@ -532,9 +501,11 @@ describe("waitNamespaceIsDeleted", () => {
   });
 
   it("rejects on a non-404 error without hanging forever, preserving the original error message", async () => {
-    const err = new Error("server exploded");
-    err.response = { status: 500 };
-    const ctx = { getNamespace: () => Promise.reject(err) };
+    const ctx = {
+      sdkApi: {
+        getNamespace: () => Promise.reject(new Error("server exploded")),
+      },
+    };
 
     await expect(
       namespacesApi.waitNamespaceIsDeleted.call(ctx, "ns-1"),
@@ -543,7 +514,9 @@ describe("waitNamespaceIsDeleted", () => {
 
   it("gives up after ~10 minutes instead of polling forever", async () => {
     const ctx = Object.assign({}, namespacesApi, {
-      getNamespace: () => Promise.resolve({ status: "deleting" }),
+      sdkApi: {
+        getNamespace: () => Promise.resolve({ status: "deleting" }),
+      },
     });
 
     const resultPromise = namespacesApi.waitNamespaceIsDeleted.call(

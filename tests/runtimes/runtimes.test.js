@@ -107,7 +107,7 @@ describe("test runtimes", () => {
       try {
         await api.getNamespace(namespace.id);
       } catch (err) {
-        expect(err.response.status).toEqual(404);
+        expect(err.status).toEqual(404);
       }
 
       // Should delete project

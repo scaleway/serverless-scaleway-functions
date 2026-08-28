@@ -13,7 +13,7 @@
     "url": "https://github.com/scaleway/serverless-scaleway-functions.git"
   },
   "scripts": {
-    "clean-up": "node tests/teardown.js",
+    "clean-up": "bun tests/teardown.js",
     "test:containers": "jest tests/containers/containers.test.js",
     "test:containers-private": "jest tests/containers/containers_private_registry.test.js",
     "test:deploy": "jest tests/deploy",
@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/scaleway/serverless-scaleway-functions",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.20.2"
   },
   "keywords": [
     "serverless",
@@ -52,8 +52,12 @@
     "testEnvironment": "node",
     "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.js$",
     "transform": {
-      "^.+\\.ts$": "ts-jest"
+      "^.+\\.ts$": "ts-jest",
+      "node_modules/@scaleway/.+\\.js$": "babel-jest"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!@scaleway/)"
+    ],
     "useStderr": true,
     "setupFiles": [
       "<rootDir>/tests/setup-tests.js"
@@ -66,14 +70,21 @@
     "verbose": true
   },
   "dependencies": {
+    "@scaleway/sdk-account": "^2.8.0",
+    "@scaleway/sdk-client": "^2.6.0",
+    "@scaleway/sdk-container": "^2.12.0",
+    "@scaleway/sdk-function": "^2.11.0",
+    "@scaleway/sdk-registry": "^2.9.0",
     "@serverless/utils": "^6.13.1",
     "argon2": "^0.45.1",
     "axios": "^1.20.0",
     "dockerode": "^5.0.1",
     "ignore": "^7.0.6",
-    "js-yaml": "^5.4.0"
+    "js-yaml": "^5.4.1",
+    "undici": "^6.28.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7",
     "@eslint/js": "^10.0.1",
     "@jest/globals": "^30.4.1",
     "@types/dockerode": "^4.0.1",
@@ -85,5 +96,9 @@
     "ts-jest": "^29.4.12",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.68.0"
+  },
+  "patchedDependencies": {
+    "ssh2@1.17.0": "patches/ssh2@1.17.0.patch",
+    "cpu-features@0.0.10": "patches/cpu-features@0.0.10.patch"
   }
 }

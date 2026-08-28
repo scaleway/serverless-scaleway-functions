@@ -1,6 +1,8 @@
 # Development
 
-This plugin is written in TypeScript and compiled to `dist/` before publish; `npm install`/`npm ci` rebuilds `dist/` automatically (via the `prepare` script), but if you edit `.ts` source directly and are running the plugin from a local checkout (see below), re-run `npm run build` to pick up your changes — `serverless` loads the compiled `dist/index.js`, not the source.
+This plugin is written in TypeScript and compiled to `dist/` before publish; `bun install` rebuilds `dist/` automatically (via the `prepare` script), but if you edit `.ts` source directly and are running the plugin from a local checkout (see below), re-run `bun run build` to pick up your changes — `serverless` loads the compiled `dist/index.js`, not the source.
+
+This repo uses [Bun](https://bun.sh) as its package manager (`bun.lock` is the committed lockfile); run `bun install` rather than `npm install`. The test suites themselves still run under Jest, not `bun test` — see the `## How to run tests` section below.
 
 To run Serverless Framework with a local checkout of this plugin, you can modify the `serverless.yml` for one or more functions as follows:
 
@@ -58,16 +60,16 @@ export SCW_URL=<url-to-functions-api>
 
 #### Run Tests
 
-We provided multiple test suites, as described above, with the following `npm` scripts:
+We provided multiple test suites, as described above, with the following `package.json` scripts (run with `bun run <script>`, or `npm run <script>` if you prefer npm locally):
 
-- `npm run test`: Run all test suites
-- `npm run test:functions`: Run functions's test suite
-- `npm run test:containers`: Run containers's test suite
-- `npm run test:runtimes`: Run runtimes's test suite
-- `npm run test -- -t "Some test regex*"`: Runs all tests matching the regex
+- `bun run test`: Run all test suites
+- `bun run test:functions`: Run functions's test suite
+- `bun run test:containers`: Run containers's test suite
+- `bun run test:runtimes`: Run runtimes's test suite
+- `jest -- -t "Some test regex*"`: Runs all tests matching the regex
 
-These tests use [Jest](https://jestjs.io/docs/) under the hood.
+These tests use [Jest](https://jestjs.io/docs/) under the hood — `bun run test:*` just invokes the same `jest` binary `npm run` would; it is **not** `bun test` (some suites rely on `jest`-specific APIs `bun:test`'s compatibility shim doesn't implement yet).
 
-**Also, make sure that you did not install this repository inside a `node_modules` folder, otherwhise your npm commands won't work (`no tests found`)**.
+**Also, make sure that you did not install this repository inside a `node_modules` folder, otherwhise your test commands won't work (`no tests found`)**.
 
 As these test suites imply real-time build/packaging of your functions/containers code and deployment to our platform, they take a bit of time (~3 minutes for functions/containers, and ~6 minutes for runtimes).

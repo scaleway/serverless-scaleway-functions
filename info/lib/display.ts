@@ -1,4 +1,4 @@
-import yaml from "js-yaml";
+import yaml = require("js-yaml");
 
 interface ApplicationRecord {
   name: string;

@@ -1,18 +1,14 @@
-import { manageError } from "./utils";
-import type { ApiManagerContext } from "./types";
+import type { Functionv1beta1 } from "@scaleway/sdk-function";
 
-interface Runtime {
-  name: string;
-  language: string;
-  status: string;
-  status_message?: string;
-  [key: string]: unknown;
+export type Runtime = Functionv1beta1.Runtime;
+
+interface RuntimesSdkContext {
+  sdkApi: Pick<Functionv1beta1.API, "listFunctionRuntimes">;
 }
 
-export function listRuntimes(this: ApiManagerContext): Promise<Runtime[]> {
-  const functionsUrl = `runtimes`;
-  return this.apiManager
-    .get<{ runtimes: Runtime[] }>(functionsUrl)
-    .then((response) => response.data.runtimes || [])
-    .catch(manageError);
+export async function listRuntimes(
+  this: RuntimesSdkContext,
+): Promise<Runtime[]> {
+  const response = await this.sdkApi.listFunctionRuntimes();
+  return response.runtimes;
 }

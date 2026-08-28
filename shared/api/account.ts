@@ -1,5 +1,4 @@
-import { manageError } from "./utils";
-import type { ApiManagerContext } from "./types";
+import type { Accountv3 } from "@scaleway/sdk-account";
 
 interface Project {
   id: string;
@@ -8,25 +7,39 @@ interface Project {
   [key: string]: unknown;
 }
 
-export function listProjects(this: ApiManagerContext, organizationId: string) {
-  return this.apiManager
-    .get<{ projects: Project[] }>(
-      `?organization_id=${organizationId}&page_size=50&order_by=created_at_desc`,
-    )
-    .then((response) => response.data.projects)
-    .catch(manageError);
+interface AccountSdkContext {
+  sdkApi: Pick<
+    Accountv3.ProjectAPI,
+    "listProjects" | "deleteProject" | "createProject"
+  >;
 }
 
-export function deleteProject(this: ApiManagerContext, projectId: string) {
-  return this.apiManager.delete(`${projectId}`).catch(manageError);
+export async function listProjects(
+  this: AccountSdkContext,
+  organizationId: string,
+): Promise<Project[]> {
+  const projects = await this.sdkApi.listProjects({ organizationId }).all();
+  return projects.map((project) => ({
+    ...project,
+    organization_id: project.organizationId,
+  }));
 }
 
-export function createProject(
-  this: ApiManagerContext,
+export async function deleteProject(
+  this: AccountSdkContext,
+  projectId: string,
+): Promise<void> {
+  await this.sdkApi.deleteProject({ projectId });
+}
+
+export async function createProject(
+  this: AccountSdkContext,
   params: { name: string; organization_id: string },
 ): Promise<Project> {
-  return this.apiManager
-    .post<Project>("", params)
-    .then((response) => response.data)
-    .catch(manageError);
+  const project = await this.sdkApi.createProject({
+    name: params.name,
+    organizationId: params.organization_id,
+    description: "",
+  });
+  return { ...project, organization_id: project.organizationId };
 }

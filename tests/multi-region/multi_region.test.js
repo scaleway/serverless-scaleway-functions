@@ -82,7 +82,7 @@ describe("test regions", () => {
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).toEqual(404);
+      expect(err.status).toEqual(404);
     }
 
     // should remove project

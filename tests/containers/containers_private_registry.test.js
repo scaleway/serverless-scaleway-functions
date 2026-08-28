@@ -149,7 +149,7 @@ describe("Build and deploy on container with a base image private", () => {
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).toBe(404);
+      expect(err.status).toBe(404);
     }
   });
 });

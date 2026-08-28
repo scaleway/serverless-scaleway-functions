@@ -16,6 +16,8 @@ export default defineConfig([
         console: "readonly",
         jest: "readonly",
         setTimeout: "readonly",
+        global: "readonly",
+        Request: "readonly",
       },
     },
   },

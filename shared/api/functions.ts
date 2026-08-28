@@ -1,15 +1,89 @@
-import { manageError } from "./utils";
-import type { ApiManagerContext } from "./types";
+import { Errors } from "@scaleway/sdk-client";
 
+interface SdkFunction {
+  id: string;
+  name: string;
+  status: string;
+  errorMessage?: string;
+  domainName: string;
+  runtimeMessage: string;
+  privateNetworkId?: string;
+  httpOption: string;
+  secretEnvironmentVariables: { key: string; hashedValue: string }[];
+}
+
+interface SdkDomain {
+  id: string;
+  hostname: string;
+  status: string;
+  errorMessage?: string;
+}
+
+interface FunctionSdkApi {
+  listFunctions(request?: { namespaceId?: string }): Promise<{
+    functions: SdkFunction[];
+  }> & {
+    all(): Promise<SdkFunction[]>;
+  };
+  createFunction(request: Record<string, unknown>): Promise<SdkFunction>;
+  updateFunction(request: Record<string, unknown>): Promise<SdkFunction>;
+  deployFunction(request: { functionId: string }): Promise<SdkFunction>;
+  getFunctionUploadURL(request: {
+    functionId: string;
+    contentLength: number;
+  }): Promise<{ url: string; headers: Record<string, string[]> }>;
+  deleteFunction(request: { functionId: string }): Promise<SdkFunction>;
+  getFunction(request: { functionId: string }): Promise<SdkFunction>;
+  listDomains(request: {
+    functionId: string;
+  }): Promise<{ domains: SdkDomain[] }>;
+}
+
+interface FunctionSdkContext {
+  sdkApi: FunctionSdkApi;
+}
+
+interface WaitFunctionsAreDeployedContext extends FunctionSdkContext {
+  waitFunctionsAreDeployed(
+    namespaceId: string,
+    attempt?: number,
+  ): Promise<FunctionRecord[]>;
+}
+
+interface WaitForFunctionStatusContext extends FunctionSdkContext {
+  getFunction(functionId: string): Promise<FunctionRecord>;
+  waitForFunctionStatus(
+    functionId: string,
+    wantedStatus: string,
+    attempt?: number,
+  ): Promise<FunctionRecord | undefined>;
+}
+
+interface WaitDomainsAreDeployedFunctionContext extends FunctionSdkContext {
+  listDomainsFunction(functionId: string): Promise<DomainRecord[]>;
+  waitDomainsAreDeployedFunction(
+    functionId: string,
+    attempt?: number,
+  ): Promise<DomainRecord[]>;
+}
+
+// External shape this file has always returned (snake_case fields several
+// production consumers read directly: deploy/lib/deployFunctions.ts's
+// domain_name/runtime_message, deploy/lib/createFunctions.ts's
+// private_network_id/secret_environment_variables,
+// invoke/scalewayInvoke.ts's domain_name) - preserved via aliasing rather
+// than changing every consumer, since this is otherwise a pure internal-
+// implementation swap.
 interface FunctionRecord {
   id: string;
   name: string;
   status: string;
   error_message?: string;
   domain_name?: string;
-  description?: string;
+  runtime_message?: string;
+  private_network_id?: string;
   http_option?: string;
-  runtime?: string;
+  secret_environment_variables?: { key: string; hashed_value: string }[];
   [key: string]: unknown;
 }
 
@@ -21,160 +95,163 @@ interface DomainRecord {
   [key: string]: unknown;
 }
 
-interface FunctionApi extends ApiManagerContext {
-  listFunctions(
-    namespaceId: string,
-    page?: number,
-    accumulated?: FunctionRecord[],
-  ): Promise<FunctionRecord[]>;
-  getFunction(functionId: string): Promise<FunctionRecord>;
-  waitFunctionsAreDeployed(
-    namespaceId: string,
-    attempt?: number,
-  ): Promise<FunctionRecord[]>;
-  waitForFunctionStatus(
-    functionId: string,
-    wantedStatus: string,
-    attempt?: number,
-  ): Promise<FunctionRecord | undefined>;
-  listDomainsFunction(functionId: string): Promise<DomainRecord[]>;
-  waitDomainsAreDeployedFunction(
-    functionId: string,
-    attempt?: number,
-  ): Promise<DomainRecord[]>;
+function toLegacyFunction(func: SdkFunction): FunctionRecord {
+  return {
+    ...func,
+    error_message: func.errorMessage,
+    domain_name: func.domainName,
+    runtime_message: func.runtimeMessage,
+    private_network_id: func.privateNetworkId,
+    http_option: func.httpOption,
+    secret_environment_variables: func.secretEnvironmentVariables?.map(
+      (secret) => ({ key: secret.key, hashed_value: secret.hashedValue }),
+    ),
+  };
 }
 
-const LIST_PAGE_SIZE = 100;
+function toLegacyDomain(domain: SdkDomain): DomainRecord {
+  return { ...domain, error_message: domain.errorMessage };
+}
+
 const POLL_INTERVAL_MS = 5000;
 // ~10 minutes at POLL_INTERVAL_MS before giving up on a stuck wait.
 const MAX_POLL_ATTEMPTS = 120;
 
-export function listFunctions(
-  this: FunctionApi,
+export async function listFunctions(
+  this: FunctionSdkContext,
   namespaceId: string,
-  page = 1,
-  accumulated: FunctionRecord[] = [],
 ): Promise<FunctionRecord[]> {
-  const functionsUrl = `namespaces/${namespaceId}/functions?page=${page}&page_size=${LIST_PAGE_SIZE}`;
-  return this.apiManager
-    .get<{ functions: FunctionRecord[] }>(functionsUrl)
-    .then((response) => {
-      const functions = response.data.functions || [];
-      const all = accumulated.concat(functions);
-
-      if (functions.length < LIST_PAGE_SIZE) {
-        return all;
-      }
-
-      return this.listFunctions(namespaceId, page + 1, all);
-    })
-    .catch(manageError);
+  const functions = await this.sdkApi.listFunctions({ namespaceId }).all();
+  return functions.map(toLegacyFunction);
 }
 
-export function createFunction(
-  this: ApiManagerContext,
+export async function createFunction(
+  this: FunctionSdkContext,
   params: Record<string, unknown>,
 ): Promise<FunctionRecord> {
-  return this.apiManager
-    .post<FunctionRecord>("functions", params)
-    .then((response) => response.data)
-    .catch(manageError);
+  const func = await this.sdkApi.createFunction({
+    name: params.name,
+    namespaceId: params.namespace_id,
+    environmentVariables: params.environment_variables,
+    secretEnvironmentVariables: params.secret_environment_variables,
+    description: params.description,
+    memoryLimit: params.memory_limit,
+    minScale: params.min_scale,
+    maxScale: params.max_scale,
+    timeout: params.timeout,
+    handler: params.handler,
+    privacy: params.privacy,
+    httpOption: params.http_option,
+    sandbox: params.sandbox,
+    privateNetworkId: params.private_network_id,
+    runtime: params.runtime,
+  });
+  return toLegacyFunction(func);
 }
 
-export function updateFunction(
-  this: ApiManagerContext,
+export async function updateFunction(
+  this: FunctionSdkContext,
   functionId: string,
   params: Record<string, unknown>,
 ): Promise<FunctionRecord> {
-  const updateUrl = `functions/${functionId}`;
-  return this.apiManager
-    .patch<FunctionRecord>(updateUrl, params)
-    .then((response) => response.data)
-    .catch(manageError);
+  const func = await this.sdkApi.updateFunction({
+    functionId,
+    redeploy: params.redeploy,
+    environmentVariables: params.environment_variables,
+    secretEnvironmentVariables: params.secret_environment_variables,
+    description: params.description,
+    memoryLimit: params.memory_limit,
+    minScale: params.min_scale,
+    maxScale: params.max_scale,
+    timeout: params.timeout,
+    handler: params.handler,
+    privacy: params.privacy,
+    httpOption: params.http_option,
+    sandbox: params.sandbox,
+    privateNetworkId: params.private_network_id,
+    runtime: params.runtime,
+  });
+  return toLegacyFunction(func);
 }
 
-export function deployFunction(
-  this: ApiManagerContext,
+export async function deployFunction(
+  this: FunctionSdkContext,
   functionId: string,
-  params: Record<string, unknown>,
 ): Promise<FunctionRecord> {
-  return this.apiManager
-    .post<FunctionRecord>(`functions/${functionId}/deploy`, params)
-    .then((response) => response.data)
-    .catch(manageError);
+  const func = await this.sdkApi.deployFunction({ functionId });
+  return toLegacyFunction(func);
 }
 
-export function getPresignedUrl(
-  this: ApiManagerContext,
+export async function getPresignedUrl(
+  this: FunctionSdkContext,
   functionId: string,
   archiveSize: number,
 ): Promise<{ url: string; headers: Record<string, string[]> }> {
-  return this.apiManager
-    .get(`functions/${functionId}/upload-url?content_length=${archiveSize}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  return this.sdkApi.getFunctionUploadURL({
+    functionId,
+    contentLength: archiveSize,
+  });
 }
 
 /**
  * Deletes the function by functionId
  * @returns function with status deleting.
  */
-export function deleteFunction(
-  this: ApiManagerContext,
+export async function deleteFunction(
+  this: FunctionSdkContext,
   functionId: string,
 ): Promise<FunctionRecord> {
-  return this.apiManager
-    .delete<FunctionRecord>(`functions/${functionId}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  const func = await this.sdkApi.deleteFunction({ functionId });
+  return toLegacyFunction(func);
 }
 
 /**
  * Get function information by functionId
  */
-export function getFunction(
-  this: ApiManagerContext,
+export async function getFunction(
+  this: FunctionSdkContext,
   functionId: string,
 ): Promise<FunctionRecord> {
-  return this.apiManager
-    .get<FunctionRecord>(`/functions/${functionId}`)
-    .then((response) => response.data)
-    .catch(manageError);
+  const func = await this.sdkApi.getFunction({ functionId });
+  return toLegacyFunction(func);
 }
 
 export function waitFunctionsAreDeployed(
-  this: FunctionApi,
+  this: WaitFunctionsAreDeployedContext,
   namespaceId: string,
   attempt = 1,
 ): Promise<FunctionRecord[]> {
-  return this.listFunctions(namespaceId).then((functions) => {
-    let functionsAreReady = true;
-    for (let i = 0; i < functions.length; i += 1) {
-      const func = functions[i];
-      if (func.status === "error") {
-        throw new Error(func.error_message);
+  return this.sdkApi
+    .listFunctions({ namespaceId })
+    .all()
+    .then((functions) => {
+      let functionsAreReady = true;
+      for (let i = 0; i < functions.length; i += 1) {
+        const func = functions[i];
+        if (func.status === "error") {
+          throw new Error(func.errorMessage);
+        }
+        if (func.status !== "ready") {
+          functionsAreReady = false;
+          break;
+        }
       }
-      if (func.status !== "ready") {
-        functionsAreReady = false;
-        break;
+      if (!functionsAreReady) {
+        if (attempt >= MAX_POLL_ATTEMPTS) {
+          throw new Error(
+            `Timed out waiting for functions in namespace ${namespaceId} to become ready`,
+          );
+        }
+        return new Promise<FunctionRecord[]>((resolve) => {
+          setTimeout(
+            () =>
+              resolve(this.waitFunctionsAreDeployed(namespaceId, attempt + 1)),
+            POLL_INTERVAL_MS,
+          );
+        });
       }
-    }
-    if (!functionsAreReady) {
-      if (attempt >= MAX_POLL_ATTEMPTS) {
-        throw new Error(
-          `Timed out waiting for functions in namespace ${namespaceId} to become ready`,
-        );
-      }
-      return new Promise<FunctionRecord[]>((resolve) => {
-        setTimeout(
-          () =>
-            resolve(this.waitFunctionsAreDeployed(namespaceId, attempt + 1)),
-          POLL_INTERVAL_MS,
-        );
-      });
-    }
-    return functions;
-  });
+      return functions.map(toLegacyFunction);
+    });
 }
 
 /**
@@ -182,7 +259,7 @@ export function waitFunctionsAreDeployed(
  * @param wantedStatus wanted function status before leaving the wait status.
  */
 export function waitForFunctionStatus(
-  this: FunctionApi,
+  this: WaitForFunctionStatusContext,
   functionId: string,
   wantedStatus: string,
   attempt = 1,
@@ -219,14 +296,13 @@ export function waitForFunctionStatus(
     .catch((err) => {
       // toleration on 404 only: some operations (e.g. checking status of
       // an item after deletion) will return a 404 once the item is gone.
-      if (err.response === undefined) {
-        // if we have a raw Error
-        throw err;
-      } else if (err.response.status !== 404) {
-        // if we have a CustomError, we can check the status
-        throw new Error(err);
+      if (err instanceof Errors.ScalewayError) {
+        if (err.status !== 404) {
+          throw new Error(err.message);
+        }
+        return undefined;
       }
-      return undefined;
+      throw err;
     });
 }
 
@@ -234,23 +310,19 @@ export function waitForFunctionStatus(
  * listDomains is used to read all domains of a wanted function.
  * @param functionId the id of the function to read domains.
  */
-export function listDomainsFunction(
-  this: ApiManagerContext,
+export async function listDomainsFunction(
+  this: FunctionSdkContext,
   functionId: string,
 ): Promise<DomainRecord[]> {
-  const domainsUrl = `domains?function_id=${functionId}`;
-
-  return this.apiManager
-    .get<{ domains: DomainRecord[] }>(domainsUrl)
-    .then((response) => response.data.domains)
-    .catch(manageError);
+  const response = await this.sdkApi.listDomains({ functionId });
+  return response.domains.map(toLegacyDomain);
 }
 
 /**
  * Waiting for all domains to be ready on a function
  */
 export function waitDomainsAreDeployedFunction(
-  this: FunctionApi,
+  this: WaitDomainsAreDeployedFunctionContext,
   functionId: string,
   attempt = 1,
 ): Promise<DomainRecord[]> {

@@ -1,10 +1,10 @@
-// import X = require("Y") throughout - see the comment at the top of
-// index.ts for why.
-import type { AxiosInstance } from "axios";
-import utils = require("./utils");
-const { getApiManager, manageError } = utils;
+import type { Registryv1 } from "@scaleway/sdk-registry";
+import sdkClient = require("./sdkClient");
+const { createScalewayClientFromResourceUrl, createLazySdkApi } = sdkClient;
+import RegistrySdk = require("@scaleway/sdk-registry");
+const { Registryv1: RegistryNamespace } = RegistrySdk;
 
-interface RegistryNamespace {
+interface RegistryNamespaceRecord {
   id: string;
   name: string;
   project_id: string;
@@ -12,36 +12,51 @@ interface RegistryNamespace {
 }
 
 class RegistryApi {
-  apiManager: AxiosInstance;
+  sdkApi: Registryv1.API;
 
   constructor(registryApiUrl: string, token: string) {
-    this.apiManager = getApiManager(registryApiUrl, token);
+    // Lazy plain-value Proxy, not a `get sdkApi()` accessor - see the long
+    // comment on createLazySdkApi in sdkClient.ts. This class isn't
+    // currently mixed onto any plugin via Object.assign (it's only ever
+    // used directly), but a prototype accessor would silently break the
+    // moment that changed, the same way it did for shared/api/index.ts's
+    // three classes - keeping the same safe pattern here for consistency.
+    this.sdkApi = createLazySdkApi(
+      () =>
+        new RegistryNamespace.API(
+          createScalewayClientFromResourceUrl(registryApiUrl, token),
+        ),
+    );
   }
 
-  listRegistryNamespace(projectId: string): Promise<RegistryNamespace[]> {
-    return this.apiManager
-      .get<{ namespaces: RegistryNamespace[] }>(
-        `namespaces?project_id=${projectId}`,
-      )
-      .then((response) => response.data.namespaces)
-      .catch(manageError);
+  async listRegistryNamespace(
+    projectId: string,
+  ): Promise<RegistryNamespaceRecord[]> {
+    const namespaces = await this.sdkApi.listNamespaces({ projectId }).all();
+    return namespaces.map((namespace) => ({
+      ...namespace,
+      project_id: namespace.projectId,
+    }));
   }
 
-  deleteRegistryNamespace(namespaceId: string): Promise<RegistryNamespace> {
-    return this.apiManager
-      .delete<RegistryNamespace>(`namespaces/${namespaceId}`)
-      .then((response) => response.data)
-      .catch(manageError);
+  async deleteRegistryNamespace(
+    namespaceId: string,
+  ): Promise<RegistryNamespaceRecord> {
+    const namespace = await this.sdkApi.deleteNamespace({ namespaceId });
+    return { ...namespace, project_id: namespace.projectId };
   }
 
-  createRegistryNamespace(params: {
+  async createRegistryNamespace(params: {
     name: string;
     project_id: string;
-  }): Promise<RegistryNamespace> {
-    return this.apiManager
-      .post<RegistryNamespace>("namespaces", params)
-      .then((response) => response.data)
-      .catch(manageError);
+  }): Promise<RegistryNamespaceRecord> {
+    const namespace = await this.sdkApi.createNamespace({
+      name: params.name,
+      projectId: params.project_id,
+      description: "",
+      isPublic: false,
+    });
+    return { ...namespace, project_id: namespace.projectId };
   }
 }
 

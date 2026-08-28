@@ -54,7 +54,7 @@ describe("validateRuntime", () => {
         language: "node",
         name: "node14",
         status: RUNTIME_STATUS_EOL,
-        status_message: "please migrate",
+        statusMessage: "please migrate",
       },
     ];
 
@@ -78,7 +78,7 @@ describe("validateRuntime", () => {
         language: "node",
         name: "node14",
         status: RUNTIME_STATUS_EOS,
-        status_message: "no longer creatable",
+        statusMessage: "no longer creatable",
       },
     ];
 
@@ -120,7 +120,7 @@ describe("validateRuntime", () => {
         language: "node",
         name: "node14",
         status: "some_future_status",
-        status_message: "extra detail",
+        statusMessage: "extra detail",
       },
     ];
 

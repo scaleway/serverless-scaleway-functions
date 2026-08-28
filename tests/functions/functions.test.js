@@ -251,7 +251,7 @@ def handle(event, context):
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      jestExpect(err.response.status).toEqual(404);
+      jestExpect(err.status).toEqual(404);
     }
   });
 
@@ -356,7 +356,7 @@ describe("validateRuntimes", () => {
         name: "bash4",
         language: "Bash",
         status: "beta",
-        status_message: "use with caution",
+        statusMessage: "use with caution",
       },
     ];
 

@@ -48,7 +48,7 @@ interface Runtime {
   name: string;
   language: string;
   status: string;
-  status_message?: string;
+  statusMessage?: string;
   [key: string]: unknown;
 }
 
@@ -216,7 +216,7 @@ export function validateRuntime(
     .flat()
     .reduce(
       (map, r) => {
-        map[r.name] = { status: r.status, statusMessage: r.status_message };
+        map[r.name] = { status: r.status, statusMessage: r.statusMessage };
         return map;
       },
       {} as Record<string, { status: string; statusMessage?: string }>,

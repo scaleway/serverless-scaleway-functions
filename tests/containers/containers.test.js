@@ -213,7 +213,7 @@ describe("Service Lifecyle Integration Test", () => {
     try {
       await api.getNamespace(namespace.id);
     } catch (err) {
-      expect(err.response.status).toBe(404);
+      expect(err.status).toBe(404);
     }
   });
 

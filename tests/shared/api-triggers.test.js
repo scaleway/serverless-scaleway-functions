@@ -2,31 +2,17 @@
 
 const triggersApi = require("../../shared/api/triggers");
 
-function apiManagerReturning(responsesByUrl) {
-  return {
-    get: (url) => {
-      const entry = Object.entries(responsesByUrl).find(([prefix]) =>
-        url.startsWith(prefix),
-      );
-      if (!entry) {
-        return Promise.reject(new Error(`unexpected URL: ${url}`));
-      }
-      const [, data] = entry;
-      if (data instanceof Error) {
-        return Promise.reject(data);
-      }
-      return Promise.resolve({ data });
-    },
-  };
+function sdkList(items) {
+  return { all: () => Promise.resolve(items) };
 }
 
 describe("listTriggersForApplication", () => {
   it("combines cron and message triggers into a single list", async () => {
     const ctx = {
-      apiManager: apiManagerReturning({
-        crons: { crons: [{ id: "cron-1" }] },
-        triggers: { triggers: [{ id: "trigger-1" }] },
-      }),
+      sdkApi: {
+        listCrons: () => sdkList([{ id: "cron-1" }]),
+        listTriggers: () => sdkList([{ id: "trigger-1" }]),
+      },
     };
 
     const result = await triggersApi.listTriggersForApplication.call(
@@ -38,50 +24,58 @@ describe("listTriggersForApplication", () => {
     expect(result).toEqual([{ id: "cron-1" }, { id: "trigger-1" }]);
   });
 
-  it("queries with function_id when isFunction is true", async () => {
-    const seenUrls = [];
+  it("queries with functionId when isFunction is true", async () => {
+    const seenRequests = [];
     const ctx = {
-      apiManager: {
-        get: (url) => {
-          seenUrls.push(url);
-          return Promise.resolve({ data: { crons: [], triggers: [] } });
+      sdkApi: {
+        listCrons: (request) => {
+          seenRequests.push(request);
+          return sdkList([]);
+        },
+        listTriggers: (request) => {
+          seenRequests.push(request);
+          return sdkList([]);
         },
       },
     };
 
     await triggersApi.listTriggersForApplication.call(ctx, "app-1", true);
 
-    expect(seenUrls).toEqual([
-      "crons?function_id=app-1",
-      "triggers?function_id=app-1",
+    expect(seenRequests).toEqual([
+      { functionId: "app-1" },
+      { functionId: "app-1" },
     ]);
   });
 
-  it("queries with container_id when isFunction is false", async () => {
-    const seenUrls = [];
+  it("queries with containerId when isFunction is false", async () => {
+    const seenRequests = [];
     const ctx = {
-      apiManager: {
-        get: (url) => {
-          seenUrls.push(url);
-          return Promise.resolve({ data: { crons: [], triggers: [] } });
+      sdkApi: {
+        listCrons: (request) => {
+          seenRequests.push(request);
+          return sdkList([]);
+        },
+        listTriggers: (request) => {
+          seenRequests.push(request);
+          return sdkList([]);
         },
       },
     };
 
     await triggersApi.listTriggersForApplication.call(ctx, "app-1", false);
 
-    expect(seenUrls).toEqual([
-      "crons?container_id=app-1",
-      "triggers?container_id=app-1",
+    expect(seenRequests).toEqual([
+      { containerId: "app-1" },
+      { containerId: "app-1" },
     ]);
   });
 
   it("returns an empty list when the application has no triggers at all", async () => {
     const ctx = {
-      apiManager: apiManagerReturning({
-        crons: { crons: [] },
-        triggers: { triggers: [] },
-      }),
+      sdkApi: {
+        listCrons: () => sdkList([]),
+        listTriggers: () => sdkList([]),
+      },
     };
 
     const result = await triggersApi.listTriggersForApplication.call(
@@ -95,15 +89,11 @@ describe("listTriggersForApplication", () => {
 
   it("propagates an API error instead of returning a partial/undefined list", async () => {
     const ctx = {
-      apiManager: {
-        get: (url) => {
-          if (url.startsWith("crons")) {
-            const err = new Error("http error");
-            err.response = { data: { message: "boom" } };
-            return Promise.reject(err);
-          }
-          return Promise.resolve({ data: { triggers: [] } });
-        },
+      sdkApi: {
+        listCrons: () => ({
+          all: () => Promise.reject(new Error("boom")),
+        }),
+        listTriggers: () => sdkList([]),
       },
     };
 
@@ -114,13 +104,13 @@ describe("listTriggersForApplication", () => {
 });
 
 describe("createCronTrigger", () => {
-  it("builds the payload with function_id when isFunction is true", async () => {
-    let capturedPayload;
+  it("builds the request with functionId when isFunction is true", async () => {
+    let capturedRequest;
     const ctx = {
-      apiManager: {
-        post: (url, payload) => {
-          capturedPayload = payload;
-          return Promise.resolve({ data: { id: "cron-1" } });
+      sdkApi: {
+        createCron: (request) => {
+          capturedRequest = request;
+          return Promise.resolve({ id: "cron-1" });
         },
       },
     };
@@ -129,19 +119,20 @@ describe("createCronTrigger", () => {
       schedule: "0 0 * * *",
     });
 
-    expect(capturedPayload).toEqual({
+    expect(capturedRequest).toEqual({
       schedule: "0 0 * * *",
-      function_id: "app-1",
+      args: undefined,
+      functionId: "app-1",
     });
   });
 
-  it("builds the payload with container_id when isFunction is false", async () => {
-    let capturedPayload;
+  it("builds the request with containerId when isFunction is false", async () => {
+    let capturedRequest;
     const ctx = {
-      apiManager: {
-        post: (url, payload) => {
-          capturedPayload = payload;
-          return Promise.resolve({ data: { id: "cron-1" } });
+      sdkApi: {
+        createCron: (request) => {
+          capturedRequest = request;
+          return Promise.resolve({ id: "cron-1" });
         },
       },
     };
@@ -150,32 +141,76 @@ describe("createCronTrigger", () => {
       schedule: "0 0 * * *",
     });
 
-    expect(capturedPayload).toEqual({
+    expect(capturedRequest).toEqual({
       schedule: "0 0 * * *",
-      container_id: "app-1",
+      args: undefined,
+      containerId: "app-1",
     });
   });
 });
 
 describe("createMessageTrigger", () => {
-  it("builds the payload with container_id when isFunction is false", async () => {
-    let capturedPayload;
+  it("builds the request with containerId and a mapped scwSqsConfig when isFunction is false", async () => {
+    let capturedRequest;
     const ctx = {
-      apiManager: {
-        post: (url, payload) => {
-          capturedPayload = payload;
-          return Promise.resolve({ data: { id: "trigger-1" } });
+      sdkApi: {
+        createTrigger: (request) => {
+          capturedRequest = request;
+          return Promise.resolve({ id: "trigger-1" });
         },
       },
     };
 
     await triggersApi.createMessageTrigger.call(ctx, "app-1", false, {
-      queue: "my-queue",
+      name: "my-trigger",
+      scw_sqs_config: {
+        queue: "my-queue",
+        mnq_project_id: "proj-1",
+        mnq_region: "fr-par",
+      },
     });
 
-    expect(capturedPayload).toEqual({
-      queue: "my-queue",
-      container_id: "app-1",
+    expect(capturedRequest).toEqual({
+      name: "my-trigger",
+      containerId: "app-1",
+      scwSqsConfig: {
+        queue: "my-queue",
+        mnqProjectId: "proj-1",
+        mnqRegion: "fr-par",
+      },
+    });
+  });
+
+  it("builds the request with a mapped scwNatsConfig", async () => {
+    let capturedRequest;
+    const ctx = {
+      sdkApi: {
+        createTrigger: (request) => {
+          capturedRequest = request;
+          return Promise.resolve({ id: "trigger-1" });
+        },
+      },
+    };
+
+    await triggersApi.createMessageTrigger.call(ctx, "app-1", true, {
+      name: "my-trigger",
+      scw_nats_config: {
+        subject: "my.subject",
+        mnq_nats_account_id: "acct-1",
+        mnq_project_id: "proj-1",
+        mnq_region: "fr-par",
+      },
+    });
+
+    expect(capturedRequest).toEqual({
+      name: "my-trigger",
+      functionId: "app-1",
+      scwNatsConfig: {
+        subject: "my.subject",
+        mnqNatsAccountId: "acct-1",
+        mnqProjectId: "proj-1",
+        mnqRegion: "fr-par",
+      },
     });
   });
 });
