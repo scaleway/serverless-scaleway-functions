@@ -215,8 +215,9 @@ interface NamespaceApiLike {
 // `api.getNamespaceFromList(serviceName, projectId)` called immediately
 // after `serverlessDeploy()` returns can come back empty even though the
 // deploy just printed the function's real, working URL - a read-after-write
-// consistency gap on a namespace that (per createProject()'s own wait
-// comment above) was itself only just created for this test run. Every test
+// consistency gap on a namespace that (per createProject()'s own comment
+// below on this general class of race) was itself only just created for
+// this test run. Every test
 // file doing this same "deploy, then look the namespace up by name from a
 // separate client" pattern is equally exposed, so this lives here once
 // rather than being fixed per-file.
@@ -298,31 +299,25 @@ async function isNamespaceRemoved(
   return removed;
 }
 
-// TEMPORARY WORKAROUND, not a real fix. This used to be a blind 60s sleep
-// ("small delay between project creation and its availability for API
-// calls... wait 1 minute to ensure there's no issue with IAM cache"), which
-// was replaced with an active probe (a single FunctionApi.listNamespaces
-// call, retried) after verifying live that it typically clears in well
-// under a second. That probe turned out to be too narrow: it only proves
-// one specific read call, in one region, has caught up - it doesn't prove
-// a *write* (createNamespace) or a *different* read (e.g.
-// FunctionApi.listFunctions, confirmed live 2026-08-31 to actually validate
-// namespace/project existence unlike listNamespaces, which never does) in
-// the same or another region has too. Confirmed live in CI right after
-// switching to the probe (multi-region and functions suites, 2026-08-31):
-// removing the 60s buffer measurably increased how often a real deploy hit
-// Scaleway's central-to-regional project sync race on some *other* call
-// shortly after createProject() returned, even though the probe itself
-// always succeeded first. A flat, shorter-than-60s wait here is a blunter
-// but broader safety margin than a probe that can only ever vouch for the
-// one call it happens to make.
-// TODO: replace with a real fix - either restore an active, broader probe,
-// or (better) add per-attempt transient-error tolerance directly to each
-// at-risk call site (createNamespace, createFunctions' listFunctions check,
-// etc.), the same class of gap the now-reverted waitNamespaceIsReady
-// 403-tolerance change addressed for just one call site.
-const PROJECT_AVAILABILITY_WAIT_MS = 10000;
-
+// No artificial wait here, deliberately - history worth knowing before
+// changing this again. Originally a blind 60s sleep ("wait 1 minute to
+// ensure there's no issue with IAM cache"), never actually verified.
+// Replaced with an active probe (a single retried FunctionApi.listNamespaces
+// call) after verifying live it typically clears in under a second - but
+// that probe only proves one specific read call, in one region, has caught
+// up, not a write (createNamespace) or a different read
+// (FunctionApi.listFunctions, confirmed live to actually validate
+// namespace/project existence unlike listNamespaces) elsewhere. Replaced
+// again with a flat 10s sleep after confirming live in CI that removing the
+// 60s buffer measurably increased how often a real deploy hit Scaleway's
+// central-to-regional project sync race on some *other* call shortly after
+// createProject() returned. That flat wait is removed here, for now, in
+// favor of tests/setup-tests.js's new verbose per-request SDK logging: the
+// goal right now is to observe the raw race directly (which exact call
+// 403s, how long after creation, how often) instead of guessing at a delay
+// that happens to paper over it. Expect this function to change again once
+// that observation informs a real fix (per-attempt transient-error
+// tolerance at each at-risk call site, most likely).
 async function createProject(): Promise<Project> {
   const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey!);
 
@@ -331,24 +326,16 @@ async function createProject(): Promise<Project> {
     organization_id: organizationId!,
   });
 
-  console.log(
-    `Project ${project.name} created, waiting for it to be available...`,
-  );
-
-  await sleep(PROJECT_AVAILABILITY_WAIT_MS);
-
-  console.log(`Project ${project.name} is now available.`);
+  console.log(`Project ${project.name} created.`);
 
   return project;
 }
 
 // Test mode: if SCW_DEFAULT_PROJECT_ID (or its legacy alias SCW_PROJECT) is
 // already set, reuse that project instead of creating a fresh ephemeral one
-// via createProject(). This matters for two real cases: credentials that
-// can't create or list projects org-wide (a project-scoped API key -
-// createProject()'s own AccountApi call would otherwise fail), and faster
-// local iteration (createProject() waits PROJECT_AVAILABILITY_WAIT_MS for
-// IAM cache to catch up before the project is usable).
+// via createProject(). Matters for credentials that can't create or list
+// projects org-wide - a project-scoped API key, for which
+// createProject()'s own AccountApi call would otherwise fail outright.
 //
 // Callers MUST branch on `usingExistingProject` before ever removing a
 // project by id - a shared existing project must never be torn down just
