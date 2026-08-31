@@ -73,6 +73,36 @@ function isTransientNetworkError(err: unknown): boolean {
   return err instanceof TypeError;
 }
 
+// Opt-in, off by default so a real `serverless deploy` run never gets this
+// (this file is shared production code, not test-only) - tests/setup-tests.js
+// turns it on for every test run by setting the env var before any test
+// file loads. Deliberately NOT @scaleway/sdk-client's own
+// enableConsoleLogger("debug"): verified live that it breaks every request
+// with a body (POST/PUT/PATCH - every create/update/deploy call) with
+// "TypeError: Cannot construct a Request with a Request object that has
+// already been used" - its debug-only request dump interceptor constructs
+// a temporary Request from the real one purely to log its headers safely,
+// which per the Fetch spec consumes the original's body stream, and then
+// hands the now-consumed original back to be actually sent. Logging only
+// method/url/status/error here instead - never touching headers or body at
+// all - sidesteps that bug entirely and also makes the "don't leak the
+// token" question moot: the token only ever travels in a header this never
+// reads, not in the URL or method.
+const VERBOSE_FETCH_LOGGING = process.env.SCW_FETCH_DEBUG === "1";
+let fetchRequestCounter = 0;
+
+function urlOf(input: Parameters<typeof fetch>[0]): string {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
+function logFetch(message: string): void {
+  if (VERBOSE_FETCH_LOGGING) {
+    console.log(`[scalewayFetch] ${message}`);
+  }
+}
+
 // Exported for direct unit testing - not part of this module's intended
 // public surface otherwise (createScalewayClient wires it in already).
 // `dispatcher` is a Node-specific fetch() extension (undici.Dispatcher)
@@ -97,12 +127,30 @@ export const scalewayFetch: typeof fetch = (input, init) => {
     dispatcher: NON_PERSISTENT_DISPATCHER,
   } as unknown as RequestInit;
 
-  return withRetry(() => fetch(input, initWithDispatcher), {
-    maxAttempts: canRetry ? MAX_FETCH_ATTEMPTS : 1,
-    initialDelayMs: RETRY_INITIAL_DELAY_MS,
-    maxDelayMs: RETRY_MAX_DELAY_MS,
-    isRetryable: isTransientNetworkError,
-  });
+  const requestId = ++fetchRequestCounter;
+  const url = urlOf(input);
+  logFetch(`#${requestId} ${method} ${url}`);
+
+  return withRetry(
+    async (attempt) => {
+      try {
+        const response = await fetch(input, initWithDispatcher);
+        logFetch(`#${requestId} attempt ${attempt} -> HTTP ${response.status}`);
+        return response;
+      } catch (err) {
+        logFetch(
+          `#${requestId} attempt ${attempt} -> ERROR ${err instanceof Error ? err.message : String(err)}`,
+        );
+        throw err;
+      }
+    },
+    {
+      maxAttempts: canRetry ? MAX_FETCH_ATTEMPTS : 1,
+      initialDelayMs: RETRY_INITIAL_DELAY_MS,
+      maxDelayMs: RETRY_MAX_DELAY_MS,
+      isRetryable: isTransientNetworkError,
+    },
+  );
 };
 
 export function createScalewayClient(options: ScalewayClientOptions): Client {
