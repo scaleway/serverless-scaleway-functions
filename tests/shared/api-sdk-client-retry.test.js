@@ -179,6 +179,44 @@ describe("scalewayFetch verbose body logging", () => {
     ).toHaveLength(2);
   });
 
+  // shared/api/mnq.ts's createSqsCredentials() / createNatsCredentials()
+  // return exactly these shapes for real - neither field name contains
+  // "secret", so a secret-only redaction pattern would leak them.
+  it("redacts an SQS credentials response's accessKey and secretKey", async () => {
+    const responseBody = JSON.stringify({
+      id: "cred-1",
+      accessKey: "SQSREALACCESSKEYVALUE",
+      secretKey: "sqs-real-secret-key-value",
+    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(new Response(responseBody, { status: 200 }));
+
+    await scalewayFetch("https://x", { method: "POST" });
+
+    const logged = loggedLines();
+    jestExpect(logged).not.toContain("SQSREALACCESSKEYVALUE");
+    jestExpect(logged).not.toContain("sqs-real-secret-key-value");
+    jestExpect(logged).toContain('"accessKey":"<redacted>"');
+    jestExpect(logged).toContain('"secretKey":"<redacted>"');
+  });
+
+  it("redacts a NATS credentials response's credentials.content", async () => {
+    const responseBody = JSON.stringify({
+      id: "cred-1",
+      credentials: { name: "trigger-1", content: "-----BEGIN NATS CREDS-----" },
+    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(new Response(responseBody, { status: 200 }));
+
+    await scalewayFetch("https://x", { method: "POST" });
+
+    const logged = loggedLines();
+    jestExpect(logged).not.toContain("BEGIN NATS CREDS");
+    jestExpect(logged).toContain('"credentials":"<redacted>"');
+  });
+
   it("logs a binary request body by type only, never as text", async () => {
     global.fetch = jest
       .fn()

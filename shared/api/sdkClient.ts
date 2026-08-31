@@ -116,12 +116,19 @@ function logFetch(message: string): void {
 
 const BODY_PREVIEW_MAX_CHARS = 2000;
 
-// Recursively blanks any object key whose name contains "secret"
-// (case-insensitive) - catches secret_environment_variables/
-// secretEnvironmentVariables (the one place a request body can carry a
-// real user-supplied plaintext secret, not just Scaleway's own auth
-// token) and anything shaped like it, present or future, without having
-// to enumerate every field name by hand.
+// Recursively blanks any object key whose name looks secret-shaped
+// (case-insensitive) - not just "secret" (secret_environment_variables/
+// secretEnvironmentVariables), but "credential" and "accessKey"/
+// "access_key" too. Confirmed live in this repo's own code that both are
+// real: shared/api/mnq.ts's createSqsCredentials() returns a real
+// {accessKey, secretKey} pair (only secretKey would have matched a
+// secret-only pattern), and createNatsCredentials() returns
+// {credentials: {name, content}} where `content` is an actual NATS
+// .creds file (a JWT plus a private seed key) - a field name a
+// secret-only pattern would miss entirely. Neither is exercised by this
+// repo's own live test suite today (only cron triggers are tested, not
+// SQS/NATS), but this is production code a real deploy does run, so it's
+// covered anyway rather than waiting for a test to prove it matters.
 function redactSecretsInPlace(value: unknown): unknown {
   if (Array.isArray(value)) {
     value.forEach(redactSecretsInPlace);
@@ -129,7 +136,7 @@ function redactSecretsInPlace(value: unknown): unknown {
   }
   if (value && typeof value === "object") {
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      if (/secret/i.test(key)) {
+      if (/secret|credential|access.?key/i.test(key)) {
         (value as Record<string, unknown>)[key] = "<redacted>";
       } else {
         redactSecretsInPlace(val);
