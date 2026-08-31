@@ -22,6 +22,7 @@ import type { Region } from "@scaleway/sdk-client";
 // with a real request (not just tsc) before bumping past 6.x - see
 // docs/fixing-plan.md's M10 for the full investigation.
 import { Agent } from "undici";
+import { withRetry } from "../retry";
 
 // Well-formed-but-unregistered is enough: @scaleway/sdk-client requires
 // accessKey to match `^SCW[A-Z0-9]{17}$` before it'll authenticate at
@@ -60,7 +61,8 @@ const NON_PERSISTENT_DISPATCHER = new Agent({
 // could create a duplicate resource. This repo's create/update calls
 // (createFunction, createNamespace, etc.) intentionally stay non-retried.
 const MAX_FETCH_ATTEMPTS = 3;
-const RETRY_BASE_DELAY_MS = 500;
+const RETRY_INITIAL_DELAY_MS = 250;
+const RETRY_MAX_DELAY_MS = 2000;
 const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "OPTIONS", "PUT", "DELETE"]);
 
 function isTransientNetworkError(err: unknown): boolean {
@@ -71,10 +73,6 @@ function isTransientNetworkError(err: unknown): boolean {
   return err instanceof TypeError;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // Exported for direct unit testing - not part of this module's intended
 // public surface otherwise (createScalewayClient wires it in already).
 // `dispatcher` is a Node-specific fetch() extension (undici.Dispatcher)
@@ -82,7 +80,7 @@ function sleep(ms: number): Promise<void> {
 // typed against, hence the cast below - Node's runtime fetch reads it off
 // the plain init object regardless of what TypeScript's lib.dom.d.ts
 // knows about.
-export const scalewayFetch: typeof fetch = async (input, init) => {
+export const scalewayFetch: typeof fetch = (input, init) => {
   const method = (
     init?.method ?? (input instanceof Request ? input.method : "GET")
   ).toUpperCase();
@@ -99,19 +97,12 @@ export const scalewayFetch: typeof fetch = async (input, init) => {
     dispatcher: NON_PERSISTENT_DISPATCHER,
   } as unknown as RequestInit;
 
-  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
-    try {
-      return await fetch(input, initWithDispatcher);
-    } catch (err) {
-      const isLastAttempt = attempt === MAX_FETCH_ATTEMPTS;
-      if (!canRetry || !isTransientNetworkError(err) || isLastAttempt) {
-        throw err;
-      }
-      await sleep(RETRY_BASE_DELAY_MS * attempt);
-    }
-  }
-  // Unreachable: the loop above always either returns or throws.
-  throw new Error("unreachable");
+  return withRetry(() => fetch(input, initWithDispatcher), {
+    maxAttempts: canRetry ? MAX_FETCH_ATTEMPTS : 1,
+    initialDelayMs: RETRY_INITIAL_DELAY_MS,
+    maxDelayMs: RETRY_MAX_DELAY_MS,
+    isRetryable: isTransientNetworkError,
+  });
 };
 
 export function createScalewayClient(options: ScalewayClientOptions): Client {

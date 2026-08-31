@@ -4,6 +4,7 @@ import RegistryApi = require("../../shared/api/registry");
 import ScalewayProvider = require("../../provider/scalewayProvider");
 import type { Serverless } from "../../shared/serverlessTypes";
 import { Errors } from "@scaleway/sdk-client";
+import { withRetry } from "../../shared/retry";
 
 interface RegistryNamespaceRecord {
   id: string;
@@ -73,12 +74,13 @@ async function findRegistryNamespaceByName(
   return namespaces.find((namespace) => namespace.name === name);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-const PERMISSIONS_RETRY_INTERVAL_MS = 5000;
 const PERMISSIONS_RETRY_MAX_ATTEMPTS = 3;
+const PERMISSIONS_RETRY_INITIAL_DELAY_MS = 1000;
+const PERMISSIONS_RETRY_MAX_DELAY_MS = 5000;
+
+function isRetryablePermissionsError(err: unknown): boolean {
+  return err instanceof Errors.ScalewayError && err.status === 403;
+}
 
 // A 403 here (as opposed to the 409-name-conflict case just above) was
 // originally assumed to be IAM policy propagation lag on a brand-new
@@ -98,29 +100,18 @@ async function createRegistryNamespaceWithRetry(
   registryApi: RegistryApiLike,
   params: { name: string; project_id: string },
   log: (message: string) => void,
-  attempt = 1,
 ): Promise<RegistryNamespaceRecord> {
-  try {
-    return await registryApi.createRegistryNamespace(params);
-  } catch (err) {
-    const isRetryablePermissionsError =
-      err instanceof Errors.ScalewayError &&
-      err.status === 403 &&
-      attempt < PERMISSIONS_RETRY_MAX_ATTEMPTS;
-    if (!isRetryablePermissionsError) {
-      throw err;
-    }
-    log(
-      `Registry namespace creation was denied - retrying in ${PERMISSIONS_RETRY_INTERVAL_MS / 1000}s in case this is transient (attempt ${attempt}/${PERMISSIONS_RETRY_MAX_ATTEMPTS}); if this persists, check that the credentials' IAM policy grants Container Registry permissions on this project...`,
-    );
-    await sleep(PERMISSIONS_RETRY_INTERVAL_MS);
-    return createRegistryNamespaceWithRetry(
-      registryApi,
-      params,
-      log,
-      attempt + 1,
-    );
-  }
+  return withRetry(() => registryApi.createRegistryNamespace(params), {
+    maxAttempts: PERMISSIONS_RETRY_MAX_ATTEMPTS,
+    initialDelayMs: PERMISSIONS_RETRY_INITIAL_DELAY_MS,
+    maxDelayMs: PERMISSIONS_RETRY_MAX_DELAY_MS,
+    isRetryable: isRetryablePermissionsError,
+    onRetry: (attempt, maxAttempts, delayMs) => {
+      log(
+        `Registry namespace creation was denied - retrying in ${Math.round(delayMs / 1000)}s in case this is transient (attempt ${attempt}/${maxAttempts}); if this persists, check that the credentials' IAM policy grants Container Registry permissions on this project...`,
+      );
+    },
+  });
 }
 
 // The actual find-or-create logic, taking its dependencies as plain

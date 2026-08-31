@@ -7,9 +7,9 @@ const { needsRegistryNamespace, shortProjectSuffix, resolveRegistryNamespace } =
   createRegistryNamespace;
 const { Errors } = require("@scaleway/sdk-client");
 
-// createRegistryNamespaceWithRetry recurses via setTimeout(..., 5000) while
-// retrying a 403 - fake timers let us drive that deterministically instead
-// of a test actually waiting up to a minute.
+// createRegistryNamespaceWithRetry retries a 403 via shared/retry.ts's
+// withRetry (jittered backoff, a few seconds worst case) - fake timers let
+// us drive that deterministically instead of a test actually waiting.
 beforeEach(() => {
   jest.useFakeTimers();
 });

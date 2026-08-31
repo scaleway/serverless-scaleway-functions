@@ -3,8 +3,13 @@ import crypto from "crypto";
 
 import { execSync } from "../../../shared/child-process";
 import { readYamlFile, writeYamlFile } from "../fs";
-import { AccountApi } from "../../../shared/api";
-import { ACCOUNT_API_URL } from "../../../shared/constants";
+import { AccountApi, FunctionApi } from "../../../shared/api";
+import {
+  ACCOUNT_API_URL,
+  DEFAULT_REGION,
+  FUNCTIONS_API_URL,
+} from "../../../shared/constants";
+import { withRetry } from "../../../shared/retry";
 
 // shared/api/index.js is still CommonJS (deliberately deferred - see
 // docs/typescript-migration.md), so AccountApi resolves to `any` here; this
@@ -132,24 +137,17 @@ function isDnsNotFoundError(err: unknown): boolean {
 // Still retries a *thrown* error too, but only for that specific DNS
 // failure (any other thrown error - a broken handler, a genuinely wrong
 // response - is a real result and should surface immediately, not be
-// masked by retrying). Async (unlike the synchronous serverlessInvoke() it
-// wraps) so the wait between attempts doesn't block the event loop.
+// masked by retrying).
 async function serverlessInvokeWithRetry(
   options?: ExecOptions,
-  attempts = 6,
-  intervalMs = 10000,
 ): Promise<Buffer | string> {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      const result = serverlessInvoke(options);
-      if (result.toString().length > 0 || attempt === attempts) return result;
-    } catch (err) {
-      if (attempt === attempts || !isDnsNotFoundError(err)) throw err;
-    }
-    await sleep(intervalMs);
-  }
-  // Unreachable: the loop above always returns or throws.
-  throw new Error("serverlessInvokeWithRetry: exhausted attempts");
+  return withRetry(async () => serverlessInvoke(options), {
+    maxAttempts: 6,
+    initialDelayMs: 1000,
+    maxDelayMs: 10000,
+    isRetryable: isDnsNotFoundError,
+    shouldRetryResult: (result) => result.toString().length === 0,
+  });
 }
 
 function serverlessRemove(options?: ExecOptions): Buffer | string {
@@ -238,22 +236,13 @@ async function getNamespaceFromListWithRetry(
   api: NamespaceApiLike,
   namespaceName: string,
   projectId: string | undefined,
-  attempts = 6,
-  intervalMs = 5000,
 ): Promise<unknown> {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      const namespace = await api.getNamespaceFromList(
-        namespaceName,
-        projectId,
-      );
-      if (namespace) return namespace;
-    } catch (err) {
-      if (attempt === attempts) throw err;
-    }
-    if (attempt < attempts) await sleep(intervalMs);
-  }
-  return undefined;
+  return withRetry(() => api.getNamespaceFromList(namespaceName, projectId), {
+    maxAttempts: 6,
+    initialDelayMs: 500,
+    maxDelayMs: 5000,
+    shouldRetryResult: (namespace) => !namespace,
+  });
 }
 
 interface NamespaceGetApiLike {
@@ -292,36 +281,73 @@ function isNotFoundError(err: unknown): boolean {
 async function isNamespaceRemoved(
   api: NamespaceGetApiLike,
   namespaceId: string,
-  attempts = 6,
-  intervalMs = 5000,
 ): Promise<boolean> {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      await api.getNamespace(namespaceId);
-    } catch (err) {
-      if (isNotFoundError(err)) return true;
-      if (attempt === attempts) throw err;
-    }
-    if (attempt < attempts) await sleep(intervalMs);
-  }
-  return false;
+  const { removed } = await withRetry(
+    async () => {
+      try {
+        await api.getNamespace(namespaceId);
+        return { removed: false };
+      } catch (err) {
+        if (isNotFoundError(err)) return { removed: true };
+        throw err;
+      }
+    },
+    {
+      maxAttempts: 6,
+      initialDelayMs: 500,
+      maxDelayMs: 5000,
+      shouldRetryResult: (r) => !r.removed,
+    },
+  );
+  return removed;
 }
 
+// Used to be a blind 60s sleep here ("small delay between project creation
+// and its availability for API calls... wait 1 minute to ensure there's no
+// issue with IAM cache"). Verified live (2026-08-31, standalone script
+// against this repo's own AccountApi/FunctionApi classes, same credentials
+// this suite runs under): with the org's IAM policy actually covering "all
+// projects, current and future" (as it must be for this suite to work at
+// all), a fresh project's id is usable immediately - FunctionApi.listNamespaces
+// on it succeeded in 51ms with zero wait, and an actual createNamespace call
+// right after succeeded too (its ~5s cost was ordinary API latency, not a
+// propagation retry). Same conclusion createRegistryNamespaceWithRetry's own
+// comment already reached for Registry API access specifically - this just
+// confirms it generalizes to the Function API and to reading right after
+// creation, not only creating right after granting access.
+//
+// Replaced with an active probe instead of removing the wait outright: cheap
+// insurance against a slower edge case (a different, more restrictive IAM
+// policy shape on some other credential this suite might run under) without
+// paying 60s of dead time on every single run in the common, verified case.
 async function createProject(): Promise<Project> {
   const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey!);
 
-  // Unfortunately, there's a small delay between the creation of a project and its availability for API calls.
-  // We wait 1 minute to ensure there's no issue with IAM cache.
   const project: Project = await accountApi.createProject({
     name: `test-slsframework-${crypto.randomBytes(6).toString("hex")}`,
     organization_id: organizationId!,
   });
 
-  console.log(
-    `Project ${project.name} created, waiting for it to be available...`,
-  );
+  console.log(`Project ${project.name} created, confirming it's usable...`);
 
-  await sleep(60000);
+  // A fixed region, not this module's own `region` (process.env.SCW_REGION,
+  // read once at load time) - callers like multi_region.test.js run several
+  // regions concurrently in this same process and only ever set SCW_REGION
+  // on the *child process* env they shell out to, not on this process's own
+  // env, so `region` here would silently probe the same one region
+  // regardless of which case called createProject(). Fine either way per
+  // the comment above (propagation, where it exists at all, is an
+  // IAM/project-level concern, not a per-region one) - DEFAULT_REGION just
+  // avoids that mismatch being confusing to a future reader.
+  const functionApi = new FunctionApi(
+    `${FUNCTIONS_API_URL}/${DEFAULT_REGION}`,
+    secretKey!,
+  );
+  await withRetry(() => functionApi.listNamespaces(project.id), {
+    maxAttempts: 6,
+    initialDelayMs: 250,
+    maxDelayMs: 5000,
+  });
 
   console.log(`Project ${project.name} is now available.`);
 
