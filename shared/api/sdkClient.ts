@@ -99,7 +99,18 @@ function urlOf(input: Parameters<typeof fetch>[0]): string {
 
 function logFetch(message: string): void {
   if (VERBOSE_FETCH_LOGGING) {
-    console.log(`[scalewayFetch] ${message}`);
+    // stderr, deliberately not console.log/stdout: invoke/scalewayInvoke.ts's
+    // doInvoke() writes the invoked function's actual response straight to
+    // process.stdout, and tests/utils/misc/index.ts's serverlessInvoke()
+    // captures that whole child process's stdout via execSync() as "the
+    // invoke output" a test then asserts against verbatim. Confirmed live in
+    // CI: forwarding SCW_FETCH_DEBUG to that child process (the previous
+    // commit) made every single invoke assertion in the suite fail - not
+    // because the invoke was broken, but because these log lines were
+    // getting captured as part of the "actual" output being compared.
+    // stderr is never part of execSync()'s returned value, so it can't
+    // collide with anything a test reads back.
+    console.error(`[scalewayFetch] ${message}`);
   }
 }
 

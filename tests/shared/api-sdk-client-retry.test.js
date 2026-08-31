@@ -121,7 +121,10 @@ describe("scalewayFetch verbose body logging", () => {
   let consoleSpy;
 
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    // stderr, not stdout - see logFetch's own comment: stdout is what
+    // execSync() captures as "the invoke output" a live test asserts
+    // against, and these log lines must never end up mixed into that.
+    consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
