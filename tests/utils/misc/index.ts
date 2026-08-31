@@ -26,6 +26,7 @@ interface TestProject {
 interface ExecOptions {
   env?: Record<string, string | undefined>;
   serviceName?: string;
+  cwd?: string;
   [key: string]: unknown;
 }
 
@@ -40,7 +41,16 @@ interface CreateTestServiceOptions {
 
 const logger = console;
 
-const testServiceIdentifier = "scwtestsls";
+// NOT "scwtestsls" - a registry namespace name starting with "scw" requires
+// a separate, additional IAM permission beyond what creating a Containers/
+// Functions namespace itself needs (confirmed live, 2026-08-28: identical
+// credentials that can create a Container namespace on a project get
+// PermissionsDeniedError "write api_admin_namespace" only when the derived
+// Registry namespace name is "scw"-prefixed). Every generated test service/
+// namespace name derives from this constant, so dropping the prefix here
+// avoids the extra grant entirely instead of requiring it on every
+// credential this test suite might run under (this repo's CI included).
+const testServiceIdentifier = "testsls";
 
 const serverlessExec = "serverless";
 
@@ -90,6 +100,58 @@ function serverlessInvoke(options?: ExecOptions): Buffer | string {
   );
 }
 
+function isDnsNotFoundError(err: unknown): boolean {
+  const { stdout, stderr } = (err ?? {}) as {
+    stdout?: Buffer;
+    stderr?: Buffer;
+  };
+  const text = `${stdout?.toString() ?? ""}${stderr?.toString() ?? ""}`;
+  return text.includes("ENOTFOUND");
+}
+
+// Confirmed live (2026-08-28, tests/containers/containers_private_registry.test.js
+// and tests/multi-region/multi_region.test.js): invoking a function/container
+// right after its deploy prints "Domains for X have been deployed!" can
+// still fail with `getaddrinfo ENOTFOUND <its own public endpoint>` -
+// production code's own domain-deploy wait (shared/api/domain.ts) only
+// confirms the Domain resource's own API status, not that the DNS record
+// has actually propagated to a resolver yet.
+//
+// invoke/scalewayInvoke.ts's own doInvoke() catches that same axios error,
+// writes it to stderr, and does NOT rethrow or set a non-zero exit code -
+// `serverless invoke` exits 0 with empty stdout on a failed invoke (verified
+// by reading that file directly). So `execSync` never throws here either;
+// the DNS failure surfaces only as an empty result, not an exception. Every
+// caller of this helper already treats a non-empty string as the sole
+// success signal (several assert `.not.toEqual("")` directly), so retrying
+// on an empty result is safe and matches every call site's actual intent -
+// this isn't limited to the DNS case specifically, since an empty exit-0
+// result can't be distinguished from one programmatically anyway (stderr
+// text isn't captured on a non-throwing execSync call).
+//
+// Still retries a *thrown* error too, but only for that specific DNS
+// failure (any other thrown error - a broken handler, a genuinely wrong
+// response - is a real result and should surface immediately, not be
+// masked by retrying). Async (unlike the synchronous serverlessInvoke() it
+// wraps) so the wait between attempts doesn't block the event loop.
+async function serverlessInvokeWithRetry(
+  options?: ExecOptions,
+  attempts = 6,
+  intervalMs = 10000,
+): Promise<Buffer | string> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const result = serverlessInvoke(options);
+      if (result.toString().length > 0 || attempt === attempts) return result;
+    } catch (err) {
+      if (attempt === attempts || !isDnsNotFoundError(err)) throw err;
+    }
+    await sleep(intervalMs);
+  }
+  // Unreachable: the loop above always returns or throws.
+  throw new Error("serverlessInvokeWithRetry: exhausted attempts");
+}
+
 function serverlessRemove(options?: ExecOptions): Buffer | string {
   options = mergeOptionsWithEnv(options);
   return execSync(`${serverlessExec} remove`, options);
@@ -116,11 +178,18 @@ function createTestService(
   execSync(
     `${serverlessExec} create --template-path ${options.templateName} --path ${tmpDir}`,
   );
-  process.chdir(tmpDir);
-
+  // Deliberately NOT process.chdir(tmpDir) here - triggers.test.js and
+  // runtimes.test.js both call this from an it.concurrent.each case, and
+  // process.chdir() mutates global, process-wide state: one concurrent
+  // case's chdir could silently redirect another's later relative-path
+  // operations into the wrong tmpDir while it's mid-await (the same race
+  // multi_region.test.js was fixed for). Give the npm link call an explicit
+  // cwd instead, which is immune to a sibling case changing the process's
+  // cwd out from under it.
+  //
   // Install our local version of this repo
   // If this is not the first time this has been run, or the repo is already linked for development, this requires --force
-  execSync(`npm link --force ${repoDir}`);
+  execSync(`npm link --force ${repoDir}`, { cwd: tmpDir });
 
   const serverlessFilePath = path.join(tmpDir, "serverless.yml");
   let serverlessConfig = readYamlFile(serverlessFilePath) as Record<
@@ -139,6 +208,103 @@ function createTestService(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface NamespaceApiLike {
+  getNamespaceFromList(
+    namespaceName: string,
+    projectId: string | undefined,
+  ): Promise<unknown>;
+}
+
+// Confirmed live (PR #334 CI, tests/functions/functions.test.js): a plain
+// `api.getNamespaceFromList(serviceName, projectId)` called immediately
+// after `serverlessDeploy()` returns can come back empty even though the
+// deploy just printed the function's real, working URL - a read-after-write
+// consistency gap on a namespace that (per createProject()'s own 60s-wait
+// comment above) was itself only just created for this test run. Every test
+// file doing this same "deploy, then look the namespace up by name from a
+// separate client" pattern is equally exposed, so this lives here once
+// rather than being fixed per-file.
+//
+// Also retries a thrown error (not just an empty result) on every attempt
+// but the last - confirmed live (2026-08-28, tests/triggers/triggers.test.js)
+// that a raw network blip (`TypeError: fetch failed` / `SocketError: other
+// side closed`, most likely from running several live suites in parallel
+// against this same machine) can hit this exact call. That's not a
+// "namespace doesn't exist" signal to react to, but it shouldn't abort the
+// whole retry budget on attempt 1 either when 5 more attempts remain.
+async function getNamespaceFromListWithRetry(
+  api: NamespaceApiLike,
+  namespaceName: string,
+  projectId: string | undefined,
+  attempts = 6,
+  intervalMs = 5000,
+): Promise<unknown> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const namespace = await api.getNamespaceFromList(
+        namespaceName,
+        projectId,
+      );
+      if (namespace) return namespace;
+    } catch (err) {
+      if (attempt === attempts) throw err;
+    }
+    if (attempt < attempts) await sleep(intervalMs);
+  }
+  return undefined;
+}
+
+interface NamespaceGetApiLike {
+  getNamespace(namespaceId: string): Promise<unknown>;
+}
+
+function isNotFoundError(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "status" in err &&
+    (err as { status?: unknown }).status === 404
+  );
+}
+
+// Confirmed live (2026-08-28): calling getNamespace() on a namespace right
+// after serverlessRemove() returns can still find it - with status
+// "deleting", not yet a 404 - even though production code's own
+// waitNamespaceIsDeleted() (shared/api/namespaces.ts) already polled its own
+// client until it saw a genuine 404 before ever printing "Namespace has been
+// deleted successfully". That confirmation happened on a separate client
+// connection (the `serverless remove` child process) from this test's own
+// `api` instance, so it doesn't rule out a short-lived read-after-delete
+// consistency lag on this client's own connection - the same class of gap
+// getNamespaceFromListWithRetry() above works around for creation. This
+// exact "await getNamespace(); catch (err) => expect(err.status).toBe(404)"
+// shape is duplicated identically across every integration test file, so it
+// lives here once rather than being fixed per-file.
+//
+// A non-404 error also gets retried (up to the last attempt) rather than
+// thrown immediately - confirmed live (2026-08-28) that this exact call can
+// hit a raw network blip (`TypeError: fetch failed` / `SocketError: other
+// side closed`, most likely from running several live suites in parallel
+// against this same machine), which isn't a "still exists" signal but
+// shouldn't burn the whole retry budget on attempt 1 either.
+async function isNamespaceRemoved(
+  api: NamespaceGetApiLike,
+  namespaceId: string,
+  attempts = 6,
+  intervalMs = 5000,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await api.getNamespace(namespaceId);
+    } catch (err) {
+      if (isNotFoundError(err)) return true;
+      if (attempt === attempts) throw err;
+    }
+    if (attempt < attempts) await sleep(intervalMs);
+  }
+  return false;
 }
 
 async function createProject(): Promise<Project> {
@@ -201,10 +367,13 @@ export {
   getServiceName,
   serverlessDeploy,
   serverlessInvoke,
+  serverlessInvokeWithRetry,
   serverlessRemove,
   createTestService,
   sleep,
   createProject,
   resolveTestProject,
   isUsingExistingTestProject,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 };

@@ -73,6 +73,56 @@ async function findRegistryNamespaceByName(
   return namespaces.find((namespace) => namespace.name === name);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const PERMISSIONS_RETRY_INTERVAL_MS = 5000;
+const PERMISSIONS_RETRY_MAX_ATTEMPTS = 3;
+
+// A 403 here (as opposed to the 409-name-conflict case just above) was
+// originally assumed to be IAM policy propagation lag on a brand-new
+// project, and retried for a full ~60s on that theory. Verified live
+// (2026-08-28) that this is wrong: against a project whose IAM policy
+// actually grants Registry access, namespace creation succeeds on the very
+// first attempt, seconds after the project itself is created - there is no
+// inherent settle time. A 403 here means the credentials' IAM policy simply
+// doesn't cover the Registry API for this project (e.g. a policy scoped to
+// a fixed list of pre-existing projects rather than "all projects, current
+// and future") - retrying alone cannot fix that; it needs the policy
+// itself corrected. This short retry is kept only as cheap insurance
+// against a genuinely transient error (e.g. a request that raced the
+// project becoming fully queryable by other Scaleway services right after
+// creation), not as a wait-out-propagation mechanism.
+async function createRegistryNamespaceWithRetry(
+  registryApi: RegistryApiLike,
+  params: { name: string; project_id: string },
+  log: (message: string) => void,
+  attempt = 1,
+): Promise<RegistryNamespaceRecord> {
+  try {
+    return await registryApi.createRegistryNamespace(params);
+  } catch (err) {
+    const isRetryablePermissionsError =
+      err instanceof Errors.ScalewayError &&
+      err.status === 403 &&
+      attempt < PERMISSIONS_RETRY_MAX_ATTEMPTS;
+    if (!isRetryablePermissionsError) {
+      throw err;
+    }
+    log(
+      `Registry namespace creation was denied - retrying in ${PERMISSIONS_RETRY_INTERVAL_MS / 1000}s in case this is transient (attempt ${attempt}/${PERMISSIONS_RETRY_MAX_ATTEMPTS}); if this persists, check that the credentials' IAM policy grants Container Registry permissions on this project...`,
+    );
+    await sleep(PERMISSIONS_RETRY_INTERVAL_MS);
+    return createRegistryNamespaceWithRetry(
+      registryApi,
+      params,
+      log,
+      attempt + 1,
+    );
+  }
+}
+
 // The actual find-or-create logic, taking its dependencies as plain
 // parameters rather than off `this` - kept separate from
 // ensureRegistryNamespace() below so it's directly unit-testable against a
@@ -94,18 +144,20 @@ async function resolveRegistryNamespace(
 
   log(`Creating registry namespace ${primaryName}...`);
   try {
-    return await registryApi.createRegistryNamespace({
-      name: primaryName,
-      project_id: projectId,
-    });
+    return await createRegistryNamespaceWithRetry(
+      registryApi,
+      { name: primaryName, project_id: projectId },
+      log,
+    );
   } catch (err) {
     // Only retry with the fallback name on a real name conflict (409) -
     // verified against the live API (2026-08-27) that other ScalewayErrors
-    // happen here too (e.g. 403 PermissionsDeniedError when the caller's
-    // credentials lack registry-write access) and must NOT be treated as
-    // "name unavailable, try the fallback": that both wastes a second API
-    // call that's guaranteed to fail the same way, and produces a
-    // misleading log message about the actual cause. The exact status a
+    // happen here too (e.g. 403 PermissionsDeniedError, already retried a
+    // few times above as a possible transient error rather than a naming
+    // issue) and must NOT be treated as "name unavailable, try the
+    // fallback": that both wastes a
+    // second API call that's guaranteed to fail the same way, and produces
+    // a misleading log message about the actual cause. The exact status a
     // genuine name-taken-by-another-organization conflict returns hasn't
     // itself been directly observed yet - 409 is the standard REST
     // convention and everything confirmed so far (403) is consistent with
@@ -117,10 +169,11 @@ async function resolveRegistryNamespace(
     log(
       `Registry namespace name ${primaryName} is unavailable, retrying as ${fallbackName}...`,
     );
-    return registryApi.createRegistryNamespace({
-      name: fallbackName,
-      project_id: projectId,
-    });
+    return createRegistryNamespaceWithRetry(
+      registryApi,
+      { name: fallbackName, project_id: projectId },
+      log,
+    );
   }
 }
 
@@ -158,6 +211,10 @@ Object.defineProperties(exports, {
   shortProjectSuffix: { value: shortProjectSuffix, enumerable: false },
   resolveRegistryNamespace: {
     value: resolveRegistryNamespace,
+    enumerable: false,
+  },
+  createRegistryNamespaceWithRetry: {
+    value: createRegistryNamespaceWithRetry,
     enumerable: false,
   },
 });

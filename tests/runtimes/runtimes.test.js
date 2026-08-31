@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
+const { execSync } = require("../../shared/child-process");
 const { getTmpDirPath } = require("../utils/fs");
 const {
   getServiceName,
@@ -11,7 +12,9 @@ const {
   createProject,
   sleep,
   createTestService,
-  serverlessInvoke,
+  serverlessInvokeWithRetry,
+  isNamespaceRemoved,
+  getNamespaceFromListWithRetry,
 } = require("../utils/misc");
 
 const { FunctionApi } = require("../../shared/api");
@@ -37,6 +40,7 @@ const exampleRepositories = [
   "php",
   "rust",
   "secrets",
+  "typescript",
 ];
 
 describe("test runtimes", () => {
@@ -60,6 +64,12 @@ describe("test runtimes", () => {
 
       // should create service for runtime ${runtime} in tmp directory
       const tmpDir = getTmpDirPath();
+      // Deliberately using an explicit cwd on every exec below instead of
+      // process.chdir(tmpDir) - it.concurrent.each runs every runtime in
+      // this same process at once, and process.chdir() mutates global,
+      // process-wide state that a sibling runtime's chdir could clobber
+      // mid-await (same race multi_region.test.js was fixed for).
+      options.cwd = tmpDir;
       const serviceName = getServiceName(runtime);
       createTestService(tmpDir, oldCwd, {
         devModuleDir,
@@ -77,22 +87,31 @@ describe("test runtimes", () => {
         optionsWithSecrets.env.ENV_SECRETC = "valueC";
         optionsWithSecrets.env.ENV_SECRET3 = "value3";
       }
+      if (runtime === "typescript") {
+        // examples/typescript's own README documents this as a required
+        // manual step before `serverless deploy`: the node26 runtime
+        // executes a plain handler.js, it doesn't compile TypeScript
+        // itself, so an unbuilt handler.ts silently 500s on every invoke.
+        execSync("npm install", { cwd: tmpDir });
+        execSync("npx tsc", { cwd: tmpDir });
+      }
       serverlessDeploy(optionsWithSecrets);
 
       api = new FunctionApi(functionApiUrl, scwToken);
-      let namespace = await api
-        .getNamespaceFromList(serviceName, projectId)
-        .catch((err) => console.error(err));
-      namespace.functions = await api
-        .listFunctions(namespace.id)
-        .catch((err) => console.error(err));
+      let namespace = await getNamespaceFromListWithRetry(
+        api,
+        serviceName,
+        projectId,
+      );
+      namespace.functions = await api.listFunctions(namespace.id);
 
       // should invoke function for runtime ${runtime} from scaleway
       const deployedApplication = namespace.functions[0];
       await sleep(30000);
-      process.chdir(tmpDir);
       optionsWithSecrets.serviceName = deployedApplication.name;
-      const output = serverlessInvoke(optionsWithSecrets).toString();
+      const output = (
+        await serverlessInvokeWithRetry(optionsWithSecrets)
+      ).toString();
       expect(output).not.toEqual("");
 
       if (runtime === "secrets") {
@@ -102,13 +121,8 @@ describe("test runtimes", () => {
       }
 
       // should remove service for runtime ${runtime} from scaleway
-      process.chdir(tmpDir);
       serverlessRemove(optionsWithSecrets);
-      try {
-        await api.getNamespace(namespace.id);
-      } catch (err) {
-        expect(err.status).toEqual(404);
-      }
+      expect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
 
       // Should delete project
       await removeProjectById(projectId).catch((err) => console.error(err));

@@ -101,6 +101,31 @@ describe("adaptScalingOptionToAPI", () => {
   });
 });
 
+describe("createSingleContainer", () => {
+  // Same reasoning as updateSingleContainer's test below: v1 always deploys
+  // a container as part of creating it, so no separate redeploy call
+  // should ever be made here either.
+  it("returns createContainer's result directly, without triggering any separate redeploy call", async () => {
+    const ctx = {
+      serverless: { cli: { log: () => {} } },
+      namespace: {
+        id: "ns-1",
+        registry_endpoint: "rg.fr-par.scw.cloud/ns-example",
+      },
+      createContainer: (params) =>
+        Promise.resolve({ id: "container-1", status: "creating", params }),
+    };
+
+    const result = await createContainers.createSingleContainer.call(ctx, {
+      name: "first",
+      registryImage: "img",
+    });
+
+    jestExpect(result.id).toEqual("container-1");
+    jestExpect(result.status).toEqual("creating");
+  });
+});
+
 describe("updateSingleContainer", () => {
   function baseCtx() {
     return {
@@ -109,7 +134,6 @@ describe("updateSingleContainer", () => {
       applyDomainsContainer: () => Promise.resolve(),
       updateContainer: (id, params) =>
         Promise.resolve({ id, status: "ready", params }),
-      deployContainer: (id) => Promise.resolve({ id, status: "deploying" }),
     };
   }
 
@@ -155,11 +179,16 @@ describe("updateSingleContainer", () => {
     jestExpect(capturedParams.private_network_id).toEqual("pn-2");
   });
 
-  it("does not trigger a redeploy when the container is already pending/updating", async () => {
+  // v1 always redeploys a container as part of updating it - confirmed live
+  // (2026-08-27) that an explicit redeploy call right after create/update
+  // races the container's own async transition out of "creating"/"updating"
+  // and fails with a transient-state error, exactly as the SDK's own
+  // redeployContainer docstring warns. updateSingleContainer no longer
+  // makes any such call, regardless of the status updateContainer returns.
+  it("returns updateContainer's result directly, without triggering any separate redeploy call", async () => {
     const ctx = baseCtx();
     ctx.updateContainer = () =>
       Promise.resolve({ id: "container-1", status: "pending" });
-    ctx.deployContainer = jest.fn();
 
     const result = await createContainers.updateSingleContainer.call(
       ctx,
@@ -167,25 +196,6 @@ describe("updateSingleContainer", () => {
       { id: "container-1", secret_environment_variables: [] },
     );
 
-    jestExpect(ctx.deployContainer).not.toHaveBeenCalled();
     jestExpect(result).toEqual({ id: "container-1", status: "pending" });
-  });
-
-  it("triggers a redeploy when the container update settles into a final status", async () => {
-    const ctx = baseCtx();
-    ctx.updateContainer = () =>
-      Promise.resolve({ id: "container-1", status: "ready" });
-    ctx.deployContainer = jest.fn(() =>
-      Promise.resolve({ id: "container-1", status: "deploying" }),
-    );
-
-    const result = await createContainers.updateSingleContainer.call(
-      ctx,
-      { name: "first", registryImage: "img" },
-      { id: "container-1", secret_environment_variables: [] },
-    );
-
-    jestExpect(ctx.deployContainer).toHaveBeenCalledWith("container-1");
-    jestExpect(result).toEqual({ id: "container-1", status: "deploying" });
   });
 });

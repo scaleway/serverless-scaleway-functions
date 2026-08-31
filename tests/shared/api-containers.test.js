@@ -14,7 +14,9 @@ const sdkContainer = {
   name: "my-container",
   status: "ready",
   errorMessage: "boom",
-  publicEndpoint: "my-container.functions.fnc.fr-par.scw.cloud",
+  // v1's publicEndpoint is a full URL, including scheme - unlike v1beta1's
+  // domainName, which was always a bare hostname (confirmed live 2026-08-27).
+  publicEndpoint: "https://my-container.functions.fnc.fr-par.scw.cloud",
   privateNetworkId: "pn-1",
   httpsConnectionsOnly: true,
   image: "rg.fr-par.scw.cloud/ns/my-image:latest",

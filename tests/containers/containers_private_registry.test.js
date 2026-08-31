@@ -5,18 +5,15 @@ const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
 
-const {
-  getTmpDirPath,
-  replaceTextInFile,
-  readYamlFile,
-  writeYamlFile,
-} = require("../utils/fs");
+const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {
   getServiceName,
   serverlessDeploy,
   serverlessRemove,
-  serverlessInvoke,
+  serverlessInvokeWithRetry,
   resolveTestProject,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 } = require("../utils/misc");
 const { ContainerApi, RegistryApi } = require("../../shared/api");
 const { execSync } = require("../../shared/child-process");
@@ -134,10 +131,17 @@ describe("Build and deploy on container with a base image private", () => {
     // service in tmp directory" - `serverless create --path <tmpDir>`
     // already overwrites `service:` with tmpDir's own (random hex)
     // basename, so a plain text replace looking for the template's
-    // placeholder string silently no-ops. Set it directly via YAML instead.
-    const serverlessConfig = readYamlFile("serverless.yml");
-    serverlessConfig.service = serviceName;
-    writeYamlFile("serverless.yml", serverlessConfig);
+    // placeholder string silently no-ops. Replace the exact string
+    // `create` put there instead of routing through
+    // readYamlFile/writeYamlFile - a js-yaml load->dump roundtrip silently
+    // drops every comment in the file (confirmed directly against
+    // examples/container/serverless.yml), which would silently break any
+    // later replaceTextInFile call targeting a commented-out placeholder.
+    replaceTextInFile(
+      "serverless.yml",
+      `service: ${path.basename(tmpDir)}`,
+      `service: ${serviceName}`,
+    );
     replaceTextInFile(
       path.join("my-container", "Dockerfile"),
       "FROM python:3-alpine",
@@ -149,7 +153,11 @@ describe("Build and deploy on container with a base image private", () => {
 
   it("should deploy service/container to scaleway", async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
     namespace.containers = await api.listContainers(namespace.id);
     containerName = namespace.containers[0].name;
   });
@@ -157,16 +165,12 @@ describe("Build and deploy on container with a base image private", () => {
   it("should invoke container from scaleway", async () => {
     await api.waitContainersAreDeployed(namespace.id);
     options.serviceName = containerName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     expect(output).toBe('{"message":"Hello, World from Scaleway Container !"}');
   });
 
   it("should remove service from scaleway", async () => {
     serverlessRemove(options);
-    try {
-      await api.getNamespace(namespace.id);
-    } catch (err) {
-      expect(err.status).toBe(404);
-    }
+    expect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
   });
 });

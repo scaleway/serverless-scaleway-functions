@@ -1,14 +1,5 @@
 // import X = require("Y") throughout - see the comment at the top of
-// index.ts for why. axios itself ships an ESM `export default` (not
-// `export =`) in its type declarations even though its actual CJS build
-// (what require() resolves to at runtime, verified directly) exports the
-// callable axios object bare - `import axios = require("axios")` would
-// type-check against the ESM-shaped declarations and miss real methods
-// like `.get`, so the runtime value is asserted against axios's own
-// AxiosStatic type instead of trusting import X = require()'s inference.
-import type { AxiosStatic } from "axios";
-import axiosModule = require("axios");
-const axios = axiosModule as unknown as AxiosStatic;
+// index.ts for why.
 import os = require("os");
 const { EOL } = os;
 
@@ -16,6 +7,8 @@ import scalewayApi = require("../shared/api/endpoint");
 import setUpDeployment = require("../shared/setUpDeployment");
 import validate = require("../shared/validate");
 import ScalewayProvider = require("../provider/scalewayProvider");
+import sdkClient = require("../shared/api/sdkClient");
+const { scalewayFetch } = sdkClient;
 import type { Serverless } from "../shared/serverlessTypes";
 
 interface InvokeOptions {
@@ -114,11 +107,20 @@ class ScalewayInvoke {
       const url = "https://" + func.domain_name;
 
       // Invoke
-      return axios
-        .get(url)
-        .then((res) => {
+      return scalewayFetch(url)
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(`Request failed with status code ${res.status}`);
+          }
+          const text = await res.text();
+          let data: unknown;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = text;
+          }
           // Make sure we write to stdout here to ensure we can capture output
-          process.stdout.write(JSON.stringify(res.data));
+          process.stdout.write(JSON.stringify(data));
         })
         .catch((error) => {
           process.stderr.write(error.toString() + EOL);

@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import axios from "axios";
+import { scalewayFetch } from "../../shared/api/sdkClient";
 
 interface FunctionRecord {
   id: string;
@@ -72,14 +72,23 @@ export function uploadFunctionsCode(
       ".serverless",
       `${this.namespaceName}.zip`,
     );
+    const headers = Object.fromEntries(
+      Object.entries(func.uploadHeader ?? {}).map(([key, value]) => [
+        key,
+        String(value),
+      ]),
+    );
+
     return fs.promises.readFile(archivePath).then((data) =>
-      axios({
-        data,
-        method: "put" as const,
-        url: func.uploadUrl,
-        headers: func.uploadHeader,
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
+      scalewayFetch(func.uploadUrl!, {
+        method: "PUT",
+        body: data,
+        headers,
+      }).then((res) => {
+        if (!res.ok) {
+          throw new Error(`Request failed with status code ${res.status}`);
+        }
+        return res;
       }),
     );
   });

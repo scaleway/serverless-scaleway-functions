@@ -128,7 +128,6 @@ interface CreateContainersContext {
     containerId: string,
     params: Record<string, unknown>,
   ): Promise<ContainerRecord>;
-  deployContainer(containerId: string): Promise<ContainerRecord>;
   listDomainsContainer(
     containerId: string,
   ): Promise<{ id: string; hostname: string }[]>;
@@ -296,9 +295,19 @@ const exportedContainers = {
 
     this.serverless.cli.log(`Creating container ${container.name}...`);
 
-    return this.createContainer(params).then((createdContainer) => {
-      return this.deployContainer(createdContainer.id);
-    });
+    // v1 always deploys a container as part of creating it (confirmed
+    // against the live API and documented in the SDK's own
+    // redeployContainer docstring: "Since updating a container now always
+    // deploys it ... calling DeployContainer immediately after
+    // UpdateContainer can cause 409 - resource is in a transient state
+    // errors, so it is better to not use it") - the explicit
+    // this.deployContainer() call this used to make right after create was
+    // v1beta1-era plumbing (create didn't necessarily deploy on its own
+    // there) that under v1 does nothing useful and, worse, races the
+    // container's own async transition out of "creating", which is exactly
+    // what surfaced this live. deployContainers.ts's waitContainersAreDeployed
+    // already polls for readiness independently of this call either way.
+    return this.createContainer(params);
   },
 
   async updateSingleContainer(
@@ -355,23 +364,12 @@ const exportedContainers = {
 
     this.serverless.cli.log(`Updating container ${container.name}...`);
 
-    return this.updateContainer(foundContainer.id, params).then(
-      (updatedContainer) => {
-        // If the container is updating, no need to do anything, a redeploy is already in progress.
-        if (
-          updatedContainer.status === "pending" ||
-          updatedContainer.status === "updating"
-        ) {
-          return updatedContainer;
-        }
-
-        this.serverless.cli.log(
-          `Redeploying container ${container.name} to apply changes...`,
-        );
-
-        return this.deployContainer(updatedContainer.id);
-      },
-    );
+    // v1 always redeploys a container as part of updating it - see the
+    // identical comment on createSingleContainer's now-removed explicit
+    // deployContainer() call above. The SDK's own docstring on
+    // redeployContainer explicitly warns against calling it right after an
+    // update for exactly this reason (a transient-state 409).
+    return this.updateContainer(foundContainer.id, params);
   },
 };
 

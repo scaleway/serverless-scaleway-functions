@@ -1,4 +1,20 @@
-import { createClient } from "@scaleway/sdk-client";
+// createClient() (the simple factory) silently drops a custom `httpClient`:
+// internally it only runs the passed settings through withProfile(), which
+// copies over a fixed allowlist of fields (apiURL, defaultRegion, etc) and
+// has no knowledge of `httpClient` at all - verified directly against the
+// installed package (client-ini-factory.js's withProfile) and by
+// constructing a client with a marker httpClient and observing
+// `client.settings.httpClient` come back as the untouched global `fetch`,
+// not the marker. createAdvancedClient() + the explicit withHTTPClient()
+// config factory is the only path that actually wires a custom httpClient
+// into `settings` - see docs/fixing-plan.md's M10 for the incident this
+// was found from (the NON_PERSISTENT_DISPATCHER/retry fix below had never
+// actually been reaching any SDK-routed request).
+import {
+  createAdvancedClient,
+  withHTTPClient,
+  withProfile,
+} from "@scaleway/sdk-client";
 import type { Client } from "@scaleway/sdk-client";
 import type { Region } from "@scaleway/sdk-client";
 // Pinned to 6.x deliberately - undici@8.10.0's Agent type-checks fine but
@@ -99,13 +115,15 @@ export const scalewayFetch: typeof fetch = async (input, init) => {
 };
 
 export function createScalewayClient(options: ScalewayClientOptions): Client {
-  return createClient({
-    accessKey: PLACEHOLDER_ACCESS_KEY,
-    secretKey: options.secretKey,
-    defaultRegion: options.region as Region,
-    httpClient: scalewayFetch,
-    ...(options.apiUrl ? { apiURL: options.apiUrl } : {}),
-  });
+  return createAdvancedClient(
+    withProfile({
+      accessKey: PLACEHOLDER_ACCESS_KEY,
+      secretKey: options.secretKey,
+      defaultRegion: options.region as Region,
+      ...(options.apiUrl ? { apiURL: options.apiUrl } : {}),
+    }),
+    withHTTPClient(scalewayFetch),
+  );
 }
 
 const DEFAULT_FALLBACK_REGION = "fr-par";

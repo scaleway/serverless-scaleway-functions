@@ -7,6 +7,25 @@ const { needsRegistryNamespace, shortProjectSuffix, resolveRegistryNamespace } =
   createRegistryNamespace;
 const { Errors } = require("@scaleway/sdk-client");
 
+// createRegistryNamespaceWithRetry recurses via setTimeout(..., 5000) while
+// retrying a 403 - fake timers let us drive that deterministically instead
+// of a test actually waiting up to a minute.
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
+function permissionsError() {
+  return new Errors.ScalewayError(
+    403,
+    "insufficient permissions",
+    "insufficient permissions: write api_admin_namespace",
+  );
+}
+
 describe("needsRegistryNamespace", () => {
   it("is false when there are no containers at all", () => {
     jestExpect(needsRegistryNamespace(undefined)).toBe(false);
@@ -156,26 +175,72 @@ describe("resolveRegistryNamespace", () => {
     jestExpect(registryApi.createRegistryNamespace).toHaveBeenCalledTimes(1);
   });
 
-  // Verified against the live API (2026-08-27): a 403 PermissionsDeniedError
-  // is a real ScalewayError this call can throw for reasons that have
-  // nothing to do with the name being taken - retrying with the fallback
-  // name would waste a call guaranteed to fail identically and produce a
-  // misleading "name unavailable" message.
-  it("propagates a non-409 ScalewayError (e.g. 403 permissions) instead of retrying", async () => {
-    const permissionsError = new Errors.ScalewayError(
-      403,
-      "insufficient permissions",
-      "insufficient permissions: write api_admin_namespace",
-    );
+  // Originally assumed to be IAM propagation lag on a brand-new project;
+  // verified live (2026-08-28) that's wrong - once the credentials' IAM
+  // policy actually grants Registry access, creation succeeds on the very
+  // first attempt with no settle time at all. A 403 here means the policy
+  // doesn't cover this project (e.g. it's scoped to a fixed list of
+  // pre-existing projects, not "all projects, current and future"), which
+  // retrying cannot fix - this short retry is only cheap insurance against
+  // a genuinely transient error, retried with the *same* name (unlike the
+  // 409 case above, which tries a different name).
+  it("retries a 403 with the same name and succeeds once the transient denial clears", async () => {
+    const created = { id: "reg-4", name: "my-service", endpoint: "ep-4" };
+    const createRegistryNamespace = jest
+      .fn()
+      .mockRejectedValueOnce(permissionsError())
+      .mockRejectedValueOnce(permissionsError())
+      .mockResolvedValueOnce(created);
     const registryApi = {
       listRegistryNamespace: jest.fn().mockResolvedValue([]),
-      createRegistryNamespace: jest.fn().mockRejectedValue(permissionsError),
+      createRegistryNamespace,
     };
 
-    await jestExpect(
-      resolveRegistryNamespace(registryApi, "proj-1", "my-service", () => {}),
-    ).rejects.toThrow("insufficient permissions");
-    jestExpect(registryApi.createRegistryNamespace).toHaveBeenCalledTimes(1);
+    const resultPromise = resolveRegistryNamespace(
+      registryApi,
+      "proj-1",
+      "my-service",
+      () => {},
+    );
+    await jest.advanceTimersByTimeAsync(15000);
+
+    jestExpect(await resultPromise).toBe(created);
+    jestExpect(createRegistryNamespace).toHaveBeenCalledTimes(3);
+    jestExpect(createRegistryNamespace).toHaveBeenNthCalledWith(1, {
+      name: "my-service",
+      project_id: "proj-1",
+    });
+    jestExpect(createRegistryNamespace).toHaveBeenNthCalledWith(3, {
+      name: "my-service",
+      project_id: "proj-1",
+    });
+  });
+
+  it("gives up and propagates the 403 once retries are exhausted", async () => {
+    const createRegistryNamespace = jest
+      .fn()
+      .mockRejectedValue(permissionsError());
+    const registryApi = {
+      listRegistryNamespace: jest.fn().mockResolvedValue([]),
+      createRegistryNamespace,
+    };
+
+    const resultPromise = resolveRegistryNamespace(
+      registryApi,
+      "proj-1",
+      "my-service",
+      () => {},
+    );
+    // Swallow the eventual rejection so it doesn't surface as an unhandled
+    // rejection while the timers below are still being driven forward.
+    const assertion = jestExpect(resultPromise).rejects.toThrow(
+      "insufficient permissions",
+    );
+    await jest.advanceTimersByTimeAsync(15000);
+    await assertion;
+
+    // 3 total attempts: the original call plus 2 retries.
+    jestExpect(createRegistryNamespace).toHaveBeenCalledTimes(3);
   });
 });
 

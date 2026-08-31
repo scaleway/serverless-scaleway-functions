@@ -9,8 +9,10 @@ const {
   getServiceName,
   serverlessDeploy,
   serverlessRemove,
-  serverlessInvoke,
+  serverlessInvokeWithRetry,
   createProject,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 } = require("../utils/misc");
 const { FunctionApi } = require("../../shared/api");
 const { FUNCTIONS_API_URL } = require("../../shared/constants");
@@ -54,36 +56,63 @@ describe("test regions", () => {
     execSync(
       `${serverlessExec} create --template-path ${functionTemplateName} --path ${tmpDir}`,
     );
-    process.chdir(tmpDir);
-    execSync(`npm link ${oldCwd}`);
-    replaceTextInFile("serverless.yml", "scaleway-python3", serviceName);
-    expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toEqual(true);
+    // Deliberately NOT process.chdir(tmpDir) here - it.concurrent.each runs
+    // all 3 regions in this same process at once, and process.chdir()
+    // mutates global, process-wide state: one region's chdir can silently
+    // redirect another region's later relative-path operations into the
+    // wrong tmpDir while it's mid-await. Every command below instead gets
+    // an explicit cwd/absolute path, which is immune to a sibling region
+    // changing the process's cwd out from under it.
+    execSync(`npm link ${oldCwd}`, { cwd: tmpDir });
+    const serverlessYmlPath = path.join(tmpDir, "serverless.yml");
+    // `serverless create --template-path ... --path <tmpDir>` sets `service:`
+    // to <tmpDir>'s own basename (confirmed against the live osls 3.77.1
+    // CLI), so the placeholder "scaleway-python3" string this used to look
+    // for is already gone by this point and a plain text replace silently
+    // no-ops. tmpDir's basename is a random hex string (getTmpDirPath()),
+    // which is only a valid Scaleway resource name when it happens to start
+    // with a-f rather than 0-9 - and even then the deploy would silently use
+    // that name instead of `serviceName`, so later lookups by `serviceName`
+    // fail. Replace the exact string `create` put there instead of routing
+    // through readYamlFile/writeYamlFile - a js-yaml load->dump roundtrip
+    // silently drops every comment in the file (confirmed directly), which
+    // broke a later replace in containers.test.js's identical pattern - same
+    // fix applied here for consistency even though this file has no later
+    // replaceTextInFile call on serverless.yml that a stripped comment would
+    // currently break.
+    replaceTextInFile(
+      serverlessYmlPath,
+      `service: ${path.basename(tmpDir)}`,
+      `service: ${serviceName}`,
+    );
+    expect(fs.existsSync(serverlessYmlPath)).toEqual(true);
     expect(fs.existsSync(path.join(tmpDir, "handler.py"))).toEqual(true);
 
     // should deploy service for region ${region}
     apiUrl = `${FUNCTIONS_API_URL}/${region}`;
     api = new FunctionApi(apiUrl, scwToken);
     options.env.SCW_REGION = region;
+    options.cwd = tmpDir;
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
     namespace.functions = await api.listFunctions(namespace.id);
 
     // should invoke service for region ${region}
     const deployedFunction = namespace.functions[0];
     expect(deployedFunction.domain_name.split(".")[3]).toEqual(region);
     options.serviceName = deployedFunction.name;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     expect(output).toEqual(
       '"Hello From Python3 runtime on Serverless Framework and Scaleway Functions"',
     );
 
     // should remove service for region ${region}
     serverlessRemove(options);
-    try {
-      await api.getNamespace(namespace.id);
-    } catch (err) {
-      expect(err.status).toEqual(404);
-    }
+    expect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
 
     // should remove project
     await removeProjectById(projectId).catch((err) => console.error(err));

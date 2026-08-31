@@ -129,11 +129,26 @@ function toSdkHttpsConnectionsOnly(httpOption: unknown): boolean | undefined {
   return httpOption === "redirected";
 }
 
+// Verified directly against the live v1 API (2026-08-27): unlike v1beta1's
+// domainName (a bare hostname, e.g. "my-container.functions.fnc.fr-par.scw.cloud"),
+// publicEndpoint is a full URL already including the scheme (e.g.
+// "https://my-container.functions.fnc.fr-par.scw.cloud"). domain_name has
+// always meant "bare hostname" to every consumer (deploy/lib/deployContainers.ts
+// logs `https://${container.domain_name}`, matching the same convention
+// functions.ts's domain_name keeps for Functions), so the scheme is
+// stripped here rather than changing what domain_name means for containers
+// specifically.
+function toLegacyDomainName(
+  publicEndpoint: string | undefined,
+): string | undefined {
+  return publicEndpoint?.replace(/^[a-z]+:\/\//, "");
+}
+
 function toLegacyContainer(container: SdkContainer): ContainerRecord {
   return {
     ...container,
     error_message: container.errorMessage,
-    domain_name: container.publicEndpoint,
+    domain_name: toLegacyDomainName(container.publicEndpoint),
     private_network_id: container.privateNetworkId,
     http_option: toLegacyHttpOption(container.httpsConnectionsOnly),
     registry_image: container.image,

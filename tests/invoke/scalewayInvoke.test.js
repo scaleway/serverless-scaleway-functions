@@ -1,9 +1,17 @@
 "use strict";
 
 const jestExpect = expect;
-const axios = require("axios");
 
 const ScalewayInvoke = require("../../invoke/scalewayInvoke");
+
+function makeResponse(body, { ok = true, status = 200 } = {}) {
+  return {
+    ok,
+    status,
+    text: () =>
+      Promise.resolve(typeof body === "string" ? body : JSON.stringify(body)),
+  };
+}
 
 function makeServerless(functionName) {
   const providers = {};
@@ -39,14 +47,14 @@ function makeInvoke(functionName) {
 }
 
 describe("scalewayInvoke: invoke:invoke hook", () => {
-  let axiosGetSpy;
+  let fetchSpy;
 
   beforeEach(() => {
-    axiosGetSpy = jest.spyOn(axios, "get");
+    fetchSpy = jest.spyOn(global, "fetch");
   });
 
   afterEach(() => {
-    axiosGetSpy.mockRestore();
+    fetchSpy.mockRestore();
   });
 
   it("invokes the matched function and awaits the request before the hook resolves", async () => {
@@ -58,7 +66,7 @@ describe("scalewayInvoke: invoke:invoke hook", () => {
       ]);
 
     let resolveGet;
-    axiosGetSpy.mockReturnValue(
+    fetchSpy.mockReturnValue(
       new Promise((resolve) => {
         resolveGet = resolve;
       }),
@@ -74,11 +82,11 @@ describe("scalewayInvoke: invoke:invoke hook", () => {
     await Promise.resolve();
     jestExpect(settled).toBe(false);
 
-    resolveGet({ data: { ok: true } });
+    resolveGet(makeResponse({ ok: true }));
     await hookPromise;
 
     jestExpect(settled).toBe(true);
-    jestExpect(axiosGetSpy).toHaveBeenCalledWith(
+    jestExpect(fetchSpy.mock.calls[0][0]).toEqual(
       "https://first.functions.fnc.example.com",
     );
   });
@@ -105,7 +113,7 @@ describe("scalewayInvoke: invoke:invoke hook", () => {
     // Prevent Node's own unhandled-rejection detection from firing before
     // doInvoke gets a chance to attach its .catch() a few microtasks later.
     rejected.catch(() => {});
-    axiosGetSpy.mockReturnValue(rejected);
+    fetchSpy.mockReturnValue(rejected);
     const stderrSpy = jest
       .spyOn(process.stderr, "write")
       .mockImplementation(() => true);
@@ -115,6 +123,34 @@ describe("scalewayInvoke: invoke:invoke hook", () => {
     jestExpect(stderrSpy).toHaveBeenCalledWith(
       jestExpect.stringContaining("network error"),
     );
+    stderrSpy.mockRestore();
+  });
+
+  it("writes the error to stderr instead of stdout when the invoked endpoint returns a non-2xx status", async () => {
+    const invoke = makeInvoke("first");
+    invoke.getNamespaceFromList = () => Promise.resolve({ id: "ns-1" });
+    invoke.listFunctions = () =>
+      Promise.resolve([
+        { name: "first", domain_name: "first.functions.fnc.example.com" },
+      ]);
+
+    fetchSpy.mockReturnValue(
+      Promise.resolve(makeResponse("boom", { ok: false, status: 500 })),
+    );
+    const stdoutSpy = jest
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    const stderrSpy = jest
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+
+    await jestExpect(invoke.hooks["invoke:invoke"]()).resolves.toBeUndefined();
+
+    jestExpect(stdoutSpy).not.toHaveBeenCalled();
+    jestExpect(stderrSpy).toHaveBeenCalledWith(
+      jestExpect.stringContaining("status code 500"),
+    );
+    stdoutSpy.mockRestore();
     stderrSpy.mockRestore();
   });
 
@@ -135,7 +171,7 @@ describe("scalewayInvoke: invoke:invoke hook", () => {
       ]),
     );
 
-    axiosGetSpy.mockReturnValue(Promise.resolve({ data: {} }));
+    fetchSpy.mockReturnValue(Promise.resolve(makeResponse({})));
 
     await invoke.hooks["invoke:invoke"]();
 

@@ -2,7 +2,10 @@
 
 const jestExpect = expect;
 
-const { scalewayFetch } = require("../../shared/api/sdkClient");
+const {
+  scalewayFetch,
+  createScalewayClient,
+} = require("../../shared/api/sdkClient");
 
 function transientError() {
   return new TypeError("fetch failed", {
@@ -111,5 +114,24 @@ describe("scalewayFetch", () => {
     await assertion;
     // DELETE is idempotent, so this should have retried up to 3 times.
     jestExpect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("createScalewayClient", () => {
+  // Regression test: createClient({..., httpClient: scalewayFetch}) silently
+  // drops the custom httpClient (verified directly against the installed
+  // @scaleway/sdk-client package - its createClient() only runs settings
+  // through withProfile(), which copies a fixed allowlist of fields that
+  // doesn't include httpClient), so every SDK-routed request was actually
+  // using the bare global fetch - none of scalewayFetch's retry/dispatcher
+  // behavior above was ever reaching real API traffic. This is what
+  // createAdvancedClient()+withHTTPClient() in sdkClient.ts now fixes.
+  it("wires scalewayFetch in as the SDK client's httpClient", () => {
+    const client = createScalewayClient({
+      secretKey: "11111111-1111-1111-1111-111111111111",
+      region: "fr-par",
+    });
+
+    jestExpect(client.settings.httpClient).toBe(scalewayFetch);
   });
 });

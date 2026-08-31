@@ -4,19 +4,16 @@ const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
 
-const {
-  getTmpDirPath,
-  replaceTextInFile,
-  readYamlFile,
-  writeYamlFile,
-} = require("../utils/fs");
+const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {
   getServiceName,
   sleep,
   serverlessDeploy,
-  serverlessInvoke,
+  serverlessInvokeWithRetry,
   serverlessRemove,
   resolveTestProject,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 } = require("../utils/misc");
 const { ContainerApi } = require("../../shared/api");
 const { execSync } = require("../../shared/child-process");
@@ -79,11 +76,17 @@ describe("Service Lifecyle Integration Test", () => {
     // basename is a random hex string (tests/utils/fs's getTmpDirPath()),
     // which is only a valid Scaleway resource name when it happens to start
     // with a-f rather than 0-9 - so this was passing or failing at random
-    // depending on the generated hex. Set `service:` directly via the
-    // parsed YAML instead, which is immune to whatever create left there.
-    const serverlessConfig = readYamlFile("serverless.yml");
-    serverlessConfig.service = serviceName;
-    writeYamlFile("serverless.yml", serverlessConfig);
+    // depending on the generated hex. Replace the exact string `create` put
+    // there instead of routing through readYamlFile/writeYamlFile - a
+    // js-yaml load->dump roundtrip silently drops every comment in the file
+    // (confirmed directly), which broke every later replaceTextInFile call
+    // in this file that targets a commented-out placeholder line (e.g.
+    // `# description: ""`, `# registryImage: ""`, `# port: 8080` below).
+    replaceTextInFile(
+      "serverless.yml",
+      `service: ${path.basename(tmpDir)}`,
+      `service: ${serviceName}`,
+    );
     replaceTextInFile(
       "serverless.yml",
       '# description: ""',
@@ -95,12 +98,12 @@ describe("Service Lifecyle Integration Test", () => {
 
   it("should deploy service/container to scaleway", async () => {
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.containers = await api
-      .listContainers(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
+    namespace.containers = await api.listContainers(namespace.id);
     expect(namespace.containers[0].description).toBe(descriptionTest);
     containerName = namespace.containers[0].name;
   });
@@ -158,20 +161,14 @@ describe("Service Lifecyle Integration Test", () => {
     await sleep(60000);
 
     const params = { registry_image: imageName };
-    await api
-      .updateContainer(namespace.containers[0].id, params)
-      .catch((err) => console.error(err));
+    await api.updateContainer(namespace.containers[0].id, params);
 
-    const nsContainers = await api
-      .listContainers(namespace.id)
-      .catch((err) => console.error(err));
+    const nsContainers = await api.listContainers(namespace.id);
     expect(nsContainers[0].registry_image).toBe(imageName);
 
     serverlessDeploy(options);
 
-    const nsContainersAfterSlsDeploy = await api
-      .listContainers(namespace.id)
-      .catch((err) => console.error(err));
+    const nsContainersAfterSlsDeploy = await api.listContainers(namespace.id);
     expect(nsContainersAfterSlsDeploy[0].registry_image).not.toContain(
       "test-container",
     );
@@ -182,7 +179,7 @@ describe("Service Lifecyle Integration Test", () => {
       .waitContainersAreDeployed(namespace.id)
       .catch((err) => console.error(err));
     options.serviceName = containerName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     expect(output).toBe('{"message":"Hello, World from Scaleway Container !"}');
   });
 
@@ -199,7 +196,7 @@ describe("Service Lifecyle Integration Test", () => {
     await api
       .waitContainersAreDeployed(namespace.id)
       .catch((err) => console.error(err));
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     expect(output).toBe('{"message":"Container successfully updated"}');
   });
 
@@ -224,17 +221,13 @@ describe("Service Lifecyle Integration Test", () => {
   it("should invoke updated container with specified registry image", async () => {
     await sleep(30000);
     options.serviceName = containerName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     expect(output).toContain("Welcome to nginx!");
   });
 
   it("should remove service from scaleway", async () => {
     serverlessRemove(options);
-    try {
-      await api.getNamespace(namespace.id);
-    } catch (err) {
-      expect(err.status).toBe(404);
-    }
+    expect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
   });
 
   // TODO: handle error at validation time
