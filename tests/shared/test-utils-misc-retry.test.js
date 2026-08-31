@@ -261,47 +261,43 @@ describe("createProject", () => {
     jest.useRealTimers();
   });
 
-  it("returns the project right after a single successful usability probe, without extra delay", async () => {
-    const listNamespaces = jest.fn().mockResolvedValue([]);
+  it("waits the full flat safety margin before resolving", async () => {
     jest.doMock("../../shared/api", () => ({
       AccountApi: jest.fn().mockImplementation(() => ({
         createProject: jest
           .fn()
           .mockResolvedValue({ id: "proj-1", name: "test-proj" }),
-      })),
-      FunctionApi: jest.fn().mockImplementation(() => ({ listNamespaces })),
-    }));
-    jest.resetModules();
-    const { createProject } = require("../utils/misc");
-
-    const result = await createProject();
-
-    jestExpect(result).toEqual({ id: "proj-1", name: "test-proj" });
-    jestExpect(listNamespaces).toHaveBeenCalledTimes(1);
-  });
-
-  it("propagates a clear error instead of hanging if the project never becomes usable", async () => {
-    jest.doMock("../../shared/api", () => ({
-      AccountApi: jest.fn().mockImplementation(() => ({
-        createProject: jest
-          .fn()
-          .mockResolvedValue({ id: "proj-1", name: "test-proj" }),
-      })),
-      FunctionApi: jest.fn().mockImplementation(() => ({
-        listNamespaces: jest
-          .fn()
-          .mockRejectedValue(new Error("still not authorized")),
       })),
     }));
     jest.resetModules();
     const { createProject } = require("../utils/misc");
 
     const resultPromise = createProject();
-    const assertion = jestExpect(resultPromise).rejects.toThrow(
-      "still not authorized",
-    );
-    await jest.advanceTimersByTimeAsync(30000);
+    let settled = false;
+    resultPromise.then(() => {
+      settled = true;
+    });
 
-    await assertion;
+    // Just under the 10s wait: must not have resolved yet.
+    await jest.advanceTimersByTimeAsync(9000);
+    jestExpect(settled).toBe(false);
+
+    await jest.advanceTimersByTimeAsync(1500);
+    jestExpect(await resultPromise).toEqual({
+      id: "proj-1",
+      name: "test-proj",
+    });
+  });
+
+  it("propagates a clear error immediately if the project itself fails to create", async () => {
+    jest.doMock("../../shared/api", () => ({
+      AccountApi: jest.fn().mockImplementation(() => ({
+        createProject: jest.fn().mockRejectedValue(new Error("quota exceeded")),
+      })),
+    }));
+    jest.resetModules();
+    const { createProject } = require("../utils/misc");
+
+    await jestExpect(createProject()).rejects.toThrow("quota exceeded");
   });
 });

@@ -1,6 +1,5 @@
 import { Errors } from "@scaleway/sdk-client";
 import type { WaitForOptions } from "@scaleway/sdk-client";
-import { withRetry } from "../retry";
 
 // Functionv1beta1.API and Containerv1.API each define their own Namespace
 // type and namespace CRUD methods (separate products, no shared base class)
@@ -142,53 +141,13 @@ export async function getNamespace(
   return toLegacyNamespace(namespace);
 }
 
-// TEMPORARY WORKAROUND, not a real fix - see the "study" and "cross-study"
-// discussion this came out of (2026-08-31): Scaleway's project creation is
-// central, but the Functions/Containers APIs are regional, and there's a
-// small, genuinely intermittent sync lag between the two - a namespace
-// created under a just-created project can 403 ("Not authorized") on the
-// very first status check, even though the exact same project/namespace was
-// already confirmed reachable moments earlier (confirmed live in CI:
-// multi-region and functions suites, 2026-08-31, ScalewayError: http error
-// 403 inside this exact call, never reproducible on demand in a standalone
-// script - a real race, not a persistent problem). The SDK's own
-// waitForNamespace (built on @scaleway/sdk-client's tryAtIntervals) has zero
-// tolerance for a thrown error mid-poll - one 403 anywhere in its internal
-// polling aborts the whole wait immediately instead of treating it as "not
-// ready yet". Retrying the *entire* waitForNamespace call on a 403
-// specifically (not on its own eventual timeout, which is a plain Error,
-// not a ScalewayError, so isRetryable already excludes it) tolerates that
-// race without touching the SDK's internals. Known limitation: if a 403 hit
-// deep into a long wait (rather than on the first attempt, which is the
-// only shape ever actually observed), this discards that progress and
-// restarts the full wait from zero rather than resuming - acceptable here
-// only because the fix is meant to be temporary and the observed failure is
-// always on the very first check.
-// TODO: remove once shared/api/*.ts's other hand-rolled/SDK-backed waiters
-// (waitForFunctionStatus, waitForContainer, etc - the same class of gap)
-// get a proper per-attempt transient-error tolerance instead of retrying
-// the whole operation from scratch.
-const NAMESPACE_READY_403_RETRY_MAX_ATTEMPTS = 5;
-const NAMESPACE_READY_403_RETRY_INITIAL_DELAY_MS = 500;
-const NAMESPACE_READY_403_RETRY_MAX_DELAY_MS = 5000;
-
 export async function waitNamespaceIsReady(
   this: NamespaceSdkContext,
   namespaceId: string,
 ): Promise<Namespace> {
-  const namespace = await withRetry(
-    () =>
-      this.sdkApi.waitForNamespace(
-        { namespaceId },
-        { timeout: WAIT_TIMEOUT_SECONDS },
-      ),
-    {
-      maxAttempts: NAMESPACE_READY_403_RETRY_MAX_ATTEMPTS,
-      initialDelayMs: NAMESPACE_READY_403_RETRY_INITIAL_DELAY_MS,
-      maxDelayMs: NAMESPACE_READY_403_RETRY_MAX_DELAY_MS,
-      isRetryable: (err) =>
-        err instanceof Errors.ScalewayError && err.status === 403,
-    },
+  const namespace = await this.sdkApi.waitForNamespace(
+    { namespaceId },
+    { timeout: WAIT_TIMEOUT_SECONDS },
   );
   if (namespace.status === "error") {
     throw new Error(namespace.errorMessage);

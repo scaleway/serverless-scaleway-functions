@@ -444,79 +444,13 @@ describe("waitDomainsAreDeployedContainer", () => {
   });
 });
 
-// waitNamespaceIsReady mostly delegates to the SDK's own waitForNamespace/
-// waitForResource (shared/api/namespaces.ts) - the polling/backoff/timeout
-// behavior itself is Scaleway's own tested responsibility, not this repo's,
-// and the error-status check (throw when the namespace lands in "error")
-// is simple enough not to need its own dedicated test. What *is* this
-// repo's code, and does need coverage: the temporary 403-tolerance wrapper
-// around that whole call (see the comment on waitNamespaceIsReady itself
-// for why it exists).
-describe("waitNamespaceIsReady", () => {
-  it("resolves normally when the SDK's waitForNamespace succeeds on the first try", async () => {
-    const waitForNamespace = jest
-      .fn()
-      .mockResolvedValue({ id: "ns-1", status: "ready" });
-    const ctx = { sdkApi: { waitForNamespace } };
-
-    const result = await namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1");
-
-    expect(result.status).toBe("ready");
-    expect(waitForNamespace).toHaveBeenCalledTimes(1);
-  });
-
-  it("retries the whole waitForNamespace call on a 403 and succeeds once it clears", async () => {
-    const err = new Errors.ScalewayError(403, {}, "Not authorized");
-    const waitForNamespace = jest
-      .fn()
-      .mockRejectedValueOnce(err)
-      .mockResolvedValueOnce({ id: "ns-1", status: "ready" });
-    const ctx = { sdkApi: { waitForNamespace } };
-
-    const resultPromise = namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1");
-    await jest.advanceTimersByTimeAsync(10000);
-
-    await expect(resultPromise).resolves.toMatchObject({ status: "ready" });
-    expect(waitForNamespace).toHaveBeenCalledTimes(2);
-  });
-
-  it("rethrows a non-403 error immediately, without retrying", async () => {
-    const err = new Error("boom");
-    const waitForNamespace = jest.fn().mockRejectedValue(err);
-    const ctx = { sdkApi: { waitForNamespace } };
-
-    await expect(
-      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1"),
-    ).rejects.toThrow("boom");
-    expect(waitForNamespace).toHaveBeenCalledTimes(1);
-  });
-
-  it("gives up and rethrows the 403 once retries are exhausted", async () => {
-    const err = new Errors.ScalewayError(403, {}, "Not authorized");
-    const waitForNamespace = jest.fn().mockRejectedValue(err);
-    const ctx = { sdkApi: { waitForNamespace } };
-
-    const resultPromise = namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1");
-    const assertion = expect(resultPromise).rejects.toThrow("Not authorized");
-    await jest.advanceTimersByTimeAsync(30000);
-
-    await assertion;
-    expect(waitForNamespace).toHaveBeenCalledTimes(5);
-  });
-
-  it("still throws when the namespace itself lands in status 'error'", async () => {
-    const waitForNamespace = jest.fn().mockResolvedValue({
-      id: "ns-1",
-      status: "error",
-      errorMessage: "build failed",
-    });
-    const ctx = { sdkApi: { waitForNamespace } };
-
-    await expect(
-      namespacesApi.waitNamespaceIsReady.call(ctx, "ns-1"),
-    ).rejects.toThrow("build failed");
-  });
-});
+// waitNamespaceIsReady now delegates entirely to the SDK's own
+// waitForNamespace/waitForResource (shared/api/namespaces.ts) - the
+// polling/backoff/timeout behavior that used to be hand-rolled and tested
+// here is Scaleway's own tested responsibility now, not this repo's. Only
+// the error-status check (throw when the namespace lands in "error")
+// still lives in this repo's code, and is simple enough not to need its
+// own dedicated fake-timer test.
 
 describe("waitNamespaceIsDeleted", () => {
   it("resolves true once the namespace is gone (ResourceNotFoundError)", async () => {
