@@ -74,6 +74,17 @@ function mergeOptionsWithEnv(options?: ExecOptions): ExecOptions {
   }
 
   options.env.PATH = process.env.PATH;
+  // execSync's `env` replaces the child's environment rather than merging
+  // with this process's own - without this, shared/api/sdkClient.ts's
+  // verbose fetch logging (tests/setup-tests.js) is invisible for every
+  // `serverless deploy`/`invoke`/`remove` child process, which is exactly
+  // where the interesting failures (createNamespace, waitNamespaceIsReady,
+  // createFunctions' listFunctions check, etc) actually happen - confirmed
+  // live in CI (2026-08-31): a PermissionsDeniedError inside one of those
+  // calls had no corresponding [scalewayFetch] log line at all.
+  if (process.env.SCW_FETCH_DEBUG) {
+    options.env.SCW_FETCH_DEBUG = process.env.SCW_FETCH_DEBUG;
+  }
 
   if (!options.env.SCW_DEFAULT_PROJECT_ID) {
     options.env.SCW_DEFAULT_PROJECT_ID = project;

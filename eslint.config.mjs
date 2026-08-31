@@ -18,6 +18,7 @@ export default defineConfig([
         setTimeout: "readonly",
         global: "readonly",
         Request: "readonly",
+        Response: "readonly",
       },
     },
   },

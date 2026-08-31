@@ -103,6 +103,92 @@ function logFetch(message: string): void {
   }
 }
 
+const BODY_PREVIEW_MAX_CHARS = 2000;
+
+// Recursively blanks any object key whose name contains "secret"
+// (case-insensitive) - catches secret_environment_variables/
+// secretEnvironmentVariables (the one place a request body can carry a
+// real user-supplied plaintext secret, not just Scaleway's own auth
+// token) and anything shaped like it, present or future, without having
+// to enumerate every field name by hand.
+function redactSecretsInPlace(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    value.forEach(redactSecretsInPlace);
+    return value;
+  }
+  if (value && typeof value === "object") {
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      if (/secret/i.test(key)) {
+        (value as Record<string, unknown>)[key] = "<redacted>";
+      } else {
+        redactSecretsInPlace(val);
+      }
+    }
+  }
+  return value;
+}
+
+// Renders a body for logging - `body` is always read via .clone() by the
+// caller first (cloning a Request/Response is safe and doesn't touch the
+// original's stream; it's specifically *constructing a new Request/Response
+// from an existing one* - `new Request(existingRequest)` - that consumes
+// it, which is the bug enableConsoleLogger hit and this file's whole reason
+// for hand-rolling this logging instead). JSON bodies get parsed and
+// secret-like fields redacted; anything else (binary, e.g.
+// uploadCode.ts's code archive PUT, or unparseable text) is summarized by
+// size only, never dumped raw, since there's no way to know it's safe to
+// print.
+function previewBody(text: string): string {
+  try {
+    const parsed = JSON.parse(text);
+    const json = JSON.stringify(redactSecretsInPlace(parsed));
+    return json.length > BODY_PREVIEW_MAX_CHARS
+      ? `${json.slice(0, BODY_PREVIEW_MAX_CHARS)}... (truncated, ${json.length} chars total)`
+      : json;
+  } catch {
+    return `<non-JSON body, ${text.length} chars>`;
+  }
+}
+
+// Both of these are debug-only diagnostics and must never be able to
+// change real behavior - wrapped in their own try/catch (not left to the
+// caller) so that e.g. a test's mock response/request object not
+// implementing .clone() produces "<unavailable>" in the log instead of
+// throwing. That distinction matters here specifically: a thrown TypeError
+// would otherwise surface from *inside* scalewayFetch's own try/catch
+// around the real fetch() call, get misclassified by isTransientNetworkError
+// (which matches on `instanceof TypeError` alone) as a transient network
+// failure, and trigger a real retry the caller never asked for - confirmed
+// the hard way, this exact thing hung an offline test using fake timers
+// that were never advanced to cover the unexpected extra retry.
+async function bodyPreviewOfRequest(
+  input: Parameters<typeof fetch>[0],
+  init?: RequestInit,
+): Promise<string | undefined> {
+  try {
+    if (input instanceof Request) {
+      if (!input.body) return undefined;
+      return previewBody(await input.clone().text());
+    }
+    const body = init?.body;
+    if (body === undefined || body === null) return undefined;
+    if (typeof body === "string") return previewBody(body);
+    // ArrayBuffer/TypedArray/Blob/etc (e.g. the code archive Buffer
+    // uploadCode.ts PUTs) - never text-decode arbitrary binary data.
+    return "<binary body>";
+  } catch {
+    return "<unavailable>";
+  }
+}
+
+async function bodyPreviewOfResponse(response: Response): Promise<string> {
+  try {
+    return previewBody(await response.clone().text());
+  } catch {
+    return "<unavailable>";
+  }
+}
+
 // Exported for direct unit testing - not part of this module's intended
 // public surface otherwise (createScalewayClient wires it in already).
 // `dispatcher` is a Node-specific fetch() extension (undici.Dispatcher)
@@ -110,7 +196,7 @@ function logFetch(message: string): void {
 // typed against, hence the cast below - Node's runtime fetch reads it off
 // the plain init object regardless of what TypeScript's lib.dom.d.ts
 // knows about.
-export const scalewayFetch: typeof fetch = (input, init) => {
+export const scalewayFetch: typeof fetch = async (input, init) => {
   const method = (
     init?.method ?? (input instanceof Request ? input.method : "GET")
   ).toUpperCase();
@@ -129,13 +215,23 @@ export const scalewayFetch: typeof fetch = (input, init) => {
 
   const requestId = ++fetchRequestCounter;
   const url = urlOf(input);
-  logFetch(`#${requestId} ${method} ${url}`);
+  if (VERBOSE_FETCH_LOGGING) {
+    const requestBody = await bodyPreviewOfRequest(input, init);
+    logFetch(
+      `#${requestId} ${method} ${url}${requestBody ? ` body=${requestBody}` : ""}`,
+    );
+  }
 
   return withRetry(
     async (attempt) => {
       try {
         const response = await fetch(input, initWithDispatcher);
-        logFetch(`#${requestId} attempt ${attempt} -> HTTP ${response.status}`);
+        if (VERBOSE_FETCH_LOGGING) {
+          const responseBody = await bodyPreviewOfResponse(response);
+          logFetch(
+            `#${requestId} attempt ${attempt} -> HTTP ${response.status} body=${responseBody}`,
+          );
+        }
         return response;
       } catch (err) {
         logFetch(

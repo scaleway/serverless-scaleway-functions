@@ -117,6 +117,79 @@ describe("scalewayFetch", () => {
   });
 });
 
+describe("scalewayFetch verbose body logging", () => {
+  let consoleSpy;
+
+  beforeEach(() => {
+    consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
+  });
+
+  function loggedLines() {
+    return consoleSpy.mock.calls.map((args) => args[0]).join("\n");
+  }
+
+  // Regression test for the exact bug this logging previously caused: a
+  // mocked response/request object (as most of this test suite's own
+  // fetch mocks are) commonly doesn't implement .clone() the way a real
+  // Response/Request does. Calling it unguarded threw a TypeError *inside*
+  // scalewayFetch's own try/catch around fetch(), which isTransientNetworkError
+  // (instanceof TypeError alone) misclassified as a transient network
+  // failure and retried for real - hanging any test using fake timers that
+  // weren't advanced to cover the unexpected extra attempt.
+  it("logs <unavailable> instead of throwing when the response has no .clone(), and does not trigger a spurious retry", async () => {
+    const fakeResponse = { ok: true, status: 200 };
+    global.fetch = jest.fn().mockResolvedValue(fakeResponse);
+
+    const result = await scalewayFetch("https://x", { method: "GET" });
+
+    jestExpect(result).toBe(fakeResponse);
+    jestExpect(global.fetch).toHaveBeenCalledTimes(1);
+    jestExpect(loggedLines()).toContain("<unavailable>");
+  });
+
+  it("redacts secret_environment_variables in both the request and response body logs", async () => {
+    const responseBody = JSON.stringify({
+      id: "ns-1",
+      secret_environment_variables: [{ key: "A", hashedValue: "abc123" }],
+    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(new Response(responseBody, { status: 200 }));
+
+    const requestBody = JSON.stringify({
+      name: "ns",
+      secret_environment_variables: [
+        { key: "A", value: "super-secret-plaintext" },
+      ],
+    });
+    await scalewayFetch("https://x", { method: "POST", body: requestBody });
+
+    const logged = loggedLines();
+    jestExpect(logged).not.toContain("super-secret-plaintext");
+    jestExpect(logged).not.toContain("abc123");
+    jestExpect(
+      logged.match(/"secret_environment_variables":"<redacted>"/g),
+    ).toHaveLength(2);
+  });
+
+  it("logs a binary request body by type only, never as text", async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(new Response("ok", { status: 200 }));
+
+    await scalewayFetch("https://x", {
+      method: "PUT",
+      body: new Uint8Array([1, 2, 3]),
+    });
+
+    jestExpect(loggedLines()).toContain("<binary body>");
+  });
+});
+
 describe("createScalewayClient", () => {
   // Regression test: createClient({..., httpClient: scalewayFetch}) silently
   // drops the custom httpClient (verified directly against the installed
