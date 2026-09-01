@@ -1,9 +1,4 @@
-const {
-  expect: jestExpect,
-  describe,
-  it,
-  beforeEach,
-} = require("@jest/globals");
+const jestExpect = expect;
 const argon2 = require("argon2");
 const secrets = require("../../shared/secrets");
 
@@ -44,7 +39,7 @@ describe("resolveSecretValue", () => {
     const actual = secrets.resolveSecretValue(
       "env_secretA",
       "value composed of special characters $^/;",
-      console
+      console,
     );
     const expected = "value composed of special characters $^/;";
     jestExpect(actual).toEqual(expected);
@@ -58,7 +53,7 @@ describe("resolveSecretValue", () => {
     const actual = secrets.resolveSecretValue(
       "env_secretA",
       "${ENV_SECRETA}",
-      console
+      console,
     );
     process.env = OLD_ENV;
 
@@ -74,7 +69,7 @@ describe("resolveSecretValue", () => {
     const actual = secrets.resolveSecretValue(
       "env_secretA",
       "${ENV_SECRETA}",
-      console
+      console,
     );
     process.env = OLD_ENV;
 
@@ -88,7 +83,7 @@ describe("resolveSecretValue", () => {
     const actual = secrets.resolveSecretValue(
       "env_secretA",
       "${ENV_SECRETA}",
-      console
+      console,
     );
 
     const expected = null;
@@ -96,7 +91,7 @@ describe("resolveSecretValue", () => {
 
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith(
-      "WARNING: Env var ENV_SECRETA used in secret env_secretA does not exist: this secret will not be created"
+      "WARNING: Env var ENV_SECRETA used in secret env_secretA does not exist: this secret will not be created",
     );
   });
 });
@@ -114,7 +109,7 @@ describe("mergeSecretEnvVars", () => {
     const actual = await secrets.mergeSecretEnvVars(
       existingSecretEnvVars,
       newSecretEnvVars,
-      console
+      console,
     );
     const expected = [{ key: "env_secretA", value: "valueA" }];
     jestExpect(actual).toEqual(expected);
@@ -131,7 +126,7 @@ describe("mergeSecretEnvVars", () => {
     const actual = await secrets.mergeSecretEnvVars(
       existingSecretEnvVars,
       newSecretEnvVars,
-      console
+      console,
     );
     const expected = [{ key: "env_secretA", value: "newValueA" }];
     jestExpect(actual).toEqual(expected);
@@ -148,7 +143,7 @@ describe("mergeSecretEnvVars", () => {
     const actual = await secrets.mergeSecretEnvVars(
       existingSecretEnvVars,
       newSecretEnvVars,
-      console
+      console,
     );
     const expected = [{ key: "env_secretA", value: null }];
     jestExpect(actual).toEqual(expected);
@@ -171,7 +166,7 @@ describe("mergeSecretEnvVars", () => {
     const actual = await secrets.mergeSecretEnvVars(
       existingSecretEnvVars,
       newSecretEnvVars,
-      console
+      console,
     );
     const expected = [
       { key: "env_secretA", value: "newValueA" },

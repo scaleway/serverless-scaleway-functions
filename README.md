@@ -97,7 +97,7 @@ provider:
 
   # Runtime used for functions (unless overridden)
   # List: https://www.scaleway.com/en/docs/serverless/functions/reference-content/functions-lifecycle/#available-runtimes
-  runtime: python310
+  runtime: python314
 
   # Global environment variables, used in every function/container in this namespace
   env:
@@ -147,7 +147,7 @@ functions:
     timeout: 300s
 
     # Runtime for this function, allows overriding provider.runtime
-    runtime: node20
+    runtime: node26
 
     # How to handle HTTP. Options: enabled (allow HTTP), or redirected (redirect HTTP -> HTTPS)
     httpOption: enabled

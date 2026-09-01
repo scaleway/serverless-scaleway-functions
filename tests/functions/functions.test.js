@@ -3,14 +3,7 @@
 const path = require("path");
 const fs = require("fs");
 
-const {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect: jestExpect,
-  it,
-} = require("@jest/globals");
+const jestExpect = expect;
 
 const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {
@@ -18,8 +11,11 @@ const {
   sleep,
   serverlessDeploy,
   serverlessInvoke,
+  serverlessInvokeWithRetry,
   serverlessRemove,
   createProject,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 } = require("../utils/misc");
 const { FunctionApi } = require("../../shared/api");
 const { execSync } = require("../../shared/child-process");
@@ -45,7 +41,7 @@ describe("Service Lifecyle Integration Test", () => {
     "..",
     "..",
     "examples",
-    "nodejs"
+    "nodejs",
   );
   const tmpDir = getTmpDirPath();
 
@@ -79,17 +75,34 @@ describe("Service Lifecyle Integration Test", () => {
 
   it("should create service in tmp directory", () => {
     execSync(
-      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`
+      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`,
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
-    replaceTextInFile(serverlessFile, "scaleway-nodeXX", serviceName);
+    // `serverless create --template-path ... --path <tmpDir>` sets `service:`
+    // to <tmpDir>'s own basename (confirmed against the live osls 3.77.1
+    // CLI - not just a template default), so the placeholder "scaleway-nodeXX"
+    // string this used to look for is already gone by this point and a plain
+    // text replace silently no-ops. tmpDir's basename is a random hex string
+    // (tests/utils/fs's getTmpDirPath()), which is only a valid Scaleway
+    // resource name when it happens to start with a-f rather than 0-9 - so
+    // this was passing or failing at random depending on the generated hex.
+    // Replace the exact string `create` put there instead of routing
+    // through readYamlFile/writeYamlFile - a js-yaml load->dump roundtrip
+    // silently drops every comment in the file (confirmed directly against
+    // examples/nodejs/serverless.yml), which broke the "# description: ..."
+    // replace just below (same bug found and fixed in containers.test.js).
+    replaceTextInFile(
+      serverlessFile,
+      `service: ${path.basename(tmpDir)}`,
+      `service: ${serviceName}`,
+    );
     replaceTextInFile(serverlessFile, "<scw-token>", scwToken);
     replaceTextInFile(serverlessFile, "<scw-project-id>", projectId);
     replaceTextInFile(
       "serverless.yml",
       '# description: ""',
-      `description: "${descriptionTest}"`
+      `description: "${descriptionTest}"`,
     );
     jestExpect(fs.existsSync(path.join(tmpDir, serverlessFile))).toBe(true);
     jestExpect(fs.existsSync(path.join(tmpDir, "handler.js"))).toBe(true);
@@ -97,27 +110,25 @@ describe("Service Lifecyle Integration Test", () => {
 
   it("should deploy service to scaleway", async () => {
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions[0].description).toEqual(descriptionTest);
     jestExpect(namespace.functions[0].http_option).toEqual(
-      redirectedHttpOptionTest
+      redirectedHttpOptionTest,
     );
     functionName = namespace.functions[0].name;
   });
 
   it("should invoke function from scaleway", async () => {
-    await api
-      .waitFunctionsAreDeployed(namespace.id)
-      .catch((err) => console.error(err));
+    await api.waitFunctionsAreDeployed(namespace.id);
     options.serviceName = functionName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     jestExpect(output).toBe(
-      '{"message":"Hello from Serverless Framework and Scaleway Functions :D"}'
+      '{"message":"Hello from Serverless Framework and Scaleway Functions :D"}',
     );
   });
 
@@ -145,32 +156,34 @@ module.exports.handle = (event, context, cb) => {
     fs.appendFileSync(`${tmpDir}/${serverlessFile}`, appendData);
 
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions.length).toEqual(2);
     jestExpect(namespace.functions[0].http_option).toEqual(
-      redirectedHttpOptionTest
+      redirectedHttpOptionTest,
     );
     jestExpect(namespace.functions[1].http_option).toEqual(
-      enabledHttpOptionTest
+      enabledHttpOptionTest,
     );
   });
 
   it("should invoke first and second function", async () => {
     options.serviceName = namespace.functions[0].name;
-    const outputInvoke = serverlessInvoke(options).toString();
+    const outputInvoke = (await serverlessInvokeWithRetry(options)).toString();
     jestExpect(outputInvoke).toEqual(
-      '{"message":"Serverless Update Succeeded"}'
+      '{"message":"Serverless Update Succeeded"}',
     );
 
     options.serviceName = namespace.functions[1].name;
-    const outputInvokeSecond = serverlessInvoke(options).toString();
+    const outputInvokeSecond = (
+      await serverlessInvokeWithRetry(options)
+    ).toString();
     jestExpect(outputInvokeSecond).toEqual(
-      '{"message":"Serverless Update Succeeded"}'
+      '{"message":"Serverless Update Succeeded"}',
     );
   });
 
@@ -180,56 +193,57 @@ module.exports.handle = (event, context, cb) => {
     replaceTextInFile(
       serverlessFile,
       "singleSource: false",
-      "singleSource: true"
+      "singleSource: true",
     );
     replaceTextInFile(serverlessFile, `  second: ${stringIdentifier}`, "");
     replaceTextInFile(
       serverlessFile,
       `    handler: handler.handle ${stringIdentifier}`,
-      ""
+      "",
     );
 
     // redeploy, func 2 should be removed
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions.length).toEqual(1);
 
     options.serviceName = namespace.functions[0].name;
-    const outputInvoke = serverlessInvoke(options).toString();
+    const outputInvoke = (await serverlessInvokeWithRetry(options)).toString();
     jestExpect(outputInvoke).toEqual(
-      '{"message":"Serverless Update Succeeded"}'
+      '{"message":"Serverless Update Succeeded"}',
     );
 
     options.serviceName = "second";
-    try {
-      await jestExpect(serverlessInvoke(options)).rejects.toThrow(Error);
-    } catch (err) {
-      // if not try catch, test would fail
-    }
+    // serverlessInvoke() is a synchronous execSync() wrapper - it throws
+    // directly, not a rejected Promise - so `expect(...).rejects` here was
+    // dead code: whichever branch ran (deploy throwing as expected, or
+    // Jest's own "not a promise" error when it unexpectedly didn't), the
+    // outer try/catch silently swallowed it before any real assertion ran.
+    jestExpect(() => serverlessInvoke(options)).toThrow();
   });
 
   it("should deploy function with https redirection disabled", async () => {
     replaceTextInFile(
       serverlessFile,
       redirectedHttpOptionTest,
-      enabledHttpOptionTest
+      enabledHttpOptionTest,
     );
 
     // redeploy
     serverlessDeploy(options);
-    namespace = await api
-      .getNamespaceFromList(serviceName, projectId)
-      .catch((err) => console.error(err));
-    namespace.functions = await api
-      .listFunctions(namespace.id)
-      .catch((err) => console.error(err));
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
+    namespace.functions = await api.listFunctions(namespace.id);
     jestExpect(namespace.functions[0].http_option).toEqual(
-      enabledHttpOptionTest
+      enabledHttpOptionTest,
     );
     functionName = namespace.functions[0].name;
   });
@@ -238,13 +252,13 @@ module.exports.handle = (event, context, cb) => {
     await sleep(30000);
 
     options.serviceName = functionName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     jestExpect(output).toEqual('{"message":"Serverless Update Succeeded"}');
   });
 
   it("should deploy function with another available runtime", async () => {
-    // example: python310
-    replaceTextInFile(serverlessFile, "node22", "python310");
+    // example: python314
+    replaceTextInFile(serverlessFile, "node26", "python314");
     const pythonHandler = `
 def handle(event, context):
   """handle a request to the function
@@ -254,7 +268,7 @@ def handle(event, context):
   """
 
   return {
-      "message": "Hello From Python310 runtime on Serverless Framework and Scaleway Functions"
+      "message": "Hello From Python314 runtime on Serverless Framework and Scaleway Functions"
   }
 `;
     fs.writeFileSync(path.join(tmpDir, "handler.py"), pythonHandler);
@@ -265,39 +279,31 @@ def handle(event, context):
     await sleep(30000);
 
     options.serviceName = functionName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     jestExpect(output).toEqual(
-      '{"message":"Hello From Python310 runtime on Serverless Framework and Scaleway Functions"}'
+      '{"message":"Hello From Python314 runtime on Serverless Framework and Scaleway Functions"}',
     );
   });
 
   it("should remove service from scaleway", async () => {
     serverlessRemove(options);
-    try {
-      await api.getNamespace(namespace.id);
-    } catch (err) {
-      jestExpect(err.response.status).toEqual(404);
-    }
+    jestExpect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
   });
 
   it("should throw error handler not found", () => {
     replaceTextInFile(serverlessFile, "handler.handle", "doesnotexist.handle");
-    try {
-      jestExpect(serverlessDeploy(options)).rejects.toThrow(Error);
-    } catch (err) {
-      // if not try catch, test would fail
-    }
+    // serverlessDeploy() is a synchronous execSync() wrapper - it throws
+    // directly, not a rejected Promise - so `expect(...).rejects` here was
+    // dead code (see the identical comment on "should invoke first and
+    // second function" above).
+    jestExpect(() => serverlessDeploy(options)).toThrow();
     replaceTextInFile(serverlessFile, "doesnotexist.handle", "handler.handle");
   });
 
   it("should throw error runtime does not exist", () => {
-    replaceTextInFile(serverlessFile, "python310", "doesnotexist");
-    try {
-      jestExpect(serverlessDeploy(options)).rejects.toThrow(Error);
-    } catch (err) {
-      // if not try catch, test would fail
-    }
-    replaceTextInFile(serverlessFile, "doesnotexist", "node22");
+    replaceTextInFile(serverlessFile, "python314", "doesnotexist");
+    jestExpect(() => serverlessDeploy(options)).toThrow();
+    replaceTextInFile(serverlessFile, "doesnotexist", "node26");
   });
 
   // TODO: throw error if http_option is incorrect
@@ -327,7 +333,7 @@ describe("validateRuntimes", () => {
     const actual = () => validateRuntime(func, existingRuntimes);
     jestExpect(actual).toThrow(Error);
     jestExpect(actual).toThrow(
-      'Runtime "bash4" does not exist, must be one of: node17, go118'
+      'Runtime "bash4" does not exist, must be one of: node17, go118',
     );
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
@@ -338,7 +344,7 @@ describe("validateRuntimes", () => {
     const actual = () => validateRuntime(func, existingRuntimes);
     jestExpect(actual).toThrow(Error);
     jestExpect(actual).toThrow(
-      'Runtime "node17" does not exist: cannot list runtimes'
+      'Runtime "node17" does not exist: cannot list runtimes',
     );
     jestExpect(console.log).toHaveBeenCalledTimes(0);
   });
@@ -368,7 +374,7 @@ describe("validateRuntimes", () => {
     jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith(
-      "WARNING: Runtime bash4 is in status beta"
+      "WARNING: Runtime bash4 is in status beta",
     );
   });
 
@@ -381,7 +387,7 @@ describe("validateRuntimes", () => {
         name: "bash4",
         language: "Bash",
         status: "beta",
-        status_message: "use with caution",
+        statusMessage: "use with caution",
       },
     ];
 
@@ -390,7 +396,7 @@ describe("validateRuntimes", () => {
     jestExpect(actual).toEqual(expected);
     jestExpect(console.log).toHaveBeenCalledTimes(1);
     jestExpect(console.log).toHaveBeenLastCalledWith(
-      "WARNING: Runtime bash4 is in status beta: use with caution"
+      "WARNING: Runtime bash4 is in status beta: use with caution",
     );
   });
 });

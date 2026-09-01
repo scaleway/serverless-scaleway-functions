@@ -3,23 +3,7 @@ const path = require("path");
 
 const ScalewayProvider = require("../../provider/scalewayProvider");
 const { createTmpDir } = require("../utils/fs");
-const { afterAll, beforeAll, describe, it, expect } = require("@jest/globals");
-
-class MockServerless {
-  constructor() {
-    this.service = {};
-    this.service.provider = {};
-
-    this.cli = {};
-    this.cli.log = (logMsg) => {
-      console.log(logMsg);
-    };
-  }
-
-  setProvider(provName, prov) {
-    this.service.provider = prov;
-  }
-}
+const { MockServerless } = require("../utils/mockServerless");
 
 describe("Scaleway credentials test", () => {
   this.expectedToken = null;

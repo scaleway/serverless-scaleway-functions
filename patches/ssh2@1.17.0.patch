@@ -1,0 +1,25 @@
+diff --git a/lib/protocol/crypto.js b/lib/protocol/crypto.js
+index 851cc73817537c1eace3442c792bc1e5e5289cd2..8d2cb046fc9f6f2f4d41fa525382566a862c01c0 100644
+--- a/lib/protocol/crypto.js
++++ b/lib/protocol/crypto.js
+@@ -27,9 +27,17 @@ let AESGCMDecipher;
+ let ChaChaPolyDecipher;
+ let GenericDecipher;
+ try {
+-  binding = require('./crypto/build/Release/sshcrypto.node');
+-  ({ AESGCMCipher, ChaChaPolyCipher, GenericCipher,
+-     AESGCMDecipher, ChaChaPolyDecipher, GenericDecipher } = binding);
++  // Bun's NAPI compat doesn't implement the libuv function this native
++  // addon calls during load, and that failure is a process-level panic
++  // (SIGILL), not a catchable JS exception - it would crash Bun outright
++  // before this try/catch could run. Skip the native require under Bun so
++  // the existing pure-JS fallback below (already exercised on platforms
++  // with no prebuilt binary) takes over instead. See oven-sh/bun#18546.
++  if (typeof Bun === 'undefined') {
++    binding = require('./crypto/build/Release/sshcrypto.node');
++    ({ AESGCMCipher, ChaChaPolyCipher, GenericCipher,
++       AESGCMDecipher, ChaChaPolyDecipher, GenericDecipher } = binding);
++  }
+ } catch {}
+ 
+ const CIPHER_STREAM = 1 << 0;

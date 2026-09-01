@@ -5,15 +5,15 @@ const Docker = require("dockerode");
 const fs = require("fs");
 const path = require("path");
 
-const { afterAll, beforeAll, describe, it, expect } = require("@jest/globals");
-
 const { getTmpDirPath, replaceTextInFile } = require("../utils/fs");
 const {
   getServiceName,
   serverlessDeploy,
   serverlessRemove,
-  serverlessInvoke,
-  createProject,
+  serverlessInvokeWithRetry,
+  resolveTestProject,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 } = require("../utils/misc");
 const { ContainerApi, RegistryApi } = require("../../shared/api");
 const { execSync } = require("../../shared/child-process");
@@ -35,7 +35,7 @@ describe("Build and deploy on container with a base image private", () => {
     "..",
     "..",
     "examples",
-    "container"
+    "container",
   );
   const tmpDir = getTmpDirPath();
 
@@ -51,6 +51,7 @@ describe("Build and deploy on container with a base image private", () => {
     namespace,
     containerName,
     registryApi;
+  let usingExistingProject = false;
 
   const originalImageRepo = "python";
   const imageTag = "3-alpine";
@@ -63,9 +64,9 @@ describe("Build and deploy on container with a base image private", () => {
     api = new ContainerApi(apiUrl, scwToken);
     registryApi = new RegistryApi(registryApiUrl, scwToken);
 
-    await createProject().then((project) => {
-      projectId = project.id;
-    });
+    const testProject = await resolveTestProject();
+    projectId = testProject.id;
+    usingExistingProject = testProject.usingExistingProject;
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
     // pull the base image, create a private registry, push it into that registry, and remove the image locally
@@ -92,7 +93,7 @@ describe("Build and deploy on container with a base image private", () => {
     await originalImage.tag({ repo: privateRegistryImageRepo, tag: imageTag });
 
     const privateRegistryImage = docker.getImage(
-      `${privateRegistryImageRepo}:${imageTag}`
+      `${privateRegistryImageRepo}:${imageTag}`,
     );
 
     const auth = {
@@ -104,7 +105,7 @@ describe("Build and deploy on container with a base image private", () => {
       privateRegistryImage.push({ authconfig: auth }, (err, stream) => {
         if (err) return reject(err);
         docker.modem.followProgress(stream, (err, res) =>
-          err ? reject(err) : resolve(res)
+          err ? reject(err) : resolve(res),
         );
       });
     });
@@ -113,20 +114,38 @@ describe("Build and deploy on container with a base image private", () => {
   });
 
   afterAll(async () => {
-    await removeProjectById(projectId).catch();
+    // Only remove the project this test actually created, never a shared
+    // existing project resolveTestProject() reused instead.
+    if (!usingExistingProject) {
+      await removeProjectById(projectId).catch();
+    }
   });
 
   it("should create service in tmp directory", async () => {
     execSync(
-      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`
+      `${serverlessExec} create --template-path ${templateName} --path ${tmpDir}`,
     );
     process.chdir(tmpDir);
     execSync(`npm link ${oldCwd}`);
-    replaceTextInFile("serverless.yml", "scaleway-container", serviceName);
+    // See the identical comment in containers.test.js's "should create
+    // service in tmp directory" - `serverless create --path <tmpDir>`
+    // already overwrites `service:` with tmpDir's own (random hex)
+    // basename, so a plain text replace looking for the template's
+    // placeholder string silently no-ops. Replace the exact string
+    // `create` put there instead of routing through
+    // readYamlFile/writeYamlFile - a js-yaml load->dump roundtrip silently
+    // drops every comment in the file (confirmed directly against
+    // examples/container/serverless.yml), which would silently break any
+    // later replaceTextInFile call targeting a commented-out placeholder.
+    replaceTextInFile(
+      "serverless.yml",
+      `service: ${path.basename(tmpDir)}`,
+      `service: ${serviceName}`,
+    );
     replaceTextInFile(
       path.join("my-container", "Dockerfile"),
       "FROM python:3-alpine",
-      `FROM ${privateRegistryImageRepo}:${imageTag}`
+      `FROM ${privateRegistryImageRepo}:${imageTag}`,
     );
     expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, "my-container"))).toBe(true);
@@ -134,7 +153,11 @@ describe("Build and deploy on container with a base image private", () => {
 
   it("should deploy service/container to scaleway", async () => {
     serverlessDeploy(options);
-    namespace = await api.getNamespaceFromList(serviceName, projectId);
+    namespace = await getNamespaceFromListWithRetry(
+      api,
+      serviceName,
+      projectId,
+    );
     namespace.containers = await api.listContainers(namespace.id);
     containerName = namespace.containers[0].name;
   });
@@ -142,16 +165,12 @@ describe("Build and deploy on container with a base image private", () => {
   it("should invoke container from scaleway", async () => {
     await api.waitContainersAreDeployed(namespace.id);
     options.serviceName = containerName;
-    const output = serverlessInvoke(options).toString();
+    const output = (await serverlessInvokeWithRetry(options)).toString();
     expect(output).toBe('{"message":"Hello, World from Scaleway Container !"}');
   });
 
   it("should remove service from scaleway", async () => {
     serverlessRemove(options);
-    try {
-      await api.getNamespace(namespace.id);
-    } catch (err) {
-      expect(err.response.status).toBe(404);
-    }
+    expect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
   });
 });
