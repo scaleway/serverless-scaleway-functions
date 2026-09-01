@@ -154,6 +154,30 @@ describe("scalewayFetch verbose body logging", () => {
     jestExpect(loggedLines()).toContain("<unavailable>");
   });
 
+  it("logs scw-request-id=unknown instead of throwing when the response has no .headers, and does not trigger a spurious retry", async () => {
+    const fakeResponse = { ok: true, status: 200 };
+    global.fetch = jest.fn().mockResolvedValue(fakeResponse);
+
+    const result = await scalewayFetch("https://x", { method: "GET" });
+
+    jestExpect(result).toBe(fakeResponse);
+    jestExpect(global.fetch).toHaveBeenCalledTimes(1);
+    jestExpect(loggedLines()).toContain("scw-request-id=unknown");
+  });
+
+  it("logs Scaleway's own x-request-id when present, for cross-referencing a failure with Scaleway's own logs", async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response("{}", {
+        status: 403,
+        headers: { "x-request-id": "req-abc-123" },
+      }),
+    );
+
+    await scalewayFetch("https://x", { method: "GET" });
+
+    jestExpect(loggedLines()).toContain("scw-request-id=req-abc-123");
+  });
+
   it("redacts secret_environment_variables in both the request and response body logs", async () => {
     const responseBody = JSON.stringify({
       id: "ns-1",

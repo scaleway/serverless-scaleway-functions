@@ -207,6 +207,23 @@ async function bodyPreviewOfResponse(response: Response): Promise<string> {
   }
 }
 
+// Scaleway's own request ID, for cross-referencing a logged failure with
+// Scaleway support/their own logs - present on error responses too,
+// confirmed live (a real 404's headers carried one same as a real 200's).
+// Reading headers never touches the body stream, so this needs none of
+// bodyPreviewOf*'s .clone() dance - but still guarded the same way
+// (optional chaining plus try/catch, not just one or the other): this
+// file has already hit two real bugs from assuming a mocked
+// Response/Request fully implements the real API, and plenty of this
+// suite's own fetch mocks don't have a .headers property at all.
+function requestIdOf(response: Response): string {
+  try {
+    return response.headers?.get?.("x-request-id") ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 // Exported for direct unit testing - not part of this module's intended
 // public surface otherwise (createScalewayClient wires it in already).
 // `dispatcher` is a Node-specific fetch() extension (undici.Dispatcher)
@@ -247,7 +264,7 @@ export const scalewayFetch: typeof fetch = async (input, init) => {
         if (VERBOSE_FETCH_LOGGING) {
           const responseBody = await bodyPreviewOfResponse(response);
           logFetch(
-            `#${requestId} attempt ${attempt} -> HTTP ${response.status} body=${responseBody}`,
+            `#${requestId} attempt ${attempt} -> HTTP ${response.status} (scw-request-id=${requestIdOf(response)}) body=${responseBody}`,
           );
         }
         return response;
