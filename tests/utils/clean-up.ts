@@ -43,14 +43,29 @@ const cleanup = async (): Promise<void> => {
   );
   for (const project of projects) {
     if (project.name.includes("test-slsframework-")) {
-      process.env.SCW_DEFAULT_PROJECT_ID = project.id;
       await removeProjectById(project.id).catch(() => undefined);
     }
   }
 };
 
+// A falsy projectId must never reach the list/delete calls below: every
+// list*() call here is Scaleway's own SDK-backed listing, and an
+// empty/undefined project_id filter does NOT mean "match nothing" the way
+// a well-formed but nonexistent project id does - it silently falls back
+// to some other, unrelated real project's resources (verified live against
+// the production API). Every caller of this function assigns projectId
+// from an async project-creation call inside its own beforeAll, so a
+// transient failure there (network error, a transient 403, etc.) leaves
+// projectId undefined when Jest still runs afterAll - which is exactly how
+// a live-test failure once caused this function to delete real,
+// non-test registry namespaces in an unrelated project.
 const removeProjectById = async (projectId: string): Promise<void> => {
-  process.env.SCW_DEFAULT_PROJECT_ID = projectId;
+  if (!projectId) {
+    console.error(
+      "removeProjectById called with an empty/undefined projectId - refusing to act, since Scaleway's list APIs treat a missing project_id as an unscoped default rather than an empty filter.",
+    );
+    return;
+  }
   await removeAllTestNamespaces(projectId)
     .then(() => accountApi.deleteProject(projectId))
     .catch(() => console.log(`failed to delete project ${projectId}`));
