@@ -32,6 +32,25 @@ describe("listRegistryNamespace field aliasing", () => {
 
     jestExpect(result.project_id).toBe("proj-1");
   });
+
+  // Regression test: an empty/undefined project_id filter here does not
+  // mean "match nothing" the way a well-formed but nonexistent project id
+  // does - verified live against the production API that it silently
+  // falls back to some other, unrelated project's namespaces instead. This
+  // must throw before ever reaching the SDK, not silently list/act on the
+  // wrong project.
+  it.each([undefined, null, ""])(
+    "throws instead of calling the SDK when projectId is %p",
+    async (projectId) => {
+      const listNamespaces = jest.fn();
+      const ctx = { sdkApi: { listNamespaces } };
+
+      await jestExpect(
+        RegistryApi.prototype.listRegistryNamespace.call(ctx, projectId),
+      ).rejects.toThrow("projectId must not be empty");
+      jestExpect(listNamespaces).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("deleteRegistryNamespace field aliasing", () => {

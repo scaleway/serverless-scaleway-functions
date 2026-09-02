@@ -1,4 +1,5 @@
 import { Errors } from "@scaleway/sdk-client";
+import { requireNonEmpty } from "./params";
 
 interface SdkFunction {
   id: string;
@@ -121,6 +122,7 @@ export async function listFunctions(
   this: FunctionSdkContext,
   namespaceId: string,
 ): Promise<FunctionRecord[]> {
+  requireNonEmpty(namespaceId, "namespaceId");
   const functions = await this.sdkApi.listFunctions({ namespaceId }).all();
   return functions.map(toLegacyFunction);
 }
@@ -129,6 +131,8 @@ export async function createFunction(
   this: FunctionSdkContext,
   params: Record<string, unknown>,
 ): Promise<FunctionRecord> {
+  requireNonEmpty(params.name as string | undefined, "name");
+  requireNonEmpty(params.namespace_id as string | undefined, "namespace_id");
   const func = await this.sdkApi.createFunction({
     name: params.name,
     namespaceId: params.namespace_id,
@@ -154,6 +158,7 @@ export async function updateFunction(
   functionId: string,
   params: Record<string, unknown>,
 ): Promise<FunctionRecord> {
+  requireNonEmpty(functionId, "functionId");
   const func = await this.sdkApi.updateFunction({
     functionId,
     redeploy: params.redeploy,
@@ -178,6 +183,7 @@ export async function deployFunction(
   this: FunctionSdkContext,
   functionId: string,
 ): Promise<FunctionRecord> {
+  requireNonEmpty(functionId, "functionId");
   const func = await this.sdkApi.deployFunction({ functionId });
   return toLegacyFunction(func);
 }
@@ -187,6 +193,7 @@ export async function getPresignedUrl(
   functionId: string,
   archiveSize: number,
 ): Promise<{ url: string; headers: Record<string, string[]> }> {
+  requireNonEmpty(functionId, "functionId");
   return this.sdkApi.getFunctionUploadURL({
     functionId,
     contentLength: archiveSize,
@@ -197,6 +204,7 @@ export async function deleteFunction(
   this: FunctionSdkContext,
   functionId: string,
 ): Promise<FunctionRecord> {
+  requireNonEmpty(functionId, "functionId");
   const func = await this.sdkApi.deleteFunction({ functionId });
   return toLegacyFunction(func);
 }
@@ -205,6 +213,7 @@ export async function getFunction(
   this: FunctionSdkContext,
   functionId: string,
 ): Promise<FunctionRecord> {
+  requireNonEmpty(functionId, "functionId");
   const func = await this.sdkApi.getFunction({ functionId });
   return toLegacyFunction(func);
 }
@@ -299,6 +308,7 @@ export async function listDomainsFunction(
   this: FunctionSdkContext,
   functionId: string,
 ): Promise<DomainRecord[]> {
+  requireNonEmpty(functionId, "functionId");
   const response = await this.sdkApi.listDomains({ functionId });
   return response.domains.map(toLegacyDomain);
 }

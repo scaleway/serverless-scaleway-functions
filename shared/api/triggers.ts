@@ -1,4 +1,5 @@
 import MnqApi = require("./mnq");
+import { requireNonEmpty } from "./params";
 import constants = require("../constants");
 const { MNQ_API_URL } = constants;
 
@@ -71,6 +72,7 @@ export async function listTriggersForApplication(
   applicationId: string,
   isFunction: boolean,
 ): Promise<Trigger[]> {
+  requireNonEmpty(applicationId, "applicationId");
   if (isFunction) {
     const cronTriggers = await this.sdkApi
       .listCrons({ functionId: applicationId })
@@ -107,6 +109,7 @@ export async function createCronTrigger(
   isFunction: boolean,
   params: TriggerParams,
 ): Promise<Trigger> {
+  requireNonEmpty(applicationId, "applicationId");
   if (isFunction) {
     return this.sdkApi.createCron({
       functionId: applicationId,
@@ -160,6 +163,7 @@ export async function createMessageTrigger(
   isFunction: boolean,
   params: TriggerParams,
 ): Promise<Trigger> {
+  requireNonEmpty(applicationId, "applicationId");
   if (isFunction) {
     // Functions stay on Functionv1beta1 - Scaleway-managed MNQ SQS/NATS
     // config, no credentials of this plugin's own making.
@@ -264,6 +268,7 @@ export async function updateCronTrigger(
   triggerId: string,
   params: TriggerParams,
 ): Promise<Trigger> {
+  requireNonEmpty(triggerId, "triggerId");
   return this.sdkApi.updateCron({
     cronId: triggerId,
     schedule: params.schedule,
@@ -276,6 +281,7 @@ export async function deleteCronTrigger(
   triggerId: string,
   isFunction: boolean,
 ): Promise<Trigger> {
+  requireNonEmpty(triggerId, "triggerId");
   if (isFunction) {
     return this.sdkApi.deleteCron({ cronId: triggerId });
   }
@@ -289,6 +295,7 @@ export async function deleteMessageTrigger(
   trigger: Trigger,
   isFunction: boolean,
 ): Promise<Trigger> {
+  requireNonEmpty(trigger.id, "trigger.id");
   if (
     !isFunction &&
     (trigger.sourceType === "sqs" || trigger.sourceType === "nats")

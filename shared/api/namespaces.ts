@@ -1,5 +1,6 @@
 import { Errors } from "@scaleway/sdk-client";
 import type { WaitForOptions } from "@scaleway/sdk-client";
+import { requireNonEmpty } from "./params";
 
 // Functionv1beta1.API and Containerv1.API each define their own Namespace
 // type and namespace CRUD methods (separate products, no shared base class)
@@ -112,6 +113,7 @@ export async function listNamespaces(
   this: NamespaceSdkContext,
   projectId: string | undefined,
 ): Promise<Namespace[]> {
+  requireNonEmpty(projectId, "projectId");
   const namespaces = await this.sdkApi.listNamespaces({ projectId }).all();
   return namespaces.map(toLegacyNamespace);
 }
@@ -121,6 +123,8 @@ export async function getNamespaceFromList(
   namespaceName: string,
   projectId: string | undefined,
 ): Promise<Namespace | undefined> {
+  requireNonEmpty(namespaceName, "namespaceName");
+  requireNonEmpty(projectId, "projectId");
   const response = await this.sdkApi.listNamespaces({
     name: namespaceName,
     projectId,
@@ -137,6 +141,7 @@ export async function getNamespace(
   this: NamespaceSdkContext,
   namespaceId: string,
 ): Promise<Namespace> {
+  requireNonEmpty(namespaceId, "namespaceId");
   const namespace = await this.sdkApi.getNamespace({ namespaceId });
   return toLegacyNamespace(namespace);
 }
@@ -145,6 +150,7 @@ export async function waitNamespaceIsReady(
   this: NamespaceSdkContext,
   namespaceId: string,
 ): Promise<Namespace> {
+  requireNonEmpty(namespaceId, "namespaceId");
   const namespace = await this.sdkApi.waitForNamespace(
     { namespaceId },
     { timeout: WAIT_TIMEOUT_SECONDS },
@@ -188,6 +194,8 @@ export async function createNamespace(
   this: NamespaceSdkContext,
   params: Record<string, unknown>,
 ): Promise<Namespace> {
+  requireNonEmpty(params.name as string | undefined, "name");
+  requireNonEmpty(params.project_id as string | undefined, "project_id");
   const namespace = await this.sdkApi.createNamespace({
     name: params.name,
     projectId: params.project_id,
@@ -205,6 +213,7 @@ export async function updateNamespace(
   namespaceId: string,
   params: Record<string, unknown>,
 ): Promise<Namespace> {
+  requireNonEmpty(namespaceId, "namespaceId");
   const namespace = await this.sdkApi.updateNamespace({
     namespaceId,
     environmentVariables: params.environment_variables,
@@ -220,6 +229,7 @@ export async function deleteNamespace(
   this: NamespaceSdkContext,
   namespaceId: string,
 ): Promise<Namespace> {
+  requireNonEmpty(namespaceId, "namespaceId");
   const namespace = await this.sdkApi.deleteNamespace({ namespaceId });
   return toLegacyNamespace(namespace);
 }
@@ -229,6 +239,7 @@ export function waitNamespaceIsDeleted(
   namespaceId: string,
   attempt = 1,
 ): Promise<boolean> {
+  requireNonEmpty(namespaceId, "namespaceId");
   return this.sdkApi
     .getNamespace({ namespaceId })
     .then((namespace) => {

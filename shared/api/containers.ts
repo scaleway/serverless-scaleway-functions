@@ -1,4 +1,5 @@
 import { Errors } from "@scaleway/sdk-client";
+import { requireNonEmpty } from "./params";
 
 // Containerv1's Container type - see the long comment above toLegacyContainer
 // for the full v1beta1 -> v1 field mapping this shape reflects.
@@ -228,6 +229,7 @@ export async function listContainers(
   this: ContainerSdkContext,
   namespaceId: string,
 ): Promise<ContainerRecord[]> {
+  requireNonEmpty(namespaceId, "namespaceId");
   const containers = await this.sdkApi.listContainers({ namespaceId }).all();
   return containers.map(toLegacyContainer);
 }
@@ -276,6 +278,8 @@ export async function createContainer(
   this: ContainerSdkContext,
   params: Record<string, unknown>,
 ): Promise<ContainerRecord> {
+  requireNonEmpty(params.name as string | undefined, "name");
+  requireNonEmpty(params.namespace_id as string | undefined, "namespace_id");
   const container = await this.sdkApi.createContainer({
     name: params.name,
     namespaceId: params.namespace_id,
@@ -306,6 +310,7 @@ export async function updateContainer(
   containerId: string,
   params: Record<string, unknown>,
 ): Promise<ContainerRecord> {
+  requireNonEmpty(containerId, "containerId");
   const container = await this.sdkApi.updateContainer({
     containerId,
     environmentVariables: params.environment_variables,
@@ -334,6 +339,7 @@ export async function deployContainer(
   this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
+  requireNonEmpty(containerId, "containerId");
   const container = await this.sdkApi.redeployContainer({ containerId });
   return toLegacyContainer(container);
 }
@@ -342,6 +348,7 @@ export async function deleteContainer(
   this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
+  requireNonEmpty(containerId, "containerId");
   const container = await this.sdkApi.deleteContainer({ containerId });
   return toLegacyContainer(container);
 }
@@ -350,6 +357,7 @@ export async function getContainer(
   this: ContainerSdkContext,
   containerId: string,
 ): Promise<ContainerRecord> {
+  requireNonEmpty(containerId, "containerId");
   const container = await this.sdkApi.getContainer({ containerId });
   return toLegacyContainer(container);
 }
@@ -480,6 +488,7 @@ export async function listDomainsContainer(
   this: ContainerSdkContext,
   containerId: string,
 ): Promise<DomainRecord[]> {
+  requireNonEmpty(containerId, "containerId");
   const response = await this.sdkApi.listDomains({ containerId });
   return response.domains.map(toLegacyDomain);
 }

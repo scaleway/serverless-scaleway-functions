@@ -1,4 +1,5 @@
 import type { Registryv1 } from "@scaleway/sdk-registry";
+import { requireNonEmpty } from "./params";
 import sdkClient = require("./sdkClient");
 const { createScalewayClientFromResourceUrl, createLazySdkApi } = sdkClient;
 import RegistrySdk = require("@scaleway/sdk-registry");
@@ -32,6 +33,7 @@ class RegistryApi {
   async listRegistryNamespace(
     projectId: string,
   ): Promise<RegistryNamespaceRecord[]> {
+    requireNonEmpty(projectId, "projectId");
     const namespaces = await this.sdkApi.listNamespaces({ projectId }).all();
     return namespaces.map((namespace) => ({
       ...namespace,
@@ -42,6 +44,7 @@ class RegistryApi {
   async deleteRegistryNamespace(
     namespaceId: string,
   ): Promise<RegistryNamespaceRecord> {
+    requireNonEmpty(namespaceId, "namespaceId");
     const namespace = await this.sdkApi.deleteNamespace({ namespaceId });
     return { ...namespace, project_id: namespace.projectId };
   }
@@ -50,6 +53,8 @@ class RegistryApi {
     name: string;
     project_id: string;
   }): Promise<RegistryNamespaceRecord> {
+    requireNonEmpty(params.name, "name");
+    requireNonEmpty(params.project_id, "project_id");
     const namespace = await this.sdkApi.createNamespace({
       name: params.name,
       projectId: params.project_id,

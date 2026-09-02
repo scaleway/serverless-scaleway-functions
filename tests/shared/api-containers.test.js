@@ -142,7 +142,10 @@ describe("createContainer request building", () => {
       },
     };
 
-    await containersApi.createContainer.call(ctx, { name: "web" });
+    await containersApi.createContainer.call(ctx, {
+      name: "web",
+      namespace_id: "ns-1",
+    });
 
     jestExpect(sentRequest.memoryLimitBytes).toBeUndefined();
   });
@@ -166,6 +169,7 @@ describe("createContainer request building", () => {
 
     await containersApi.createContainer.call(ctx, {
       name: "web",
+      namespace_id: "ns-1",
       secret_environment_variables: [
         { key: "DB_PASSWORD", value: "s3cr3t" },
         { key: "API_KEY", value: "abc123" },
@@ -212,7 +216,10 @@ describe("createContainer request building", () => {
       },
     };
 
-    await containersApi.createContainer.call(ctx, { name: "web" });
+    await containersApi.createContainer.call(ctx, {
+      name: "web",
+      namespace_id: "ns-1",
+    });
 
     jestExpect(sentRequest.secretEnvironmentVariables).toBeUndefined();
   });

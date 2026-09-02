@@ -1,4 +1,5 @@
 import type { Mnqv1beta1 } from "@scaleway/sdk-mnq";
+import { requireNonEmpty } from "./params";
 import sdkClient = require("./sdkClient");
 const { createScalewayClientFromResourceUrl, createLazySdkApi } = sdkClient;
 import MnqSdk = require("@scaleway/sdk-mnq");
@@ -48,6 +49,7 @@ class MnqApi {
   // "disabled" status for a never-activated project hasn't been confirmed
   // against the live API from this environment, so both are handled here.
   async ensureSqsActivated(projectId: string): Promise<string> {
+    requireNonEmpty(projectId, "projectId");
     try {
       const info = await this.sqsApi.getSqsInfo({ projectId });
       if (info.status === "enabled") {
@@ -65,6 +67,8 @@ class MnqApi {
     projectId: string,
     name: string,
   ): Promise<SqsCredentialsRecord> {
+    requireNonEmpty(projectId, "projectId");
+    requireNonEmpty(name, "name");
     return this.sqsApi.createSqsCredentials({
       projectId,
       name,
@@ -76,6 +80,8 @@ class MnqApi {
     projectId: string,
     name: string,
   ): Promise<void> {
+    requireNonEmpty(projectId, "projectId");
+    requireNonEmpty(name, "name");
     const credentials = await this.sqsApi
       .listSqsCredentials({ projectId })
       .all();
@@ -86,6 +92,7 @@ class MnqApi {
   }
 
   async getNatsAccountEndpoint(natsAccountId: string): Promise<string> {
+    requireNonEmpty(natsAccountId, "natsAccountId");
     const account = await this.natsApi.getNatsAccount({ natsAccountId });
     return account.endpoint;
   }
@@ -94,6 +101,8 @@ class MnqApi {
     natsAccountId: string,
     name: string,
   ): Promise<NatsCredentialsRecord> {
+    requireNonEmpty(natsAccountId, "natsAccountId");
+    requireNonEmpty(name, "name");
     return this.natsApi.createNatsCredentials({ natsAccountId, name });
   }
 
@@ -106,6 +115,8 @@ class MnqApi {
     projectId: string,
     name: string,
   ): Promise<void> {
+    requireNonEmpty(projectId, "projectId");
+    requireNonEmpty(name, "name");
     const credentials = await this.natsApi
       .listNatsCredentials({ projectId })
       .all();

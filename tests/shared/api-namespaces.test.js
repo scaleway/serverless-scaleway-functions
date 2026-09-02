@@ -8,6 +8,36 @@ function sdkListNamespaces(namespaces) {
   return { namespaces };
 }
 
+describe("getNamespaceFromList parameter validation", () => {
+  // Regression test: provider.getScwProject() can legitimately return an
+  // empty string or undefined on misconfigured credentials (see
+  // provider/scalewayProvider.ts's setCredentials fallback branch) -
+  // this must fail fast and clearly rather than silently querying with an
+  // unscoped filter.
+  it.each([undefined, null, ""])(
+    "throws instead of calling the SDK when projectId is %p",
+    async (projectId) => {
+      const listNamespaces = jest.fn();
+      const ctx = { sdkApi: { listNamespaces } };
+
+      await jestExpect(
+        namespacesApi.getNamespaceFromList.call(ctx, "my-ns", projectId),
+      ).rejects.toThrow("projectId must not be empty");
+      jestExpect(listNamespaces).not.toHaveBeenCalled();
+    },
+  );
+
+  it("throws instead of calling the SDK when namespaceName is empty", async () => {
+    const listNamespaces = jest.fn();
+    const ctx = { sdkApi: { listNamespaces } };
+
+    await jestExpect(
+      namespacesApi.getNamespaceFromList.call(ctx, "", "proj-1"),
+    ).rejects.toThrow("namespaceName must not be empty");
+    jestExpect(listNamespaces).not.toHaveBeenCalled();
+  });
+});
+
 describe("getNamespaceFromList", () => {
   it("returns undefined instead of throwing when no namespace matches the name", async () => {
     const ctx = {
@@ -124,6 +154,7 @@ describe("createNamespace/updateNamespace secret shape, by product", () => {
 
     await namespacesApi.createNamespace.call(ctx, {
       name: "my-ns",
+      project_id: "proj-1",
       secret_environment_variables: [{ key: "SECRET", value: "abc123" }],
     });
 
@@ -161,6 +192,7 @@ describe("createNamespace/updateNamespace secret shape, by product", () => {
 
     await namespacesApi.createNamespace.call(ctx, {
       name: "my-ns",
+      project_id: "proj-1",
       secret_environment_variables: [{ key: "SECRET", value: "abc123" }],
     });
     jestExpect(sentRequest.secretEnvironmentVariables).toEqual({

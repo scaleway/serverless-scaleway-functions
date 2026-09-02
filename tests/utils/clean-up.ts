@@ -10,6 +10,7 @@ import {
   CONTAINERS_API_URL,
   REGISTRY_API_URL,
 } from "../../shared/constants";
+import { requireNonEmpty } from "../../shared/api/params";
 
 // shared/api/index.js (the AccountApi/FunctionApi/ContainerApi/RegistryApi
 // class definitions themselves) is still CommonJS, deliberately deferred in
@@ -59,10 +60,19 @@ const cleanup = async (): Promise<void> => {
 // projectId undefined when Jest still runs afterAll - which is exactly how
 // a live-test failure once caused this function to delete real,
 // non-test registry namespaces in an unrelated project.
+//
+// requireNonEmpty() is also enforced independently inside every
+// shared/api/*.ts function this eventually calls (listNamespaces,
+// listRegistryNamespace, deleteProject, ...), so this check is
+// belt-and-suspenders - but it's the one that lets cleanup log a clear
+// reason and skip entirely, rather than letting the failure surface deep
+// inside removeAllTestNamespaces's per-region try/catch.
 const removeProjectById = async (projectId: string): Promise<void> => {
-  if (!projectId) {
+  try {
+    requireNonEmpty(projectId, "projectId");
+  } catch (err) {
     console.error(
-      "removeProjectById called with an empty/undefined projectId - refusing to act, since Scaleway's list APIs treat a missing project_id as an unscoped default rather than an empty filter.",
+      `removeProjectById: ${(err as Error).message} - refusing to act.`,
     );
     return;
   }

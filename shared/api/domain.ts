@@ -1,4 +1,5 @@
 import type { ServerlessLoggerContext } from "./types";
+import { requireNonEmpty } from "./params";
 
 // This file only ever creates/deletes a domain, never lists or waits on
 // one - deliberately narrower than functions.ts/containers.ts's own
@@ -50,6 +51,11 @@ export async function createDomain(
   this: DomainSdkContext,
   params: CreateDomainParams,
 ): Promise<DomainMutationRecord> {
+  requireNonEmpty(params.hostname, "hostname");
+  requireNonEmpty(
+    params.function_id || params.container_id,
+    "function_id or container_id",
+  );
   const domain = await this.sdkApi.createDomain({
     hostname: params.hostname,
     functionId: params.function_id,
@@ -62,6 +68,7 @@ export async function deleteDomain(
   this: DomainSdkContext,
   domainID: string,
 ): Promise<DomainMutationRecord> {
+  requireNonEmpty(domainID, "domainID");
   const domain = await this.sdkApi.deleteDomain({ domainId: domainID });
   return { ...domain };
 }
