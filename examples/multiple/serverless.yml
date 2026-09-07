@@ -2,7 +2,7 @@ service: scaleway-multiple
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: node22
+  runtime: node26
   # Global Environment variables - used in every functions
   env:
     test: test
@@ -24,7 +24,7 @@ functions:
     env:
       local: local
   pythonfunc:
-    runtime: python311 # Here we add a specific runtime for the function
+    runtime: python314 # Here we add a specific runtime for the function
     handler: handler.handle
     # description: ""
     # Local environment variables - used only in given function

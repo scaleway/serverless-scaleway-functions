@@ -1,0 +1,502 @@
+import fs from "fs";
+import path from "path";
+
+// COMPILED_RUNTIMES_PREFIXES is an array containing all runtimes
+// that are considered as "compiled runtimes".
+// If you fill this array with "go" it will match all runtimes that starts with "go".
+// For example "golang", "go118" matches this filter.
+const COMPILED_RUNTIMES_PREFIXES = ["go", "rust"];
+
+// RUNTIMES_EXTENSIONS serves two purposes :
+// - the struct key is used to list different runtimes families (go, python etc...)
+// - the content is used to list file extensions of the runtime, file extensions are only
+// required on non-compiled runtimes.
+const RUNTIMES_EXTENSIONS: Record<string, string[]> = {
+  // tester .ts in node runtime
+  node: ["ts", "js"],
+  python: ["py"],
+  php: ["php"],
+  go: [],
+  rust: [],
+};
+
+const REGION_LIST = ["fr-par", "nl-ams", "pl-waw"];
+
+const cronScheduleRegex = new RegExp(
+  /^((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/,
+);
+
+const triggerNameRegex = new RegExp(/^([a-zA-Z0-9-]){2,100}$/);
+
+const triggerNatsAccountIdRegex = new RegExp(/^([A-Z0-9]){56}$/);
+
+const triggerNatsProjectIdRegex = new RegExp(
+  /^([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}$/,
+);
+
+const triggerNatsSubjectRegex = new RegExp(
+  /^(\$?[a-zA-Z0-9_*>][a-zA-Z0-9_*>.]*){1,200}$/,
+);
+
+const triggerSqsQueueRegex = new RegExp(/^([a-zA-Z0-9-_.]){2,80}$/);
+const triggerSqsProjectIdRegex = triggerNatsProjectIdRegex;
+
+interface ScheduleTriggerConfig {
+  rate: string;
+}
+
+interface NatsTriggerConfig {
+  name: string;
+  scw_nats_config: {
+    subject: string;
+    mnq_nats_account_id: string;
+    mnq_project_id: string;
+    mnq_region: string;
+  };
+}
+
+interface SqsTriggerConfig {
+  name: string;
+  queue: string;
+  projectId?: string;
+  region?: string;
+}
+
+// The trigger type (schedule/nats/sqs) is only known at runtime, from
+// whichever single key is present on the trigger's config object - see
+// validateTriggers below. Each validator's own parameter is precisely typed;
+// only the map holding all three together needs a loose signature to
+// describe that dynamic dispatch.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TRIGGERS_VALIDATION: Record<string, (config: any) => void> = {
+  schedule: (trigger: ScheduleTriggerConfig) => {
+    if (!trigger.rate || !cronScheduleRegex.test(trigger.rate)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.rate}, schedule should be formatted like a UNIX-Compliant Cronjob, for example: '1 * * * *'`,
+      );
+    }
+  },
+  nats: (trigger: NatsTriggerConfig) => {
+    if (!trigger.name || !triggerNameRegex.test(trigger.name)) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${
+          trigger.name
+        }, name is invalid, should match regex: ${triggerNameRegex.toString()}`,
+      );
+    }
+    if (!trigger.scw_nats_config) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config is missing`,
+      );
+    }
+    if (
+      !trigger.scw_nats_config.subject ||
+      !triggerNatsSubjectRegex.test(trigger.scw_nats_config.subject)
+    ) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${
+          trigger.name
+        }, scw_nats_config.subject is invalid, should match regex: ${triggerNatsSubjectRegex.toString()}`,
+      );
+    }
+    if (
+      !trigger.scw_nats_config.mnq_nats_account_id ||
+      !triggerNatsAccountIdRegex.test(
+        trigger.scw_nats_config.mnq_nats_account_id,
+      )
+    ) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${
+          trigger.name
+        }, scw_nats_config.mnq_nats_account_id is invalid, should match regex: ${triggerNatsAccountIdRegex.toString()}`,
+      );
+    }
+    if (
+      !trigger.scw_nats_config.mnq_project_id ||
+      !triggerNatsProjectIdRegex.test(trigger.scw_nats_config.mnq_project_id)
+    ) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${
+          trigger.name
+        }, scw_nats_config.mnq_project_id is invalid, should match regex: ${triggerNatsProjectIdRegex.toString()}`,
+      );
+    }
+    if (
+      !trigger.scw_nats_config.mnq_region ||
+      !REGION_LIST.includes(trigger.scw_nats_config.mnq_region)
+    ) {
+      throw new Error(
+        `Trigger Schedule is invalid: ${trigger.name}, scw_nats_config.region is unknown`,
+      );
+    }
+  },
+  sqs: (trigger: SqsTriggerConfig) => {
+    if (!trigger.name || !triggerNameRegex.test(trigger.name)) {
+      throw new Error(
+        `Invalid trigger "${
+          trigger.name
+        }": name is invalid, should match regex "${triggerNameRegex.toString()}"`,
+      );
+    }
+    if (!trigger.queue || !triggerSqsQueueRegex.test(trigger.queue)) {
+      throw new Error(
+        `Invalid trigger "${
+          trigger.name
+        }": queue is invalid, should match regex "${triggerSqsQueueRegex.toString()}"`,
+      );
+    }
+    if (
+      trigger.projectId &&
+      !triggerSqsProjectIdRegex.test(trigger.projectId)
+    ) {
+      throw new Error(
+        `Invalid trigger "${
+          trigger.name
+        }": projectId is invalid, should match regex "${triggerSqsProjectIdRegex.toString()}"`,
+      );
+    }
+    if (trigger.region && !REGION_LIST.includes(trigger.region)) {
+      throw new Error(`Invalid trigger "${trigger.name}": region is unknown`);
+    }
+  },
+};
+
+interface ApplicationConfig {
+  runtime?: string;
+  handler: string;
+  events?: Record<string, unknown>[];
+  [key: string]: unknown;
+}
+
+interface ValidateContext {
+  serverless: {
+    config: { servicePath?: string };
+    service: {
+      provider: { env?: Record<string, unknown> };
+      functions?: Record<string, ApplicationConfig>;
+      custom?: { containers?: Record<string, ApplicationConfig> };
+    };
+  };
+  provider: {
+    scwToken?: string;
+    scwRegion: string;
+    getScwProject(): string | undefined;
+    serverless: {
+      service: {
+        functions?: Record<string, ApplicationConfig>;
+        custom?: { containers?: Record<string, ApplicationConfig> };
+      };
+    };
+  };
+  runtime: string;
+  validateServicePath(): Promise<void>;
+  validateCredentials(): void;
+  validateRegion(): void;
+  validateNamespace(errors?: string[]): Promise<string[]>;
+  validateApplications(errors?: string[]): Promise<string[]>;
+  checkErrors(errors: string[]): Promise<void>;
+  validateTriggers(triggers: Record<string, unknown>[]): string[];
+  validateEnv(variables: Record<string, unknown> | undefined): string[];
+}
+
+export async function validate(this: ValidateContext) {
+  await this.validateServicePath();
+  await this.validateCredentials();
+  await this.validateRegion();
+  const namespaceErrors = await this.validateNamespace();
+  const applicationErrors = await this.validateApplications(namespaceErrors);
+  return this.checkErrors(applicationErrors);
+}
+
+export function validateServicePath(this: ValidateContext): Promise<void> {
+  if (!this.serverless.config.servicePath) {
+    throw new Error("This command can only be run inside a service directory");
+  }
+
+  return Promise.resolve();
+}
+
+export function validateCredentials(this: ValidateContext): void {
+  const scwProject = this.provider.getScwProject();
+  if (
+    !this.provider.scwToken ||
+    this.provider.scwToken.length !== 36 ||
+    !scwProject ||
+    scwProject.length !== 36
+  ) {
+    const errorMessage = [
+      'Either "scwToken" or "scwProject" is invalid.',
+      " Credentials to deploy on your Scaleway Account are required, please read the documentation.",
+    ].join("");
+    throw new Error(errorMessage);
+  }
+}
+
+export function validateRegion(this: ValidateContext): void {
+  if (!REGION_LIST.includes(this.provider.scwRegion)) {
+    throw new Error("unknown region");
+  }
+}
+
+export function checkErrors(errors: string[]): Promise<void> {
+  if (!errors || !errors.length) {
+    return Promise.resolve();
+  }
+
+  // Format error messages for user
+  return Promise.reject(errors);
+}
+
+export function validateNamespace(
+  this: ValidateContext,
+  errors?: string[],
+): Promise<string[]> {
+  const currentErrors = Array.isArray(errors) ? errors : [];
+  // Check space env vars:
+  const namespaceEnvVars = this.serverless.service.provider.env;
+  const namespaceErrors = this.validateEnv(namespaceEnvVars);
+
+  return Promise.resolve(currentErrors.concat(namespaceErrors));
+}
+
+export function validateApplications(
+  this: ValidateContext,
+  errors?: string[],
+): Promise<string[]> {
+  let functionNames: string[] = [];
+  let containerNames: string[] = [];
+
+  const currentErrors = Array.isArray(errors) ? errors : [];
+  let functionErrors: string[] = [];
+  let containers: Record<string, ApplicationConfig> | undefined;
+
+  let extensions: string[] = [];
+
+  const { functions } = this.serverless.service;
+
+  if (functions && Object.keys(functions).length !== 0) {
+    functionNames = Object.keys(functions);
+
+    let defaultRTexists = false;
+
+    const rtKeys = Object.getOwnPropertyNames(RUNTIMES_EXTENSIONS);
+    for (let i = 0; i < rtKeys.length; i += 1) {
+      if (this.runtime.startsWith(rtKeys[i])) {
+        defaultRTexists = true;
+        extensions = RUNTIMES_EXTENSIONS[rtKeys[i]];
+
+        break;
+      }
+    }
+
+    if (!defaultRTexists) {
+      functionErrors.push(
+        `Runtime ${this.runtime} is not supported, please check documentation for available runtimes`,
+      );
+    }
+
+    functionNames.forEach((functionName) => {
+      const func = functions[functionName];
+
+      // check if runtime is compiled runtime, if so we skip validations
+      for (let i = 0; i < COMPILED_RUNTIMES_PREFIXES.length; i += 1) {
+        if (
+          (func.runtime !== undefined &&
+            func.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i])) ||
+          (!func.runtime &&
+            this.runtime.startsWith(COMPILED_RUNTIMES_PREFIXES[i]))
+        ) {
+          return; // for compiled runtimes there is no need to validate specific files
+        }
+      }
+
+      // Check that function's runtime is authorized if existing
+      if (func.runtime) {
+        let RTexists = false;
+
+        for (let i = 0; i < rtKeys.length; i += 1) {
+          if (func.runtime.startsWith(rtKeys[i])) {
+            RTexists = true;
+            extensions = RUNTIMES_EXTENSIONS[rtKeys[i]];
+            break;
+          }
+        }
+
+        if (!RTexists) {
+          functionErrors.push(
+            `Runtime ${func.runtime} is not supported, please check documentation for available runtimes`,
+          );
+        }
+      }
+
+      // Check if function handler exists
+      try {
+        // get handler file => path/to/file.handler => split ['path/to/file', 'handler']
+        const splitHandlerPath = func.handler.split(".");
+        if (splitHandlerPath.length !== 2) {
+          throw new Error(
+            `Handler is malformatted for ${functionName}: handler should be path/to/file.functionInsideFile`,
+          );
+        }
+
+        const handlerPath = splitHandlerPath[0];
+
+        // For each extensions linked to a language (node: .ts,.js, python: .py ...),
+        // check that a handler file exists with one of the extensions
+        let handlerFileExists = false;
+
+        for (let i = 0; i < extensions.length; i += 1) {
+          const handler = `${handlerPath}.${extensions[i]}`;
+
+          if (fs.existsSync(path.resolve("./", handler))) {
+            handlerFileExists = true;
+            break;
+          }
+        }
+
+        // If Handler file does not exist, throw an error
+        if (!handlerFileExists) {
+          throw new Error("File does not exists");
+        }
+      } catch (error) {
+        const message = `Handler file defined for function ${functionName} does not exist (${func.handler}, err : ${error} ).`;
+        functionErrors.push(message);
+      }
+
+      // Check that triggers are valid
+      func.events = func.events || [];
+      functionErrors = [
+        ...functionErrors,
+        ...this.validateTriggers(func.events),
+      ];
+    });
+  }
+
+  if (this.serverless.service.custom) {
+    containers = this.serverless.service.custom.containers;
+  }
+  if (containers && Object.keys(containers).length !== 0) {
+    containerNames = Object.keys(containers);
+
+    // Validate triggers/events for containers
+    containerNames.forEach((containerName) => {
+      const container = containers[containerName];
+      container.events = container.events || [];
+      functionErrors = [
+        ...functionErrors,
+        ...this.validateTriggers(container.events),
+      ];
+    });
+  }
+
+  if (!functionNames.length && !containerNames.length) {
+    functionErrors.push(
+      "You must define at least one function or container to deploy under the functions or custom key.",
+    );
+  } else if (functionNames.length && containerNames.length) {
+    functionErrors.push(
+      "You cannot define both functions and custom.containers in the same service. Split them into separate services.",
+    );
+  }
+
+  return Promise.resolve(currentErrors.concat(functionErrors));
+}
+
+export function validateTriggers(
+  triggers: Record<string, unknown>[],
+): string[] {
+  // Check that key schedule exists
+  return triggers.reduce<string[]>((accumulator, trigger) => {
+    const triggerKeys = Object.keys(trigger);
+    if (triggerKeys.length !== 1) {
+      const errorMessage =
+        "Trigger is invalid, it should contain at least one event type configuration (example: schedule).";
+      return [...accumulator, errorMessage];
+    }
+
+    // e.g schedule, http
+    const triggerName = triggerKeys[0];
+
+    const authorizedTriggers = Object.keys(TRIGGERS_VALIDATION);
+    if (!authorizedTriggers.includes(triggerName)) {
+      const errorMessage = `Trigger Type ${triggerName} is not currently supported by Scaleway's Serverless platform, supported types are the following: ${authorizedTriggers.join(
+        ", ",
+      )}`;
+      return [...accumulator, errorMessage];
+    }
+
+    // Run Trigger validation
+    try {
+      TRIGGERS_VALIDATION[triggerName](trigger[triggerName]);
+    } catch (error) {
+      return [...accumulator, (error as Error).message];
+    }
+
+    return accumulator;
+  }, []);
+}
+
+export function validateEnv(
+  variables: Record<string, unknown> | undefined,
+): string[] {
+  const errors: string[] = [];
+
+  if (!variables) return errors;
+  if (typeof variables !== "object") {
+    throw new Error(
+      "Environment variables should be a map of strings under the form: key - value",
+    );
+  }
+
+  const variableNames = Object.keys(variables);
+  variableNames.forEach((variableName) => {
+    const variable = variables[variableName];
+    if (typeof variable !== "string") {
+      const error = `Variable ${variableName}: variable is invalid, environment variables may only be strings`;
+      errors.push(error);
+    }
+  });
+
+  return errors;
+}
+
+export function isDefinedContainer(
+  this: ValidateContext,
+  containerName: string,
+): boolean {
+  // Check if given name is listed as a container
+  let res = false;
+  if (
+    this.provider.serverless.service.custom &&
+    this.provider.serverless.service.custom.containers
+  ) {
+    const foundKey = Object.keys(
+      this.provider.serverless.service.custom.containers,
+    ).find((k) => k == containerName);
+
+    if (foundKey) {
+      res = true;
+    }
+  }
+
+  return res;
+}
+
+export function isDefinedFunction(
+  this: ValidateContext,
+  functionName: string,
+): boolean {
+  // Check if given name is listed as a function
+  let res = false;
+  if (this.provider.serverless.service.functions) {
+    const foundKey = Object.keys(
+      this.provider.serverless.service.functions,
+    ).find((k) => k == functionName);
+
+    if (foundKey) {
+      res = true;
+    }
+  }
+
+  return res;
+}

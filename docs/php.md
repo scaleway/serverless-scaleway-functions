@@ -12,7 +12,7 @@ Your `serverless.yml` can then look something like this:
 
 ```yml
 provider:
-  runtime: php82
+  runtime: php85
 functions:
   main:
     handler: "handler"

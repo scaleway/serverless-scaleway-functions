@@ -2,7 +2,7 @@ import {
   Callback,
   Context,
   Event,
-} from "@scaleway/serverless-functions/framework/dist/types/types";
+} from "@scaleway/serverless-functions/framework/dist/framework/types/types";
 
 export { handle };
 

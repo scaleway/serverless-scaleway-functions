@@ -2,7 +2,7 @@ service: node-event-example
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: node20
+  runtime: node26
 
 plugins:
   - serverless-scaleway-functions

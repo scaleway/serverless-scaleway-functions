@@ -12,7 +12,7 @@ Your serverless.yml `functions` should look something like this:
 
 ```yml
 provider:
-  runtime: rust179
+  runtime: rust196
 functions:
   main:
     handler: "handler"

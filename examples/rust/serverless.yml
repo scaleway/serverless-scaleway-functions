@@ -2,7 +2,7 @@ service: scaleway-rust
 configValidationMode: off
 provider:
   name: scaleway
-  runtime: rust179 # Available rust runtimes are listed in documentation
+  runtime: rust196 # Available rust runtimes are listed in documentation
   # Global Environment variables - used in every functions
   env:
     test: test

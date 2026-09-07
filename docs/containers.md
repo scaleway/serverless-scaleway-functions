@@ -32,6 +32,14 @@ Below is an example of a project structure corresponding to the example above, c
 └── serverless.yml
 ```
 
+Unless every container specifies its own `registryImage` (see below), this plugin
+automatically creates a Container Registry namespace to push built images to, matching
+your service's name. If that name is already taken by another Scaleway organization
+(registry namespace names are unique region-wide, unlike most other resource names in
+this plugin), a project-specific suffix is appended instead - this only happens on the
+very first deploy that needs one, and the same namespace is reused on every later
+deploy.
+
 Serverless Containers automatically have a `PORT` environment variable set, which indicates which port the container's webserver should be listening on. By default `PORT` is 8080. You can change this via the `port` variable in your container definition.
 
 See the [container example](https://github.com/scaleway/serverless-scaleway-functions/tree/master/examples/container) for more information.

@@ -8,8 +8,11 @@ const {
   getServiceName,
   serverlessDeploy,
   serverlessRemove,
-  createProject,
+  resolveTestProject,
+  isUsingExistingTestProject,
   createTestService,
+  getNamespaceFromListWithRetry,
+  isNamespaceRemoved,
 } = require("../utils/misc");
 
 const { FunctionApi, ContainerApi } = require("../../shared/api");
@@ -17,7 +20,6 @@ const {
   FUNCTIONS_API_URL,
   CONTAINERS_API_URL,
 } = require("../../shared/constants");
-const { describe, it, expect } = require("@jest/globals");
 const { removeProjectById } = require("../utils/clean-up");
 
 const scwRegion = process.env.SCW_REGION;
@@ -35,27 +37,45 @@ const runtimesToTest = [
   { name: "container-schedule", isFunction: false },
 ];
 
+// A shared existing project's resources (registry namespace naming, MNQ
+// activation, etc.) can collide across concurrent test cases the way they
+// can't when each case gets its own isolated project - so when
+// resolveTestProject() below is going to reuse an existing project instead
+// of creating one, these run sequentially instead of concurrently. The
+// `it`/`it.concurrent` split has to happen at this static call-site level
+// (Jest has no per-case "concurrent unless..." toggle), so it reads the
+// same synchronous check resolveTestProject() itself uses.
+const runRuntimeTests = isUsingExistingTestProject
+  ? it.each(runtimesToTest)
+  : it.concurrent.each(runtimesToTest);
+
 describe("test triggers", () => {
-  it.concurrent.each(runtimesToTest)("triggers for %s", async (runtime) => {
+  runRuntimeTests("triggers for %s", async (runtime) => {
     let options = {};
     options.env = {};
     options.env.SCW_SECRET_KEY = scwToken;
     options.env.SCW_REGION = scwRegion;
 
     let projectId, api;
-    let namespace = {};
+    let namespace;
 
     // should create project
     // not in beforeAll because of a known bug between concurrent tests and async beforeAll
-    await createProject()
-      .then((project) => {
-        projectId = project.id;
-      })
-      .catch((err) => console.error(err));
+    const testProject = await resolveTestProject();
+    projectId = testProject.id;
+    const usingExistingProject = testProject.usingExistingProject;
     options.env.SCW_DEFAULT_PROJECT_ID = projectId;
 
     // should create service in tmp directory
     const tmpDir = getTmpDirPath();
+    // Deliberately using an explicit cwd on every exec below instead of
+    // process.chdir(tmpDir) - runRuntimeTests runs concurrently
+    // (it.concurrent.each) unless isUsingExistingTestProject forces the
+    // sequential path, and process.chdir() mutates global, process-wide
+    // state that a concurrent sibling case's chdir could clobber mid-await
+    // (same race multi_region.test.js was fixed for).
+    options.cwd = tmpDir;
+    const serverlessYmlPath = path.join(tmpDir, "serverless.yml");
     const serviceName = getServiceName(runtime.name);
     const config = createTestService(tmpDir, oldCwd, {
       devModuleDir,
@@ -63,28 +83,27 @@ describe("test triggers", () => {
       serviceName: serviceName,
       runCurrentVersion: true,
     });
-    expect(fs.existsSync(path.join(tmpDir, "serverless.yml"))).toEqual(true);
+    expect(fs.existsSync(serverlessYmlPath)).toEqual(true);
     expect(fs.existsSync(path.join(tmpDir, "package.json"))).toEqual(true);
 
     // should deploy function service to scaleway
-    process.chdir(tmpDir);
     serverlessDeploy(options);
     if (runtime.isFunction) {
       api = new FunctionApi(functionApiUrl, scwToken);
-      namespace = await api
-        .getNamespaceFromList(serviceName, projectId)
-        .catch((err) => console.error(err));
-      namespace.functions = await api
-        .listFunctions(namespace.id)
-        .catch((err) => console.error(err));
+      namespace = await getNamespaceFromListWithRetry(
+        api,
+        serviceName,
+        projectId,
+      );
+      namespace.functions = await api.listFunctions(namespace.id);
     } else {
       api = new ContainerApi(containerApiUrl, scwToken);
-      namespace = await api
-        .getNamespaceFromList(serviceName, projectId)
-        .catch((err) => console.error(err));
-      namespace.containers = await api
-        .listContainers(namespace.id)
-        .catch((err) => console.error(err));
+      namespace = await getNamespaceFromListWithRetry(
+        api,
+        serviceName,
+        projectId,
+      );
+      namespace.containers = await api.listContainers(namespace.id);
     }
 
     // should create cronjob for function
@@ -97,42 +116,51 @@ describe("test triggers", () => {
       deployedApplication = namespace.containers[0];
       triggerInputs = config.custom.containers.first.events[0].schedule.input;
     }
-    const deployedTriggers = await api
-      .listTriggersForApplication(deployedApplication.id, runtime.isFunction)
-      .catch((err) => console.error(err));
+    const deployedTriggers = await api.listTriggersForApplication(
+      deployedApplication.id,
+      runtime.isFunction,
+    );
 
     expect(deployedTriggers.length).toEqual(1);
-    for (const key in triggerInputs) {
-      expect(deployedTriggers[0].args[key]).toEqual(triggerInputs[key]);
+    // Functions (v1beta1) keep the old Cron.args shape; Containers (v1)
+    // dropped it entirely - the same schedule.input value is instead
+    // JSON-encoded into cronConfig.body as the cron's HTTP request body
+    // (see shared/api/triggers.ts's createCronTrigger). Confirmed against
+    // the live API (2026-08-28): a container's listed trigger has no
+    // top-level `args` at all, only `cronConfig.body`.
+    if (runtime.isFunction) {
+      for (const key in triggerInputs) {
+        expect(deployedTriggers[0].args[key]).toEqual(triggerInputs[key]);
+      }
+    } else {
+      const body = JSON.parse(deployedTriggers[0].cronConfig.body);
+      for (const key in triggerInputs) {
+        expect(body[key]).toEqual(triggerInputs[key]);
+      }
     }
     expect(deployedTriggers[0].schedule).toEqual("1 * * * *");
 
     // should remove services from scaleway
-    process.chdir(tmpDir);
     serverlessRemove(options);
-    try {
-      await api.getNamespace(namespace.id);
-    } catch (err) {
-      expect(err.response.status).toEqual(404);
-    }
+    expect(await isNamespaceRemoved(api, namespace.id)).toBe(true);
 
     // should throw error invalid schedule
-    replaceTextInFile("serverless.yml", "1 * * * *", "10 minutes");
-    try {
-      await expect(serverlessDeploy(options)).rejects.toThrow(Error);
-    } catch (err) {
-      // If not try catch, test would fail
-    }
+    // serverlessDeploy() is a synchronous execSync() wrapper - it throws
+    // directly, not a rejected Promise - so `expect(...).rejects` here was
+    // dead code: whichever branch ran (deploy throwing as expected, or
+    // Jest's own "not a promise" error when it unexpectedly didn't), the
+    // outer try/catch silently swallowed it before any real assertion ran.
+    replaceTextInFile(serverlessYmlPath, "1 * * * *", "10 minutes");
+    expect(() => serverlessDeploy(options)).toThrow();
 
     // should throw error invalid triggerType
-    replaceTextInFile("serverless.yml", "schedule:", "queue:");
-    try {
-      await expect(serverlessDeploy(options)).rejects.toThrow(Error);
-    } catch (err) {
-      // If not try catch, test would fail
-    }
+    replaceTextInFile(serverlessYmlPath, "schedule:", "queue:");
+    expect(() => serverlessDeploy(options)).toThrow();
 
-    // should remove project
-    await removeProjectById(projectId).catch((err) => console.error(err));
+    // should remove project - only the one this test actually created,
+    // never a shared existing project resolveTestProject() reused instead.
+    if (!usingExistingProject) {
+      await removeProjectById(projectId).catch((err) => console.error(err));
+    }
   });
 });
