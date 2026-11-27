@@ -1,5 +1,4 @@
 const axios = require("axios");
-const https = require("https");
 
 const version = "0.5.1";
 
@@ -12,9 +11,6 @@ function getApiManager(apiUrl, token) {
       "User-Agent": `serverless-scaleway-functions/${version}`,
       "X-Auth-Token": token,
     },
-    httpsAgent: new https.Agent({
-      rejectUnauthorized: false,
-    }),
   });
 }
 
