@@ -1,6 +1,15 @@
 const rewire = require("rewire");
 const { Readable } = require("stream");
-const { describe, it, expect } = require("@jest/globals");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+} = require("@jest/globals");
 
 const buildAndPushContainers = rewire(
   "../../deploy/lib/buildAndPushContainers.js"
@@ -10,6 +19,12 @@ const extractStreamContents = buildAndPushContainers.__get__(
 );
 const findErrorInBuildOutput = buildAndPushContainers.__get__(
   "findErrorInBuildOutput"
+);
+const getFilesInBuildContextDirectory = buildAndPushContainers.__get__(
+  "getFilesInBuildContextDirectory"
+);
+const filterFilesWithDockerignore = buildAndPushContainers.__get__(
+  "filterFilesWithDockerignore"
 );
 
 describe("extractStreamContents", () => {
@@ -88,5 +103,132 @@ describe("findErrorInBuildOutput", () => {
     const expected =
       'Head "https://rg.fr-par.scw.cloud/v2/some-private-registry/python/manifests/3.10.3-alpine3.15": error parsing HTTP 403 response body: no error details found in HTTP response body: "{"details":[{"action":"read","resource":"api_namespace"},{"action":"read","resource":"registry_image"}],"message":"insufficient permissions","type":"permissions_denied"}"';
     expect(actual).toEqual(expected);
+  });
+});
+
+describe("filterFilesWithDockerignore", () => {
+  let dir;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "dockerignore-test-"));
+    fs.mkdirSync(path.join(dir, "node_modules", "some-dep"), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(dir, "node_modules", "some-dep", "index.js"),
+      ""
+    );
+    fs.writeFileSync(path.join(dir, "server.py"), "");
+    fs.writeFileSync(path.join(dir, ".env"), "SECRET=shh");
+    fs.writeFileSync(path.join(dir, "keep.env.example"), "");
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("returns every file unfiltered when there is no .dockerignore", () => {
+    const files = getFilesInBuildContextDirectory(dir);
+    const actual = filterFilesWithDockerignore(dir, files).sort();
+
+    expect(actual).toEqual(
+      [
+        "server.py",
+        ".env",
+        "keep.env.example",
+        path.join("node_modules", "some-dep", "index.js"),
+      ].sort()
+    );
+  });
+
+  it("excludes files and directories matched by .dockerignore patterns", () => {
+    fs.writeFileSync(
+      path.join(dir, ".dockerignore"),
+      ["node_modules", ".env"].join("\n")
+    );
+
+    const files = getFilesInBuildContextDirectory(dir);
+    const actual = filterFilesWithDockerignore(dir, files).sort();
+
+    // node_modules/** and .env are excluded; the .dockerignore file itself
+    // was already dropped by getFilesInBuildContextDirectory.
+    expect(actual).toEqual(["server.py", "keep.env.example"].sort());
+  });
+
+  it("respects negation patterns to re-include a specific path", () => {
+    // Excludes a directory's contents, then re-includes one entry.
+    fs.writeFileSync(
+      path.join(dir, ".dockerignore"),
+      ["node_modules/*", "!node_modules/some-dep"].join("\n")
+    );
+
+    const files = getFilesInBuildContextDirectory(dir);
+    const actual = filterFilesWithDockerignore(dir, files).sort();
+
+    expect(actual).toEqual(
+      [
+        "server.py",
+        ".env",
+        "keep.env.example",
+        path.join("node_modules", "some-dep", "index.js"),
+      ].sort()
+    );
+  });
+});
+
+describe("filterFilesWithDockerignore (Docker semantics)", () => {
+  let dir;
+
+  const write = (relativePath) => {
+    const fullPath = path.join(dir, relativePath);
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, "");
+  };
+
+  const filtered = (dockerignoreLines) => {
+    const content = dockerignoreLines.join("\n");
+    fs.writeFileSync(path.join(dir, ".dockerignore"), content);
+    const files = getFilesInBuildContextDirectory(dir);
+    return filterFilesWithDockerignore(dir, files)
+      .map((file) => file.split(path.sep).join("/"))
+      .sort();
+  };
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "dockerignore-docker-"));
+    const paths = [
+      "Dockerfile",
+      "server.py",
+      "README.md",
+      "docs/guide.md",
+      "src/app.py",
+      "src/lib/util.py",
+    ];
+    paths.forEach(write);
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("keeps what an allowlist-style .dockerignore re-includes", () => {
+    const actual = filtered(["*", "!server.py", "!src"]);
+    const expected = [
+      "Dockerfile",
+      "server.py",
+      "src/app.py",
+      "src/lib/util.py",
+    ];
+    expect(actual).toEqual(expected);
+  });
+
+  it("always keeps the Dockerfile, even when .dockerignore lists it", () => {
+    expect(filtered(["Dockerfile", "*.md"])).toContain("Dockerfile");
+  });
+
+  it("anchors patterns at the build context root", () => {
+    const actual = filtered(["*.md"]);
+    expect(actual).toContain("docs/guide.md");
+    expect(actual).not.toContain("README.md");
   });
 });

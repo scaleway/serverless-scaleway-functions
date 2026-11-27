@@ -113,12 +113,12 @@ module.exports = {
         return container;
       })
       .catch((err) => {
-        // toleration on 4XX errors because on some status, for example deleting the API
-        // will return a 404 err code if item has been deleted.
+        // toleration on 404 only: some operations (e.g. checking status of
+        // an item after deletion) will return a 404 once the item is gone.
         if (err.response === undefined) {
           // if we have a raw Error
           throw err;
-        } else if (err.response.status >= 500) {
+        } else if (err.response.status !== 404) {
           // if we have a CustomError, we can check the status
           throw new Error(err);
         }

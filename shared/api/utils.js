@@ -49,6 +49,8 @@ function manageError(err) {
     throw new CustomError(message, err.response);
   } else if (err.response.data.error_message) {
     throw new CustomError(err.response.data.error_message, err.response);
+  } else {
+    throw new CustomError(JSON.stringify(err.response.data), err.response);
   }
 }
 

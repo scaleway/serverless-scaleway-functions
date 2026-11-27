@@ -3,6 +3,7 @@
 const Docker = require("dockerode");
 const path = require("path");
 const fs = require("fs");
+const dockerignore = require("@balena/dockerignore");
 
 const docker = new Docker();
 
@@ -73,6 +74,30 @@ function getFilesInBuildContextDirectory(directory) {
   return files;
 }
 
+// Applies Docker's own .dockerignore semantics, via the matcher dockerode
+// itself depends on, not gitignore's: patterns are anchored at the build
+// context root, and a negation can re-include a path inside an excluded
+// directory (`*` then `!src` keeps src/**). Docker always sends the
+// Dockerfile even when .dockerignore matches it, so it is never filtered
+// out here.
+function filterFilesWithDockerignore(directory, files) {
+  const dockerignorePath = path.join(directory, ".dockerignore");
+
+  if (!fs.existsSync(dockerignorePath)) {
+    return files;
+  }
+
+  const patterns = fs.readFileSync(dockerignorePath, "utf8").split(/\r?\n/);
+  const ig = dockerignore().add(patterns);
+
+  // Patterns in .dockerignore are matched against POSIX-style relative
+  // paths, regardless of the host OS path separator.
+  return files.filter((file) => {
+    const posixPath = file.split(path.sep).join("/");
+    return posixPath === "Dockerfile" || !ig.ignores(posixPath);
+  });
+}
+
 function validateContainerConfigBeforeBuild(containerConfig) {
   const { name, buildArgs } = containerConfig;
 
@@ -114,7 +139,10 @@ async function buildAndPushContainer(
   const buildStream = await docker.buildImage(
     {
       context: directory,
-      src: getFilesInBuildContextDirectory(directory),
+      src: filterFilesWithDockerignore(
+        directory,
+        getFilesInBuildContextDirectory(directory)
+      ),
     },
     buildOptions
   );
