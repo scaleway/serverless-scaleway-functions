@@ -17,6 +17,19 @@ const accountApi = new AccountApi(ACCOUNT_API_URL, process.env.SCW_SECRET_KEY);
 const regions = ["fr-par", "nl-ams", "pl-waw"];
 
 const cleanup = async () => {
+  // Only this run's projects: CI runs for different PRs share one
+  // organization, so deleting every test-slsframework-* project would wipe
+  // out test projects that another, still-running workflow is using.
+  // CI sets SCW_TEST_RUN_ID once per workflow run (.github/workflows/test.yml)
+  // and createProject() puts it in every project name.
+  const runId = process.env.SCW_TEST_RUN_ID;
+  if (!runId) {
+    console.error(
+      "cleanup: SCW_TEST_RUN_ID is not set - refusing to delete projects that other runs may be using."
+    );
+    return;
+  }
+  const runPrefix = `test-slsframework-${runId}-`;
   const accountApi = new AccountApi(
     ACCOUNT_API_URL,
     process.env.SCW_SECRET_KEY
@@ -25,7 +38,7 @@ const cleanup = async () => {
     process.env.SCW_ORGANIZATION_ID
   );
   for (const project of projects) {
-    if (project.name.includes("test-slsframework-")) {
+    if (project.name.startsWith(runPrefix)) {
       process.env.SCW_DEFAULT_PROJECT_ID = project.id;
       await removeProjectById(project.id).catch();
     }

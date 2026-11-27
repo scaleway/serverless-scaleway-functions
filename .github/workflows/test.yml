@@ -10,6 +10,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # Every test project this workflow run creates carries this id in its
+  # name, and the clean-up job only deletes projects that carry it - so
+  # concurrent runs (other PRs) never delete each other's test projects.
+  SCW_TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
 jobs:
   lint:
     runs-on: ubuntu-24.04

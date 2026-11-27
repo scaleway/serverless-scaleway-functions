@@ -108,13 +108,22 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// CI sets SCW_TEST_RUN_ID per workflow run so that clean-up deletes only
+// the projects its own run created (see tests/utils/clean-up).
+function testRunTag() {
+  const runId = process.env.SCW_TEST_RUN_ID;
+  return runId ? `${runId}-` : "";
+}
+
 async function createProject() {
   const accountApi = new AccountApi(ACCOUNT_API_URL, secretKey);
 
   // Unfortunately, there's a small delay between the creation of a project and its availability for API calls.
   // We wait 1 minute to ensure there's no issue with IAM cache.
   const project = await accountApi.createProject({
-    name: `test-slsframework-${crypto.randomBytes(6).toString("hex")}`,
+    name: `test-slsframework-${testRunTag()}${crypto
+      .randomBytes(6)
+      .toString("hex")}`,
     organization_id: organizationId,
   });
 
