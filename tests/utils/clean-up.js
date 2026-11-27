@@ -33,6 +33,15 @@ const cleanup = async () => {
 };
 
 const removeProjectById = async (projectId) => {
+  // Never act without a project id: Scaleway's list endpoints treat a
+  // missing project_id filter as unscoped rather than "match nothing", so
+  // the deletes below would hit namespaces in other, unrelated projects.
+  // projectId is undefined whenever createProject() failed in a test's
+  // beforeAll, and Jest still runs afterAll.
+  if (!projectId) {
+    console.error("removeProjectById: no projectId given - refusing to act.");
+    return;
+  }
   process.env.SCW_DEFAULT_PROJECT_ID = projectId;
   await removeAllTestNamespaces(projectId)
     .then(() => accountApi.deleteProject(projectId))
