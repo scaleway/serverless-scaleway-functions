@@ -18,16 +18,20 @@ module.exports = {
   },
 
   deleteFunctionsByIds(funcIdsToDelete) {
-    funcIdsToDelete.forEach((funcIdToDelete) => {
+    const deletePromises = funcIdsToDelete.map((funcIdToDelete) =>
       this.deleteFunction(funcIdToDelete).then((res) => {
         this.serverless.cli.log(
           `Function ${res.name} removed from config file, deleting it...`
         );
-        this.waitForFunctionStatus(funcIdToDelete, "deleted").then(
-          this.serverless.cli.log(`Function ${res.name} deleted`)
+        return this.waitForFunctionStatus(funcIdToDelete, "deleted").then(
+          () => {
+            this.serverless.cli.log(`Function ${res.name} deleted`);
+          }
         );
-      });
-    });
+      })
+    );
+
+    return Promise.all(deletePromises);
   },
 
   createOrUpdateFunctions(foundFunctions) {
@@ -39,33 +43,34 @@ module.exports = {
       Object.keys(functions)
     );
 
-    this.deleteFunctionsByIds(deleteData.elementsIdsToRemove);
+    return Promise.all([
+      this.deleteFunctionsByIds(deleteData.elementsIdsToRemove),
+      // run create or update promises sequentially (concurrency: 1)
+      // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
+      BbPromise.map(
+        deleteData.serviceNamesRet,
+        (functionName) => {
+          const func = Object.assign(functions[functionName], {
+            name: functionName,
+          });
 
-    // run create or update promises sequentially (concurrency: 1)
-    // to avoid rate limiting, and because these operations are pretty quick (no need for parallelism)
-    return BbPromise.map(
-      deleteData.serviceNamesRet,
-      (functionName) => {
-        const func = Object.assign(functions[functionName], {
-          name: functionName,
-        });
+          const foundFunc = foundFunctions.find((f) => f.name === func.name);
 
-        const foundFunc = foundFunctions.find((f) => f.name === func.name);
-
-        return foundFunc
-          ? this.updateSingleFunction(func, foundFunc)
-          : this.createSingleFunction(func);
-      },
-      { concurrency: 1 }
-    ).then((updatedFunctions) => {
-      this.functions = updatedFunctions;
-    });
+          return foundFunc
+            ? this.updateSingleFunction(func, foundFunc)
+            : this.createSingleFunction(func);
+        },
+        { concurrency: 1 }
+      ).then((updatedFunctions) => {
+        this.functions = updatedFunctions;
+      }),
+    ]);
   },
 
   applyDomainsFunc(funcId, customDomains) {
     // we make a diff to know which domains to add or delete
 
-    this.listDomainsFunction(funcId).then((domains) => {
+    return this.listDomainsFunction(funcId).then((domains) => {
       const existingDomains = domainUtils.formatDomainsStructure(domains);
       const domainsToCreate = domainUtils.getDomainsToCreate(
         customDomains,
@@ -76,17 +81,19 @@ module.exports = {
         existingDomains
       );
 
-      domainsToCreate.forEach((newDomain) => {
+      const createPromises = domainsToCreate.map((newDomain) => {
         const createDomainParams = { function_id: funcId, hostname: newDomain };
 
-        this.createDomainAndLog(createDomainParams);
+        return this.createDomainAndLog(createDomainParams);
       });
 
-      domainsIdToDelete.forEach((domainId) => {
+      const deletePromises = domainsIdToDelete.map((domainId) =>
         this.deleteDomain(domainId).then((res) => {
           this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        });
-      });
+        })
+      );
+
+      return Promise.all([...createPromises, ...deletePromises]);
     });
   },
 
@@ -246,11 +253,14 @@ Runtime lifecycle doc : https://www.scaleway.com/en/docs/compute/functions/refer
 
     this.serverless.cli.log(`Updating function ${func.name}...`);
 
-    // assign domains
-    this.applyDomainsFunc(foundFunc.id, func.custom_domains);
+    const [updatedFunction] = await Promise.all([
+      this.updateFunction(foundFunc.id, params).then((response) =>
+        Object.assign(response, { handler: func.handler })
+      ),
+      // assign domains
+      this.applyDomainsFunc(foundFunc.id, func.custom_domains),
+    ]);
 
-    return this.updateFunction(foundFunc.id, params).then((response) =>
-      Object.assign(response, { handler: func.handler })
-    );
+    return updatedFunction;
   },
 };

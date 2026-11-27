@@ -61,20 +61,22 @@ module.exports = {
   },
 
   deleteContainersByIds(containersIdsToDelete) {
-    containersIdsToDelete.forEach((containerIdToDelete) => {
+    const deletePromises = containersIdsToDelete.map((containerIdToDelete) =>
       this.deleteContainer(containerIdToDelete).then((res) => {
         this.serverless.cli.log(
           `Container ${res.name} removed from config file, deleting it...`
         );
-        this.waitForContainer(containerIdToDelete).then(() => {
+        return this.waitForContainer(containerIdToDelete).then(() => {
           this.serverless.cli.log(`Container ${res.name} deleted`);
         });
-      });
-    });
+      })
+    );
+
+    return Promise.all(deletePromises);
   },
 
   applyDomainsContainer(containerId, customDomains) {
-    this.listDomainsContainer(containerId).then((domains) => {
+    return this.listDomainsContainer(containerId).then((domains) => {
       const existingDomains = domainUtils.formatDomainsStructure(domains);
       const domainsToCreate = domainUtils.getDomainsToCreate(
         customDomains,
@@ -85,20 +87,22 @@ module.exports = {
         existingDomains
       );
 
-      domainsToCreate.forEach((newDomain) => {
+      const createPromises = domainsToCreate.map((newDomain) => {
         const createDomainParams = {
           container_id: containerId,
           hostname: newDomain,
         };
 
-        this.createDomainAndLog(createDomainParams);
+        return this.createDomainAndLog(createDomainParams);
       });
 
-      domainsIdToDelete.forEach((domainId) => {
+      const deletePromises = domainsIdToDelete.map((domainId) =>
         this.deleteDomain(domainId).then((res) => {
           this.serverless.cli.log(`Deleting domain ${res.hostname}`);
-        });
-      });
+        })
+      );
+
+      return Promise.all([...createPromises, ...deletePromises]);
     });
   },
 
@@ -111,9 +115,7 @@ module.exports = {
       Object.keys(containers)
     );
 
-    this.deleteContainersByIds(deleteData.elementsIdsToRemove);
-
-    const promises = deleteData.serviceNamesRet.map((containerName) => {
+    const updatePromises = deleteData.serviceNamesRet.map((containerName) => {
       const container = Object.assign(containers[containerName], {
         name: containerName,
       });
@@ -133,9 +135,12 @@ module.exports = {
       return this.createSingleContainer(container);
     });
 
-    return Promise.all(promises).then((updatedContainers) => {
-      this.containers = updatedContainers;
-    });
+    return Promise.all([
+      this.deleteContainersByIds(deleteData.elementsIdsToRemove),
+      Promise.all(updatePromises).then((updatedContainers) => {
+        this.containers = updatedContainers;
+      }),
+    ]);
   },
 
   createSingleContainer(container) {
@@ -190,7 +195,10 @@ module.exports = {
     // while the container is updating or pending, and we already wait for the container
     // to be in a final status before updating it.
     // => This order of operation is simpler and does not require performing two separate waits.
-    this.applyDomainsContainer(foundContainer.id, container.custom_domains);
+    await this.applyDomainsContainer(
+      foundContainer.id,
+      container.custom_domains
+    );
 
     let privateNetworkId = container.privateNetworkId;
     const hasToDeletePrivateNetwork =

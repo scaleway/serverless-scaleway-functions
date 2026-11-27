@@ -41,7 +41,7 @@ module.exports = {
   waitForDomainsDeployment(func) {
     this.serverless.cli.log(`Waiting for ${func.name} domains deployment...`);
 
-    this.waitDomainsAreDeployedFunction(func.id).then((domains) => {
+    return this.waitDomainsAreDeployedFunction(func.id).then((domains) => {
       domains.forEach((domain) => {
         this.serverless.cli.log(
           `Domain ready (${func.name}): ${domain.hostname}`

@@ -46,10 +46,9 @@ module.exports = {
     const deleteTriggersPromises = application.currentTriggers.map(
       (trigger) => {
         if ("schedule" in trigger) {
-          this.deleteCronTrigger(trigger.id);
-        } else {
-          this.deleteMessageTrigger(trigger.id);
+          return this.deleteCronTrigger(trigger.id);
         }
+        return this.deleteMessageTrigger(trigger.id);
       }
     );
 
@@ -73,19 +72,19 @@ module.exports = {
 
     const createTriggersPromises = serverlessApp.events.map((event) => {
       if ("schedule" in event) {
-        this.createCronTrigger(application.id, isFunction, {
+        return this.createCronTrigger(application.id, isFunction, {
           schedule: event.schedule.rate,
           args: event.schedule.input || {},
         });
       }
       if ("nats" in event) {
-        this.createMessageTrigger(application.id, isFunction, {
+        return this.createMessageTrigger(application.id, isFunction, {
           name: event.nats.name,
           scw_nats_config: event.nats.scw_nats_config,
         });
       }
       if ("sqs" in event) {
-        this.createMessageTrigger(application.id, isFunction, {
+        return this.createMessageTrigger(application.id, isFunction, {
           name: event.sqs.name,
           scw_sqs_config: {
             queue: event.sqs.queue,
@@ -95,6 +94,7 @@ module.exports = {
           },
         });
       }
+      return undefined;
     });
 
     return Promise.all(createTriggersPromises);
